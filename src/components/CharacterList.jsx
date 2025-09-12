@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { getCharactersForUser, createNewCharacter } from '../services/firestoreService';
 
-const CharacterList = () => {
+// Adicionámos a propriedade 'onSelectCharacter'
+const CharacterList = ({ onSelectCharacter }) => {
   const { user } = useAuth();
   const [characters, setCharacters] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Função para carregar os personagens
   const fetchCharacters = async () => {
     if (user) {
       setIsLoading(true);
@@ -17,42 +17,42 @@ const CharacterList = () => {
     }
   };
 
-  // useEffect para carregar os personagens quando o componente é montado
   useEffect(() => {
     fetchCharacters();
   }, [user]);
 
-  // Função para o botão de criar personagem
   const handleCreateCharacter = async () => {
     if (user) {
       const newCharacter = await createNewCharacter(user.uid);
       if (newCharacter) {
-        fetchCharacters(); // Atualiza a lista após a criação
+        fetchCharacters();
       }
     }
   };
 
   return (
-    <div className="bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-700">
+    <div className="bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-700 w-full">
       <h2 className="text-xl font-bold text-purple-400 mb-4">Meus Personagens</h2>
       
       {isLoading ? (
-        <p className="text-gray-400 italic">A carregar a lista de personagens...</p>
+        <p className="text-gray-400 italic">A carregar...</p>
       ) : characters.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {characters.map((char) => (
-            <div key={char.id} className="bg-gray-700 p-4 rounded-md">
-              <h3 className="font-bold text-white">{char.name}</h3>
-              {/* Tentamos deserializar os dados para exibição */}
-              <p className="text-sm text-gray-300">Nível: {
-                (() => {
-                  try {
-                    return JSON.parse(char.mainAttributes).level || char.level || 'N/A';
-                  } catch (e) {
-                    return char.level || 'N/A';
-                  }
-                })()
-              }</p>
+            <div key={char.id} className="bg-gray-700 p-4 rounded-md flex flex-col justify-between">
+              <div>
+                <h3 className="font-bold text-white">{char.name}</h3>
+                <p className="text-sm text-gray-300">Nível: {char.level || '1'}</p>
+              </div>
+              <div className="flex justify-end mt-2">
+                {/* Este botão agora seleciona o personagem */}
+                <button
+                  onClick={() => onSelectCharacter(char)}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg"
+                >
+                  Ver/Editar
+                </button>
+              </div>
             </div>
           ))}
         </div>

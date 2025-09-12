@@ -1,9 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
 import CharacterList from './CharacterList';
+import CharacterSheet from './CharacterSheet'; // Importa a nova ficha
 import { useAuth } from '../hooks/useAuth';
 
 const Dashboard = () => {
   const { user, googleSignOut } = useAuth();
+  // Novo estado para guardar o personagem selecionado
+  const [selectedCharacter, setSelectedCharacter] = useState(null);
+
+  // Se um personagem estiver selecionado, mostra a ficha. Senão, mostra a lista.
+  if (selectedCharacter) {
+    return (
+      <CharacterSheet 
+        character={selectedCharacter} 
+        onBack={() => setSelectedCharacter(null)} // Função para voltar à lista
+      />
+    );
+  }
 
   return (
     <div className="w-full max-w-5xl mx-auto p-4 md:p-8">
@@ -21,7 +34,7 @@ const Dashboard = () => {
       </header>
 
       <main>
-        <CharacterList />
+        <CharacterList onSelectCharacter={setSelectedCharacter} />
       </main>
     </div>
   );
