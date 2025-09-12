@@ -1,23 +1,47 @@
 import React, { createContext, useEffect, useState } from "react";
 import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
-import { auth } from "../services/firebase.js";
+import { auth, db } from "../services/firebase.js";
+import { doc, setDoc, getDoc } from "firebase/firestore"; // Importa as funções do Firestore
 
-// Cria o Contexto
+const appId = "1:727724875985:web:97411448885c68c289e5f0"; // ID do App para o caminho
+
 export const AuthContext = createContext();
 
-// Cria o Provedor
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Função para criar/verificar o documento do utilizador no Firestore
+  const handleUserDocument = async (currentUser) => {
+    if (!currentUser) return;
+
+    // Define o caminho para o documento do utilizador no nosso novo universo 'artifacts2'
+    const userDocRef = doc(db, `artifacts2/${appId}/users/${currentUser.uid}`);
+    
+    const userDocSnap = await getDoc(userDocRef);
+
+    // Se o documento não existir, cria-o com os campos padrão
+    if (!userDocSnap.exists()) {
+      try {
+        await setDoc(userDocRef, {
+          displayName: currentUser.displayName,
+          email: currentUser.email,
+          isMaster: false, // Por padrão, ninguém é mestre
+        });
+        console.log("Documento do utilizador criado em artifacts2!");
+      } catch (error) {
+        console.error("Erro ao criar o documento do utilizador:", error);
+      }
+    }
+  };
+
   useEffect(() => {
-    // Escuta por mudanças no estado de autenticação (login/logout)
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
+      handleUserDocument(currentUser); // Chama a função para lidar com o documento
       setLoading(false);
     });
 
-    // Limpa o listener quando o componente é desmontado
     return () => {
       unsubscribe();
     };
@@ -39,11 +63,9 @@ export const AuthProvider = ({ children }) => {
     googleSignOut,
   };
 
-  // Fornece o estado de autenticação para os componentes filhos
   return (
     <AuthContext.Provider value={value}>
       {!loading && children}
     </AuthContext.Provider>
   );
 };
-

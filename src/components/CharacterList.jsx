@@ -43,7 +43,16 @@ const CharacterList = () => {
           {characters.map((char) => (
             <div key={char.id} className="bg-gray-700 p-4 rounded-md">
               <h3 className="font-bold text-white">{char.name}</h3>
-              <p className="text-sm text-gray-300">Nível: {char.level || 'N/A'}</p>
+              {/* Tentamos deserializar os dados para exibição */}
+              <p className="text-sm text-gray-300">Nível: {
+                (() => {
+                  try {
+                    return JSON.parse(char.mainAttributes).level || char.level || 'N/A';
+                  } catch (e) {
+                    return char.level || 'N/A';
+                  }
+                })()
+              }</p>
             </div>
           ))}
         </div>
