@@ -1,50 +1,48 @@
-import React, { createContext, useState, useEffect } from 'react';
-import { onAuthStateChanged, signInWithPopup, signOut, GoogleAuthProvider } from 'firebase/auth';
-import { auth } from '../services/firebase';
+import React, { createContext, useEffect, useState } from "react";
+import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
+import { auth } from "../services/firebase.js";
 
-// Cria o Contexto que compartilhará os dados de autenticação
+// Cria o Contexto
 export const AuthContext = createContext();
 
-// Cria o componente "Provedor" que vai envolver nossa aplicação
+// Cria o Provedor
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
-  // Função para fazer login com a conta do Google
-  const signInWithGoogle = () => {
+  useEffect(() => {
+    // Escuta por mudanças no estado de autenticação (login/logout)
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
+    });
+
+    // Limpa o listener quando o componente é desmontado
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  const googleSignIn = () => {
     const provider = new GoogleAuthProvider();
     return signInWithPopup(auth, provider);
   };
 
-  // Função para fazer logout
-  const signOutUser = () => {
+  const googleSignOut = () => {
     return signOut(auth);
   };
 
-  // Efeito que roda uma vez para verificar o estado do login
-  useEffect(() => {
-    // A função onAuthStateChanged fica "ouvindo" o Firebase
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser); // Define o usuário (ou null se não estiver logado)
-      setIsLoading(false); // Marca que a verificação inicial terminou
-    });
-
-    // Função de limpeza para parar de "ouvir" quando o componente for desmontado
-    return () => unsubscribe();
-  }, []);
-
-  // O valor que será compartilhado com toda a aplicação
   const value = {
     user,
-    isLoading,
-    signInWithGoogle,
-    signOutUser,
+    loading,
+    googleSignIn,
+    googleSignOut,
   };
 
-  // Retorna o Provedor com os dados, mostrando os componentes filhos apenas quando o carregamento inicial terminar
+  // Fornece o estado de autenticação para os componentes filhos
   return (
     <AuthContext.Provider value={value}>
-      {!isLoading && children}
+      {!loading && children}
     </AuthContext.Provider>
   );
 };

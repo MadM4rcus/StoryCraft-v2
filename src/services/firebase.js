@@ -1,23 +1,21 @@
-// 1. Importe as funções necessárias dos SDKs do Firebase
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
-// 2. Configuração do seu projeto Firebase
+// Configuração do seu projeto Firebase v1 (storycraft-a5f7e)
 const firebaseConfig = {
-  apiKey: "AIzaSyC1Mpdmg4sF1U5Gr-kc0yOHofcPYYssS6Y",
-  authDomain: "storycraft-v2.firebaseapp.com",
-  projectId: "storycraft-v2",
-  storageBucket: "storycraft-v2.firebasestorage.app",
-  messagingSenderId: "20874394730",
-  appId: "1:20874394730:web:d7219bb7810b2da7161e13"
+  apiKey: "AIzaSyDfsK4K4vhOmSSGeVHOlLnJuNlHGNha4LU",
+  authDomain: "storycraft-a5f7e.firebaseapp.com",
+  projectId: "storycraft-a5f7e",
+  storageBucket: "storycraft-a5f7e.firebasestorage.app", // Corrigido para corresponder ao seu projeto v1
+  messagingSenderId: "727724875985",
+  appId: "1:727724875985:web:97411448885c68c289e5f0",
+  measurementId: "G-JH03Y2NZDK"
 };
 
-// 3. Inicialize os serviços do Firebase
+// Inicializa o Firebase
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
 
-// 4. Exporte os serviços inicializados para que possam ser usados em outras partes do app
-export { auth, db };
-
+// Exporta os serviços que vamos usar
+export const auth = getAuth(app);
+export const db = getFirestore(app);
