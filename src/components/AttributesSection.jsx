@@ -61,7 +61,7 @@ const AttributesSection = ({ character, isMaster, onUpdate, isCollapsed, toggleS
                         {totalValue >= 0 ? '+' : ''}{totalValue}
                       </span>
                     </span>
-                    <button className="px-4 py-1 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg whitespace-nowrap ml-4 text-sm shadow-md">
+                    <button className="px-4 py-1 bg-gray-500 text-white font-bold rounded-lg whitespace-nowrap ml-4 text-sm shadow-md cursor-not-allowed" disabled>
                       Rolar
                     </button>
                   </div>

@@ -1,19 +1,18 @@
 import React, { useState } from 'react';
-import CharacterList from './CharacterList';
-import CharacterSheet from './CharacterSheet'; // Importa a nova ficha
-import { useAuth } from '../hooks/useAuth';
+import CharacterList from './CharacterList.jsx';
+import CharacterSheet from './CharacterSheet.jsx';
+import { useAuth } from '../hooks/useAuth.js';
 
 const Dashboard = () => {
-  const { user, googleSignOut } = useAuth();
-  // Novo estado para guardar o personagem selecionado
+  const { user, googleSignOut, isMaster } = useAuth(); // Pega o isMaster do hook
   const [selectedCharacter, setSelectedCharacter] = useState(null);
 
-  // Se um personagem estiver selecionado, mostra a ficha. Senão, mostra a lista.
   if (selectedCharacter) {
     return (
       <CharacterSheet 
         character={selectedCharacter} 
-        onBack={() => setSelectedCharacter(null)} // Função para voltar à lista
+        onBack={() => setSelectedCharacter(null)}
+        isMaster={isMaster} // Passa o valor real para a ficha
       />
     );
   }

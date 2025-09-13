@@ -1,51 +1,56 @@
 import React, { createContext, useEffect, useState } from "react";
 import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
 import { auth, db } from "../services/firebase.js";
-import { doc, setDoc, getDoc } from "firebase/firestore"; // Importa as funções do Firestore
+import { doc, setDoc, getDoc, onSnapshot } from "firebase/firestore";
 
-const appId = "1:727724875985:web:97411448885c68c289e5f0"; // ID do App para o caminho
+const appId = "1:727724875985:web:97411448885c68c289e5f0";
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [isMaster, setIsMaster] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Função para criar/verificar o documento do utilizador no Firestore
-  const handleUserDocument = async (currentUser) => {
-    if (!currentUser) return;
-
-    // Define o caminho para o documento do utilizador no nosso novo universo 'artifacts2'
-    const userDocRef = doc(db, `artifacts2/${appId}/users/${currentUser.uid}`);
-    
-    const userDocSnap = await getDoc(userDocRef);
-
-    // Se o documento não existir, cria-o com os campos padrão
-    if (!userDocSnap.exists()) {
-      try {
-        await setDoc(userDocRef, {
-          displayName: currentUser.displayName,
-          email: currentUser.email,
-          isMaster: false, // Por padrão, ninguém é mestre
-        });
-        console.log("Documento do utilizador criado em artifacts2!");
-      } catch (error) {
-        console.error("Erro ao criar o documento do utilizador:", error);
+  useEffect(() => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (!currentUser) {
+        setLoading(false);
+        setIsMaster(false);
       }
-    }
-  };
+    });
+    return () => unsubscribeAuth();
+  }, []);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      handleUserDocument(currentUser); // Chama a função para lidar com o documento
-      setLoading(false);
-    });
+    if (user) {
+      const userDocRef = doc(db, `artifacts2/${appId}/users/${user.uid}`);
 
-    return () => {
-      unsubscribe();
-    };
-  }, []);
+      const unsubscribeFirestore = onSnapshot(userDocRef, async (docSnap) => {
+        if (!docSnap.exists()) {
+          try {
+            await setDoc(userDocRef, {
+              displayName: user.displayName,
+              email: user.email,
+              isMaster: false,
+            });
+            setIsMaster(false);
+          } catch (error) {
+            console.error("Erro ao criar o documento do utilizador:", error);
+          }
+        } else {
+          setIsMaster(docSnap.data().isMaster === true);
+        }
+        setLoading(false);
+      }, (error) => {
+        console.error("Erro ao escutar documento do utilizador:", error);
+        setLoading(false);
+      });
+
+      return () => unsubscribeFirestore();
+    }
+  }, [user]);
 
   const googleSignIn = () => {
     const provider = new GoogleAuthProvider();
@@ -59,6 +64,7 @@ export const AuthProvider = ({ children }) => {
   const value = {
     user,
     loading,
+    isMaster,
     googleSignIn,
     googleSignOut,
   };

@@ -4,7 +4,7 @@ import CharacterInfoSection from './CharacterInfoSection.jsx';
 import MainAttributesSection from './MainAttributesSection.jsx';
 import ActionsSection from './ActionsSection.jsx';
 import BuffsSection from './BuffsSection.jsx';
-import AttributesSection from './AttributesSection.jsx';
+import AttributesSection from './AttributesSection.jsx'; // Caminho verificado
 
 const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
   const { character, loading, updateCharacterField, useCollapsibleState } = useCharacter(initialCharacter.id, initialCharacter.ownerUid);
