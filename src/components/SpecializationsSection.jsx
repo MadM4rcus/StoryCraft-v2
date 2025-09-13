@@ -6,7 +6,8 @@ const SpecializationsSection = ({ character, isMaster, onUpdate, isCollapsed, to
     const canEdit = user.uid === character.ownerUid || isMaster;
 
     const handleAddSpecialization = () => {
-        const newSpec = { id: crypto.randomUUID(), name: '', modifier: 0, bonus: 0 };
+        // Adiciona 'isCollapsed: false' para que o novo item apareça aberto
+        const newSpec = { id: crypto.randomUUID(), name: '', modifier: 0, bonus: 0, isCollapsed: false };
         onUpdate('specializations', [...(character.specializations || []), newSpec]);
     };
 
@@ -15,7 +16,19 @@ const SpecializationsSection = ({ character, isMaster, onUpdate, isCollapsed, to
     };
 
     const handleSpecializationChange = (id, field, value) => {
-        onUpdate('specializations', (character.specializations || []).map(s => (s.id === id ? { ...s, [field]: field === 'name' ? value : parseInt(value, 10) || 0 } : s)));
+        onUpdate('specializations', (character.specializations || []).map(s => (
+            s.id === id 
+            ? { ...s, [field]: field === 'name' ? value : parseInt(value, 10) || 0 } 
+            : s
+        )));
+    };
+    
+    // A função que faltava para colapsar cada item individualmente
+    const toggleItemCollapsed = (id) => {
+        const newList = (character.specializations || []).map(item =>
+            item.id === id ? { ...item, isCollapsed: !item.isCollapsed } : item
+        );
+        onUpdate('specializations', newList);
     };
 
     return (
@@ -31,47 +44,59 @@ const SpecializationsSection = ({ character, isMaster, onUpdate, isCollapsed, to
                 <>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {(character.specializations || []).map(spec => (
-                            <div key={spec.id} className="p-3 bg-gray-600 rounded-md shadow-sm">
-                                <div className="flex justify-between items-center">
-                                    <input 
-                                        type="text" 
-                                        value={spec.name} 
-                                        onChange={(e) => handleSpecializationChange(spec.id, 'name', e.target.value)} 
-                                        className="font-semibold text-lg flex-grow p-1 bg-gray-700 border border-gray-500 rounded-md text-white" 
-                                        placeholder="Nome da Perícia" 
-                                        disabled={!canEdit} 
-                                    />
+                            <div key={spec.id} className="flex flex-col p-3 bg-gray-600 rounded-md shadow-sm">
+                                <div className="flex justify-between items-center mb-1">
+                                    {/* Adiciona o onClick de volta ao título da perícia */}
+                                    <span 
+                                        className="font-semibold text-lg w-full cursor-pointer text-white"
+                                        onClick={() => toggleItemCollapsed(spec.id)}
+                                    >
+                                        {spec.name || 'Perícia Sem Nome'} {spec.isCollapsed ? '...' : ''}
+                                    </span>
                                     {canEdit && (
                                         <button 
                                             onClick={() => handleRemoveSpecialization(spec.id)} 
-                                            className="ml-4 px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-md"
+                                            className="ml-4 px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-md flex-shrink-0"
                                         >
                                             Remover
                                         </button>
                                     )}
                                 </div>
-                                <div className="flex gap-4 text-sm mt-2 text-white">
-                                    <label className="flex items-center gap-1">
-                                        Mod: 
+                                {/* Mostra/esconde os detalhes com base no 'isCollapsed' do item */}
+                                {!spec.isCollapsed && (
+                                    <>
                                         <input 
-                                            type="number" 
-                                            value={spec.modifier === 0 ? '' : spec.modifier} 
-                                            onChange={(e) => handleSpecializationChange(spec.id, 'modifier', e.target.value)} 
-                                            className="w-12 p-1 bg-gray-700 border border-gray-500 rounded-md text-white text-center" 
+                                            type="text" 
+                                            value={spec.name} 
+                                            onChange={(e) => handleSpecializationChange(spec.id, 'name', e.target.value)} 
+                                            className="font-semibold text-lg w-full p-1 bg-gray-700 border border-gray-500 rounded-md text-white mb-2" 
+                                            placeholder="Nome da Perícia" 
                                             disabled={!canEdit} 
                                         />
-                                    </label>
-                                    <label className="flex items-center gap-1">
-                                        Bônus: 
-                                        <input 
-                                            type="number" 
-                                            value={spec.bonus === 0 ? '' : spec.bonus} 
-                                            onChange={(e) => handleSpecializationChange(spec.id, 'bonus', e.target.value)} 
-                                            className="w-12 p-1 bg-gray-700 border border-gray-500 rounded-md text-white text-center" 
-                                            disabled={!canEdit} 
-                                        />
-                                    </label>
-                                </div>
+                                        <div className="flex gap-4 text-sm mt-2 text-white">
+                                            <label className="flex items-center gap-1">
+                                                Mod: 
+                                                <input 
+                                                    type="number" 
+                                                    value={spec.modifier === 0 ? '' : spec.modifier} 
+                                                    onChange={(e) => handleSpecializationChange(spec.id, 'modifier', e.target.value)} 
+                                                    className="w-12 p-1 bg-gray-700 border border-gray-500 rounded-md text-white text-center" 
+                                                    disabled={!canEdit} 
+                                                />
+                                            </label>
+                                            <label className="flex items-center gap-1">
+                                                Bônus: 
+                                                <input 
+                                                    type="number" 
+                                                    value={spec.bonus === 0 ? '' : spec.bonus} 
+                                                    onChange={(e) => handleSpecializationChange(spec.id, 'bonus', e.target.value)} 
+                                                    className="w-12 p-1 bg-gray-700 border border-gray-500 rounded-md text-white text-center" 
+                                                    disabled={!canEdit} 
+                                                />
+                                            </label>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         ))}
                     </div>

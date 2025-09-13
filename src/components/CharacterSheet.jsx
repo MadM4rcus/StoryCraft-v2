@@ -8,11 +8,13 @@ import AttributesSection from './AttributesSection.jsx';
 import WalletSection from './WalletSection.jsx';
 import InventorySection from './InventorySection.jsx';
 import PerksSection from './PerksSection.jsx';
-import SkillsSection from './SkillsSection.jsx'; // <-- Importa a nova secção
+import SkillsSection from './SkillsSection.jsx'; // A sua secção de Habilidades
+import SpecializationsSection from './SpecializationsSection.jsx'; // A nova secção de Perícias
 
 const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
   const { character, loading, updateCharacterField, useCollapsibleState } = useCharacter(initialCharacter.id, initialCharacter.ownerUid);
   
+  // Adiciona a nova secção ao nosso gestor de estado colapsável
   const [collapsedSections, toggleSection] = useCollapsibleState({
       isCharacterInfoCollapsed: false,
       isMainAttributesCollapsed: false,
@@ -22,7 +24,8 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
       isWalletCollapsed: false,
       isInventoryCollapsed: false,
       isPerksCollapsed: false,
-      isSkillsCollapsed: false, // <-- Adicionado, começa aberta
+      isSkillsCollapsed: false,
+      isSpecializationsCollapsed: false, // <-- Adicionado!
   });
 
   if (loading) {
@@ -32,7 +35,6 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
     return <div className="text-center p-8"><p className="text-xl text-red-400">Erro: Personagem não encontrado.</p></div>;
   }
 
-  // A ordem dos componentes agora reflete a do V1
   return (
     <div className="w-full max-w-4xl mx-auto">
       <button 
@@ -42,6 +44,7 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
         ← Voltar para a Lista
       </button>
 
+      {/* A ordem dos componentes permanece a mesma */}
       <CharacterInfoSection 
         character={character} 
         onUpdate={updateCharacterField}
@@ -92,13 +95,21 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
         isCollapsed={collapsedSections.isPerksCollapsed}
         toggleSection={() => toggleSection('isPerksCollapsed')}
       />
-      {/* Nova secção de Habilidades adicionada na ordem correta */}
       <SkillsSection
         character={character}
         isMaster={isMaster}
         onUpdate={updateCharacterField}
         isCollapsed={collapsedSections.isSkillsCollapsed}
         toggleSection={() => toggleSection('isSkillsCollapsed')}
+      />
+      
+      {/* Secção de Perícias com a lógica de colapsar ligada */}
+      <SpecializationsSection
+        character={character}
+        isMaster={isMaster}
+        onUpdate={updateCharacterField}
+        isCollapsed={collapsedSections.isSpecializationsCollapsed}
+        toggleSection={() => toggleSection('isSpecializationsCollapsed')}
       />
     </div>
   );
