@@ -11,7 +11,8 @@ import PerksSection from './PerksSection.jsx';
 import SkillsSection from './SkillsSection.jsx';
 import SpecializationsSection from './SpecializationsSection.jsx';
 import EquippedItemsSection from './EquippedItemsSection.jsx';
-import StorySection from './StorySection.jsx'; // <-- Importa a nova secção
+import StorySection from './StorySection.jsx';
+import NotesSection from './NotesSection.jsx'; // <-- Importa a nova secção
 
 const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
   const { character, loading, updateCharacterField, toggleSection } = useCharacter(initialCharacter.id, initialCharacter.ownerUid);
@@ -28,7 +29,7 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
       buffs: 'isBuffsCollapsed', attributes: 'isAttributesCollapsed', wallet: 'isWalletCollapsed',
       inventory: 'isInventoryCollapsed', perks: 'isPerksCollapsed', skills: 'isSkillsCollapsed',
       specializations: 'isSpecializationsCollapsed', equipped: 'isEquippedItemsCollapsed',
-      story: 'isStoryCollapsed'
+      story: 'isStoryCollapsed', notes: 'isNotesCollapsed' // <-- Adicionado
   };
 
   return (
@@ -37,7 +38,6 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
         ← Voltar para a Lista
       </button>
 
-      {/* A ordem dos componentes agora reflete a do V1 */}
       <CharacterInfoSection character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.[sections.info]} toggleSection={() => toggleSection(sections.info)} />
       <MainAttributesSection character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.[sections.main]} toggleSection={() => toggleSection(sections.main)} />
       <ActionsSection isCollapsed={character.collapsedStates?.[sections.actions]} toggleSection={() => toggleSection(sections.actions)} />
@@ -49,14 +49,15 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
       <SkillsSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.skills]} toggleSection={() => toggleSection(sections.skills)} />
       <SpecializationsSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.specializations]} toggleSection={() => toggleSection(sections.specializations)} />
       <EquippedItemsSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.equipped]} toggleSection={() => toggleSection(sections.equipped)} />
+      <StorySection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.story]} toggleSection={() => toggleSection(sections.story)} />
       
-      {/* Nova secção de História adicionada na ordem correta */}
-      <StorySection
+      {/* Nova secção de Anotações adicionada na ordem correta */}
+      <NotesSection
         character={character}
         isMaster={isMaster}
         onUpdate={updateCharacterField}
-        isCollapsed={character.collapsedStates?.[sections.story]}
-        toggleSection={() => toggleSection(sections.story)}
+        isCollapsed={character.collapsedStates?.[sections.notes]}
+        toggleSection={() => toggleSection(sections.notes)}
       />
     </div>
   );
