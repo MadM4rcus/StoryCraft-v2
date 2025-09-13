@@ -8,25 +8,13 @@ import AttributesSection from './AttributesSection.jsx';
 import WalletSection from './WalletSection.jsx';
 import InventorySection from './InventorySection.jsx';
 import PerksSection from './PerksSection.jsx';
-import SkillsSection from './SkillsSection.jsx'; // A sua secção de Habilidades
-import SpecializationsSection from './SpecializationsSection.jsx'; // A nova secção de Perícias
+import SkillsSection from './SkillsSection.jsx';
+import SpecializationsSection from './SpecializationsSection.jsx';
+import EquippedItemsSection from './EquippedItemsSection.jsx'; // <-- Importa a nova secção
 
 const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
-  const { character, loading, updateCharacterField, useCollapsibleState } = useCharacter(initialCharacter.id, initialCharacter.ownerUid);
-  
-  // Adiciona a nova secção ao nosso gestor de estado colapsável
-  const [collapsedSections, toggleSection] = useCollapsibleState({
-      isCharacterInfoCollapsed: false,
-      isMainAttributesCollapsed: false,
-      isActionsCollapsed: true,
-      isBuffsCollapsed: true,
-      isAttributesCollapsed: false,
-      isWalletCollapsed: false,
-      isInventoryCollapsed: false,
-      isPerksCollapsed: false,
-      isSkillsCollapsed: false,
-      isSpecializationsCollapsed: false, // <-- Adicionado!
-  });
+  // A função useCollapsibleState foi removida daqui e agora a lógica está no useCharacter
+  const { character, loading, updateCharacterField, toggleSection } = useCharacter(initialCharacter.id, initialCharacter.ownerUid);
 
   if (loading) {
     return <div className="text-center p-8"><p className="text-xl text-gray-300">A carregar ficha...</p></div>;
@@ -35,82 +23,39 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
     return <div className="text-center p-8"><p className="text-xl text-red-400">Erro: Personagem não encontrado.</p></div>;
   }
 
+  // Define os nomes das chaves para o estado colapsável
+  const sections = {
+      info: 'isCharacterInfoCollapsed',
+      main: 'isMainAttributesCollapsed',
+      actions: 'isActionsCollapsed',
+      buffs: 'isBuffsCollapsed',
+      attributes: 'isAttributesCollapsed',
+      wallet: 'isWalletCollapsed',
+      inventory: 'isInventoryCollapsed',
+      perks: 'isPerksCollapsed',
+      skills: 'isSkillsCollapsed',
+      specializations: 'isSpecializationsCollapsed',
+      equipped: 'isEquippedItemsCollapsed'
+  };
+
   return (
     <div className="w-full max-w-4xl mx-auto">
-      <button 
-        onClick={onBack}
-        className="mb-4 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-lg"
-      >
+      <button onClick={onBack} className="mb-4 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-lg">
         ← Voltar para a Lista
       </button>
-
-      {/* A ordem dos componentes permanece a mesma */}
-      <CharacterInfoSection 
-        character={character} 
-        onUpdate={updateCharacterField}
-        isMaster={isMaster}
-        isCollapsed={collapsedSections.isCharacterInfoCollapsed}
-        toggleSection={() => toggleSection('isCharacterInfoCollapsed')}
-      />
-      <MainAttributesSection 
-        character={character}
-        onUpdate={updateCharacterField}
-        isMaster={isMaster}
-        isCollapsed={collapsedSections.isMainAttributesCollapsed}
-        toggleSection={() => toggleSection('isMainAttributesCollapsed')}
-      />
-      <ActionsSection 
-        isCollapsed={collapsedSections.isActionsCollapsed}
-        toggleSection={() => toggleSection('isActionsCollapsed')}
-      />
-      <BuffsSection
-        isCollapsed={collapsedSections.isBuffsCollapsed}
-        toggleSection={() => toggleSection('isBuffsCollapsed')}
-      />
-      <AttributesSection
-        character={character}
-        isMaster={isMaster}
-        onUpdate={updateCharacterField}
-        isCollapsed={collapsedSections.isAttributesCollapsed}
-        toggleSection={() => toggleSection('isAttributesCollapsed')}
-      />
-      <WalletSection
-        character={character}
-        isMaster={isMaster}
-        onUpdate={updateCharacterField}
-        isCollapsed={collapsedSections.isWalletCollapsed}
-        toggleSection={() => toggleSection('isWalletCollapsed')}
-      />
-      <InventorySection
-        character={character}
-        isMaster={isMaster}
-        onUpdate={updateCharacterField}
-        isCollapsed={collapsedSections.isInventoryCollapsed}
-        toggleSection={() => toggleSection('isInventoryCollapsed')}
-      />
-      <PerksSection
-        character={character}
-        isMaster={isMaster}
-        onUpdate={updateCharacterField}
-        isCollapsed={collapsedSections.isPerksCollapsed}
-        toggleSection={() => toggleSection('isPerksCollapsed')}
-      />
-      <SkillsSection
-        character={character}
-        isMaster={isMaster}
-        onUpdate={updateCharacterField}
-        isCollapsed={collapsedSections.isSkillsCollapsed}
-        toggleSection={() => toggleSection('isSkillsCollapsed')}
-      />
       
-      {/* Secção de Perícias com a lógica de colapsar ligada */}
-      <SpecializationsSection
-        character={character}
-        isMaster={isMaster}
-        onUpdate={updateCharacterField}
-        isCollapsed={collapsedSections.isSpecializationsCollapsed}
-        toggleSection={() => toggleSection('isSpecializationsCollapsed')}
-      />
+      {/* Cada secção agora usa a função 'toggleSection' do nosso motor */}
+      <CharacterInfoSection character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.[sections.info]} toggleSection={() => toggleSection(sections.info)} />
+      <MainAttributesSection character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.[sections.main]} toggleSection={() => toggleSection(sections.main)} />
+      <ActionsSection isCollapsed={character.collapsedStates?.[sections.actions]} toggleSection={() => toggleSection(sections.actions)} />
+      <BuffsSection isCollapsed={character.collapsedStates?.[sections.buffs]} toggleSection={() => toggleSection(sections.buffs)} />
+      <AttributesSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.attributes]} toggleSection={() => toggleSection(sections.attributes)} />
+      <WalletSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.wallet]} toggleSection={() => toggleSection(sections.wallet)} />
+      <InventorySection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.inventory]} toggleSection={() => toggleSection(sections.inventory)} />
+      <PerksSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.perks]} toggleSection={() => toggleSection(sections.perks)} />
+      <SkillsSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.skills]} toggleSection={() => toggleSection(sections.skills)} />
+      <SpecializationsSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.specializations]} toggleSection={() => toggleSection(sections.specializations)} />
+      <EquippedItemsSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.equipped]} toggleSection={() => toggleSection(sections.equipped)} />
     </div>
   );
 };
