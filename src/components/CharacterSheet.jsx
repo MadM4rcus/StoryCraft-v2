@@ -4,7 +4,9 @@ import CharacterInfoSection from './CharacterInfoSection.jsx';
 import MainAttributesSection from './MainAttributesSection.jsx';
 import ActionsSection from './ActionsSection.jsx';
 import BuffsSection from './BuffsSection.jsx';
-import AttributesSection from './AttributesSection.jsx'; // Caminho verificado
+import AttributesSection from './AttributesSection.jsx';
+import WalletSection from './WalletSection.jsx';
+import InventorySection from './InventorySection.jsx';
 
 const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
   const { character, loading, updateCharacterField, useCollapsibleState } = useCharacter(initialCharacter.id, initialCharacter.ownerUid);
@@ -15,6 +17,8 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
       isActionsCollapsed: true,
       isBuffsCollapsed: true,
       isAttributesCollapsed: false,
+      isWalletCollapsed: false,
+      isInventoryCollapsed: false,
   });
 
   if (loading) {
@@ -24,6 +28,7 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
     return <div className="text-center p-8"><p className="text-xl text-red-400">Erro: Personagem não encontrado.</p></div>;
   }
 
+  // A ordem dos componentes agora reflete a do V1
   return (
     <div className="w-full max-w-4xl mx-auto">
       <button 
@@ -40,7 +45,6 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
         isCollapsed={collapsedSections.isCharacterInfoCollapsed}
         toggleSection={() => toggleSection('isCharacterInfoCollapsed')}
       />
-
       <MainAttributesSection 
         character={character}
         onUpdate={updateCharacterField}
@@ -48,15 +52,6 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
         isCollapsed={collapsedSections.isMainAttributesCollapsed}
         toggleSection={() => toggleSection('isMainAttributesCollapsed')}
       />
-
-      <AttributesSection
-        character={character}
-        isMaster={isMaster}
-        onUpdate={updateCharacterField}
-        isCollapsed={collapsedSections.isAttributesCollapsed}
-        toggleSection={() => toggleSection('isAttributesCollapsed')}
-      />
-
       <ActionsSection 
         isCollapsed={collapsedSections.isActionsCollapsed}
         toggleSection={() => toggleSection('isActionsCollapsed')}
@@ -65,7 +60,27 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
         isCollapsed={collapsedSections.isBuffsCollapsed}
         toggleSection={() => toggleSection('isBuffsCollapsed')}
       />
-
+      <AttributesSection
+        character={character}
+        isMaster={isMaster}
+        onUpdate={updateCharacterField}
+        isCollapsed={collapsedSections.isAttributesCollapsed}
+        toggleSection={() => toggleSection('isAttributesCollapsed')}
+      />
+      <WalletSection
+        character={character}
+        isMaster={isMaster}
+        onUpdate={updateCharacterField}
+        isCollapsed={collapsedSections.isWalletCollapsed}
+        toggleSection={() => toggleSection('isWalletCollapsed')}
+      />
+      <InventorySection
+        character={character}
+        isMaster={isMaster}
+        onUpdate={updateCharacterField}
+        isCollapsed={collapsedSections.isInventoryCollapsed}
+        toggleSection={() => toggleSection('isInventoryCollapsed')}
+      />
     </div>
   );
 };
