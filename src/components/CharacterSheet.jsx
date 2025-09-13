@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useCharacter } from '../hooks/useCharacter.js';
+import Modal from './Modal.jsx';
 import CharacterInfoSection from './CharacterInfoSection.jsx';
 import MainAttributesSection from './MainAttributesSection.jsx';
 import ActionsSection from './ActionsSection.jsx';
@@ -12,10 +13,13 @@ import SkillsSection from './SkillsSection.jsx';
 import SpecializationsSection from './SpecializationsSection.jsx';
 import EquippedItemsSection from './EquippedItemsSection.jsx';
 import StorySection from './StorySection.jsx';
-import NotesSection from './NotesSection.jsx'; // <-- Importa a nova secção
+import NotesSection from './NotesSection.jsx';
+import DiscordIntegrationSection from './DiscordIntegrationSection.jsx';
+import ActionButtons from './ActionButtons.jsx';
 
 const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
   const { character, loading, updateCharacterField, toggleSection } = useCharacter(initialCharacter.id, initialCharacter.ownerUid);
+  const [modal, setModal] = useState({ isVisible: false });
 
   if (loading) {
     return <div className="text-center p-8"><p className="text-xl text-gray-300">A carregar ficha...</p></div>;
@@ -28,12 +32,53 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
       info: 'isCharacterInfoCollapsed', main: 'isMainAttributesCollapsed', actions: 'isActionsCollapsed',
       buffs: 'isBuffsCollapsed', attributes: 'isAttributesCollapsed', wallet: 'isWalletCollapsed',
       inventory: 'isInventoryCollapsed', perks: 'isPerksCollapsed', skills: 'isSkillsCollapsed',
-      specializations: 'isSpecializationsCollapsed', equipped: 'isEquippedItemsCollapsed',
-      story: 'isStoryCollapsed', notes: 'isNotesCollapsed' // <-- Adicionado
+      specializations: 'isSpecializationsCollapsed', equipped: 'isEquippedItemsCollapsed', discord: 'isDiscordCollapsed',
+      story: 'isStoryCollapsed', notes: 'isNotesCollapsed'
   };
+
+  const handleExportJson = () => {
+    if (!character) return;
+    // Removemos os estados de "recolhido" antes de exportar para manter o ficheiro limpo
+    const { collapsedStates, ...exportData } = character;
+    const jsonString = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${character.name || 'ficha'}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  };
+
+  const handleReset = () => {
+    setModal({
+      isVisible: true,
+      message: `Tem a certeza que deseja resetar PERMANENTEMENTE a ficha de "${character.name}"? Esta ação não pode ser desfeita.`,
+      type: 'confirm',
+      onConfirm: async () => {
+        const fieldsToReset = {
+            photoUrl: '', age: '', height: '', gender: '', race: '', class: '', alignment: '', level: 1, xp: 0,
+            mainAttributes: { hp: { current: 10, max: 10, temp: 0 }, mp: { current: 10, max: 10 }, initiative: 0, fa: 0, fm: 0, fd: 0 },
+            attributes: [], inventory: [], wallet: { zeni: 0, inspiration: 0 }, advantages: [], disadvantages: [], abilities: [],
+            specializations: [], equippedItems: [], history: [], notes: [], buffs: [], formulaActions: [],
+            discordWebhookUrl: '',
+        };
+
+        // Itera sobre cada campo e atualiza-o no Firestore.
+        for (const [field, value] of Object.entries(fieldsToReset)) {
+            await updateCharacterField(field, value);
+        }
+        setModal({ isVisible: false });
+      },
+      onCancel: () => setModal({ isVisible: false }),
+    });
+  };
+
 
   return (
     <div className="w-full max-w-4xl mx-auto">
+      {modal.isVisible && <Modal {...modal} onCancel={() => setModal({ isVisible: false })} />}
       <button onClick={onBack} className="mb-4 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-lg">
         ← Voltar para a Lista
       </button>
@@ -51,13 +96,26 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
       <EquippedItemsSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.equipped]} toggleSection={() => toggleSection(sections.equipped)} />
       <StorySection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.story]} toggleSection={() => toggleSection(sections.story)} />
       
-      {/* Nova secção de Anotações adicionada na ordem correta */}
       <NotesSection
         character={character}
         isMaster={isMaster}
         onUpdate={updateCharacterField}
         isCollapsed={character.collapsedStates?.[sections.notes]}
         toggleSection={() => toggleSection(sections.notes)}
+      />
+
+      <DiscordIntegrationSection
+        character={character}
+        isMaster={isMaster}
+        onUpdate={updateCharacterField}
+        isCollapsed={character.collapsedStates?.[sections.discord]}
+        toggleSection={() => toggleSection(sections.discord)}
+      />
+
+      <ActionButtons
+        character={character}
+        onExport={handleExportJson}
+        onReset={handleReset}
       />
     </div>
   );
