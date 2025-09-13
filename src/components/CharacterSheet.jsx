@@ -10,10 +10,10 @@ import InventorySection from './InventorySection.jsx';
 import PerksSection from './PerksSection.jsx';
 import SkillsSection from './SkillsSection.jsx';
 import SpecializationsSection from './SpecializationsSection.jsx';
-import EquippedItemsSection from './EquippedItemsSection.jsx'; // <-- Importa a nova secção
+import EquippedItemsSection from './EquippedItemsSection.jsx';
+import StorySection from './StorySection.jsx'; // <-- Importa a nova secção
 
 const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
-  // A função useCollapsibleState foi removida daqui e agora a lógica está no useCharacter
   const { character, loading, updateCharacterField, toggleSection } = useCharacter(initialCharacter.id, initialCharacter.ownerUid);
 
   if (loading) {
@@ -23,19 +23,12 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
     return <div className="text-center p-8"><p className="text-xl text-red-400">Erro: Personagem não encontrado.</p></div>;
   }
 
-  // Define os nomes das chaves para o estado colapsável
   const sections = {
-      info: 'isCharacterInfoCollapsed',
-      main: 'isMainAttributesCollapsed',
-      actions: 'isActionsCollapsed',
-      buffs: 'isBuffsCollapsed',
-      attributes: 'isAttributesCollapsed',
-      wallet: 'isWalletCollapsed',
-      inventory: 'isInventoryCollapsed',
-      perks: 'isPerksCollapsed',
-      skills: 'isSkillsCollapsed',
-      specializations: 'isSpecializationsCollapsed',
-      equipped: 'isEquippedItemsCollapsed'
+      info: 'isCharacterInfoCollapsed', main: 'isMainAttributesCollapsed', actions: 'isActionsCollapsed',
+      buffs: 'isBuffsCollapsed', attributes: 'isAttributesCollapsed', wallet: 'isWalletCollapsed',
+      inventory: 'isInventoryCollapsed', perks: 'isPerksCollapsed', skills: 'isSkillsCollapsed',
+      specializations: 'isSpecializationsCollapsed', equipped: 'isEquippedItemsCollapsed',
+      story: 'isStoryCollapsed'
   };
 
   return (
@@ -43,8 +36,8 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
       <button onClick={onBack} className="mb-4 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-lg">
         ← Voltar para a Lista
       </button>
-      
-      {/* Cada secção agora usa a função 'toggleSection' do nosso motor */}
+
+      {/* A ordem dos componentes agora reflete a do V1 */}
       <CharacterInfoSection character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.[sections.info]} toggleSection={() => toggleSection(sections.info)} />
       <MainAttributesSection character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.[sections.main]} toggleSection={() => toggleSection(sections.main)} />
       <ActionsSection isCollapsed={character.collapsedStates?.[sections.actions]} toggleSection={() => toggleSection(sections.actions)} />
@@ -56,6 +49,15 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
       <SkillsSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.skills]} toggleSection={() => toggleSection(sections.skills)} />
       <SpecializationsSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.specializations]} toggleSection={() => toggleSection(sections.specializations)} />
       <EquippedItemsSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.equipped]} toggleSection={() => toggleSection(sections.equipped)} />
+      
+      {/* Nova secção de História adicionada na ordem correta */}
+      <StorySection
+        character={character}
+        isMaster={isMaster}
+        onUpdate={updateCharacterField}
+        isCollapsed={character.collapsedStates?.[sections.story]}
+        toggleSection={() => toggleSection(sections.story)}
+      />
     </div>
   );
 };
