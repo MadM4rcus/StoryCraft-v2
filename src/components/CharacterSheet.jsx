@@ -1,31 +1,27 @@
 import React from 'react';
-import { useCharacter } from '../hooks/useCharacter'; // Importa o nosso novo motor
-import CharacterInfoSection from './CharacterInfoSection'; // Importa a nova secção
+import { useCharacter } from '../hooks/useCharacter.js';
+import CharacterInfoSection from './CharacterInfoSection.jsx';
+import MainAttributesSection from './MainAttributesSection.jsx';
+import ActionsSection from './ActionsSection.jsx';
+import BuffsSection from './BuffsSection.jsx';
+import AttributesSection from './AttributesSection.jsx';
 
-const CharacterSheet = ({ character: initialCharacter, onBack }) => {
-  // Usa o motor para obter os dados do personagem em tempo real
-  const { character, loading, updateCharacterField } = useCharacter(initialCharacter.id, initialCharacter.ownerUid);
+const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
+  const { character, loading, updateCharacterField, useCollapsibleState } = useCharacter(initialCharacter.id, initialCharacter.ownerUid);
+  
+  const [collapsedSections, toggleSection] = useCollapsibleState({
+      isCharacterInfoCollapsed: false,
+      isMainAttributesCollapsed: false,
+      isActionsCollapsed: true,
+      isBuffsCollapsed: true,
+      isAttributesCollapsed: false,
+  });
 
   if (loading) {
-    return (
-      <div className="text-center p-8">
-        <p className="text-xl text-gray-300">A carregar ficha do personagem...</p>
-      </div>
-    );
+    return <div className="text-center p-8"><p className="text-xl text-gray-300">A carregar ficha...</p></div>;
   }
-
   if (!character) {
-    return (
-      <div className="text-center p-8">
-        <p className="text-xl text-red-400">Erro: Personagem não encontrado.</p>
-        <button 
-          onClick={onBack}
-          className="mt-4 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-lg"
-        >
-          ← Voltar
-        </button>
-      </div>
-    );
+    return <div className="text-center p-8"><p className="text-xl text-red-400">Erro: Personagem não encontrado.</p></div>;
   }
 
   return (
@@ -37,13 +33,39 @@ const CharacterSheet = ({ character: initialCharacter, onBack }) => {
         ← Voltar para a Lista
       </button>
 
-      {/* Renderiza a secção de informações, passando os dados e a função para atualizar */}
       <CharacterInfoSection 
         character={character} 
-        onUpdate={updateCharacterField} 
+        onUpdate={updateCharacterField}
+        isMaster={isMaster}
+        isCollapsed={collapsedSections.isCharacterInfoCollapsed}
+        toggleSection={() => toggleSection('isCharacterInfoCollapsed')}
       />
 
-      {/* Outras secções (Atributos, Inventário, etc.) serão adicionadas aqui */}
+      <MainAttributesSection 
+        character={character}
+        onUpdate={updateCharacterField}
+        isMaster={isMaster}
+        isCollapsed={collapsedSections.isMainAttributesCollapsed}
+        toggleSection={() => toggleSection('isMainAttributesCollapsed')}
+      />
+
+      <AttributesSection
+        character={character}
+        isMaster={isMaster}
+        onUpdate={updateCharacterField}
+        isCollapsed={collapsedSections.isAttributesCollapsed}
+        toggleSection={() => toggleSection('isAttributesCollapsed')}
+      />
+
+      <ActionsSection 
+        isCollapsed={collapsedSections.isActionsCollapsed}
+        toggleSection={() => toggleSection('isActionsCollapsed')}
+      />
+      <BuffsSection
+        isCollapsed={collapsedSections.isBuffsCollapsed}
+        toggleSection={() => toggleSection('isBuffsCollapsed')}
+      />
+
     </div>
   );
 };

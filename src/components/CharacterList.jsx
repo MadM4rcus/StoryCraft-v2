@@ -1,75 +1,74 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../hooks/useAuth';
-import { getCharactersForUser, createNewCharacter } from '../services/firestoreService';
+import React from 'react';
+import { useCharacter } from '../hooks/useCharacter';
+import CharacterInfoSection from './CharacterInfoSection';
+import MainAttributesSection from './MainAttributesSection';
+import ActionsSection from './ActionsSection';
+import BuffsSection from './BuffsSection';
+import AttributesSection from './AttributesSection'; // <-- Importa a nova secção de Atributos
 
-// Adicionámos a propriedade 'onSelectCharacter'
-const CharacterList = ({ onSelectCharacter }) => {
-  const { user } = useAuth();
-  const [characters, setCharacters] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
+  const { character, loading, updateCharacterField, useCollapsibleState } = useCharacter(initialCharacter.id, initialCharacter.ownerUid);
+  
+  const [collapsedSections, toggleSection] = useCollapsibleState({
+      isCharacterInfoCollapsed: false,
+      isMainAttributesCollapsed: false,
+      isActionsCollapsed: true,
+      isBuffsCollapsed: true,
+      isAttributesCollapsed: false, // Começa aberta por defeito
+  });
 
-  const fetchCharacters = async () => {
-    if (user) {
-      setIsLoading(true);
-      const userCharacters = await getCharactersForUser(user.uid);
-      setCharacters(userCharacters);
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchCharacters();
-  }, [user]);
-
-  const handleCreateCharacter = async () => {
-    if (user) {
-      const newCharacter = await createNewCharacter(user.uid);
-      if (newCharacter) {
-        fetchCharacters();
-      }
-    }
-  };
+  if (loading) {
+    return <div className="text-center p-8"><p className="text-xl text-gray-300">A carregar ficha...</p></div>;
+  }
+  if (!character) {
+    return <div className="text-center p-8"><p className="text-xl text-red-400">Erro: Personagem não encontrado.</p></div>;
+  }
 
   return (
-    <div className="bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-700 w-full">
-      <h2 className="text-xl font-bold text-purple-400 mb-4">Meus Personagens</h2>
-      
-      {isLoading ? (
-        <p className="text-gray-400 italic">A carregar...</p>
-      ) : characters.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {characters.map((char) => (
-            <div key={char.id} className="bg-gray-700 p-4 rounded-md flex flex-col justify-between">
-              <div>
-                <h3 className="font-bold text-white">{char.name}</h3>
-                <p className="text-sm text-gray-300">Nível: {char.level || '1'}</p>
-              </div>
-              <div className="flex justify-end mt-2">
-                {/* Este botão agora seleciona o personagem */}
-                <button
-                  onClick={() => onSelectCharacter(char)}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg"
-                >
-                  Ver/Editar
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="text-gray-400">Nenhum personagem encontrado. Crie um novo!</p>
-      )}
+    <div className="w-full max-w-4xl mx-auto">
+      <button 
+        onClick={onBack}
+        className="mb-4 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-lg"
+      >
+        ← Voltar para a Lista
+      </button>
 
-      <div className="mt-6 text-center">
-        <button 
-          onClick={handleCreateCharacter}
-          className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg shadow-md"
-        >
-          Criar Novo Personagem
-        </button>
-      </div>
+      <CharacterInfoSection 
+        character={character} 
+        onUpdate={updateCharacterField}
+        isMaster={isMaster}
+        isCollapsed={collapsedSections.isCharacterInfoCollapsed}
+        toggleSection={() => toggleSection('isCharacterInfoCollapsed')}
+      />
+
+      <MainAttributesSection 
+        character={character}
+        onUpdate={updateCharacterField}
+        isMaster={isMaster}
+        isCollapsed={collapsedSections.isMainAttributesCollapsed}
+        toggleSection={() => toggleSection('isMainAttributesCollapsed')}
+      />
+
+      {/* A nova secção é adicionada aqui */}
+      <AttributesSection
+        character={character}
+        isMaster={isMaster}
+        onUpdate={updateCharacterField}
+        isCollapsed={collapsedSections.isAttributesCollapsed}
+        toggleSection={() => toggleSection('isAttributesCollapsed')}
+      />
+
+      <ActionsSection 
+        isCollapsed={collapsedSections.isActionsCollapsed}
+        toggleSection={() => toggleSection('isActionsCollapsed')}
+      />
+      <BuffsSection
+        isCollapsed={collapsedSections.isBuffsCollapsed}
+        toggleSection={() => toggleSection('isBuffsCollapsed')}
+      />
+
     </div>
   );
 };
 
-export default CharacterList;
+export default CharacterSheet;

@@ -5,13 +5,20 @@ import { useAuth } from './useAuth';
 
 const appId = "1:727724875985:web:97411448885c68c289e5f0";
 
-// Este hook gere os dados de um único personagem
+// Hook para gerir o estado colapsável das secções
+const useCollapsibleState = (initialState) => {
+    const [collapsedSections, setCollapsedSections] = useState(initialState);
+    const toggleSection = (sectionName) => {
+        setCollapsedSections(prev => ({ ...prev, [sectionName]: !prev[sectionName] }));
+    };
+    return [collapsedSections, toggleSection];
+};
+
 export const useCharacter = (characterId, ownerUid) => {
   const { user } = useAuth();
   const [character, setCharacter] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Efeito para ouvir as alterações no Firestore em tempo real
   useEffect(() => {
     if (!characterId || !ownerUid) {
       setLoading(false);
@@ -23,13 +30,12 @@ export const useCharacter = (characterId, ownerUid) => {
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-        // Deserializa os dados que foram guardados como JSON string
         const deserializedData = { ...data };
         Object.keys(deserializedData).forEach(key => {
           if (typeof deserializedData[key] === 'string') {
             try {
               deserializedData[key] = JSON.parse(deserializedData[key]);
-            } catch (e) { /* Ignora se não for um JSON válido */ }
+            } catch (e) { /* Ignora */ }
           }
         });
         setCharacter({ id: docSnap.id, ...deserializedData });
@@ -43,15 +49,13 @@ export const useCharacter = (characterId, ownerUid) => {
       setLoading(false);
     });
 
-    return () => unsubscribe(); // Limpa a escuta quando o componente é desmontado
+    return () => unsubscribe();
   }, [characterId, ownerUid]);
 
-  // Função para atualizar um campo específico do personagem
   const updateCharacterField = useCallback(async (field, value) => {
     if (!characterId || !ownerUid) return;
     const docRef = doc(db, `artifacts2/${appId}/users/${ownerUid}/characterSheets/${characterId}`);
     
-    // Se o valor for um objeto (como mainAttributes), serializa-o antes de guardar
     const valueToSave = typeof value === 'object' && value !== null ? JSON.stringify(value) : value;
 
     try {
@@ -61,5 +65,5 @@ export const useCharacter = (characterId, ownerUid) => {
     }
   }, [characterId, ownerUid]);
 
-  return { character, loading, updateCharacterField };
+  return { character, loading, updateCharacterField, useCollapsibleState };
 };
