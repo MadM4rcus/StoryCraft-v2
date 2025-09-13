@@ -7,6 +7,7 @@ import BuffsSection from './BuffsSection.jsx';
 import AttributesSection from './AttributesSection.jsx';
 import WalletSection from './WalletSection.jsx';
 import InventorySection from './InventorySection.jsx';
+import PerksSection from './PerksSection.jsx'; // <-- Importa a nova secção
 
 const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
   const { character, loading, updateCharacterField, useCollapsibleState } = useCharacter(initialCharacter.id, initialCharacter.ownerUid);
@@ -19,6 +20,7 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
       isAttributesCollapsed: false,
       isWalletCollapsed: false,
       isInventoryCollapsed: false,
+      isPerksCollapsed: false, // <-- Adicionado, começa aberta
   });
 
   if (loading) {
@@ -80,6 +82,14 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
         onUpdate={updateCharacterField}
         isCollapsed={collapsedSections.isInventoryCollapsed}
         toggleSection={() => toggleSection('isInventoryCollapsed')}
+      />
+      {/* Nova secção de Vantagens/Desvantagens adicionada na ordem correta */}
+      <PerksSection
+        character={character}
+        isMaster={isMaster}
+        onUpdate={updateCharacterField}
+        isCollapsed={collapsedSections.isPerksCollapsed}
+        toggleSection={() => toggleSection('isPerksCollapsed')}
       />
     </div>
   );
