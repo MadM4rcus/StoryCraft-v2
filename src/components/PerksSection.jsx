@@ -1,9 +1,33 @@
-import React from 'react';
-import { useAuth } from '../hooks/useAuth';
+import React, { useRef, useEffect } from 'react';
 
-const PerksSection = ({ character, isMaster, onUpdate, isCollapsed, toggleSection, onShowDiscord }) => {
-  const { user } = useAuth();
-  const canEdit = user.uid === character.ownerUid || isMaster;
+// Componente auxiliar para um textarea que se ajusta ao conteúdo
+const AutoResizingTextarea = ({ value, onChange, placeholder, className, disabled }) => {
+    const textareaRef = useRef(null);
+
+    useEffect(() => {
+        if (textareaRef.current) {
+            textareaRef.current.style.height = 'auto'; // Reseta a altura para calcular o novo scrollHeight
+            textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`; // Define a altura com base no conteúdo
+        }
+    }, [value]); // Executa sempre que o valor (texto) mudar
+
+    return (
+        <textarea
+            ref={textareaRef}
+            value={value}
+            onChange={onChange}
+            placeholder={placeholder}
+            className={`${className} resize-none overflow-hidden`} // 'resize-none' e 'overflow-hidden' são importantes aqui
+            rows="1" // Começa com uma linha e cresce a partir daí
+            disabled={disabled}
+        />
+    );
+};
+
+
+const PerksSection = ({ user, character, isMaster, onUpdate, isCollapsed, toggleSection, onShowDiscord }) => {
+  // A pedido, esta seção agora é editável por qualquer usuário que tenha acesso à ficha.
+  const canEdit = true;
 
   const handleAddPerk = (type) => {
     const newPerk = { 
@@ -104,7 +128,13 @@ const PerkItem = ({ perk, type, canEdit, onRemove, onChange, onOriginChange, onT
           <input type="text" value={perk.name} onChange={(e) => onChange(type, perk.id, 'name', e.target.value)} className="font-semibold text-lg flex-grow p-1 bg-gray-700 border border-gray-500 rounded-md text-white" placeholder="Nome" disabled={!canEdit} />
           <input type="number" value={perk.value === 0 ? '' : perk.value} onChange={(e) => onChange(type, perk.id, 'value', e.target.value)} className="w-12 p-1 bg-gray-700 border border-gray-500 rounded-md text-center text-white" placeholder="Valor" disabled={!canEdit} />
         </div>
-        <textarea value={perk.description} onChange={(e) => onChange(type, perk.id, 'description', e.target.value)} placeholder="Descrição" className="text-sm text-gray-300 italic w-full p-1 bg-gray-700 border border-gray-500 rounded-md text-white resize-none" rows="2" disabled={!canEdit} />
+        <AutoResizingTextarea 
+            value={perk.description} 
+            onChange={(e) => onChange(type, perk.id, 'description', e.target.value)} 
+            placeholder="Descrição" 
+            className="text-sm text-gray-300 italic w-full p-1 bg-gray-700 border border-gray-500 rounded-md text-white" 
+            disabled={!canEdit} 
+        />
         <div className="flex gap-3 text-sm text-gray-400 mt-2">
           {['class', 'race', 'manual'].map(originType => (
             <label key={originType} className="flex items-center gap-1">
@@ -118,3 +148,4 @@ const PerkItem = ({ perk, type, canEdit, onRemove, onChange, onOriginChange, onT
 );
 
 export default PerksSection;
+
