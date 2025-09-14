@@ -1,6 +1,6 @@
 import React from 'react';
 
-const AttributesSection = ({ character, onUpdate, isCollapsed, toggleSection, buffModifiers }) => {
+const AttributesSection = ({ character, onUpdate, isCollapsed, toggleSection, buffModifiers, onOpenRollModal }) => {
   
   const handleAddAttribute = () => {
     const newAttribute = { id: crypto.randomUUID(), name: '', base: 0, perm: 0, arma: 0, isCollapsed: false };
@@ -21,10 +21,9 @@ const AttributesSection = ({ character, onUpdate, isCollapsed, toggleSection, bu
   };
 
   const handleToggleCollapsed = (id) => {
-    const newAttributes = (character.attributes || []).map(attr => 
+    onUpdate('attributes', (character.attributes || []).map(attr => 
       attr.id === id ? { ...attr, isCollapsed: !attr.isCollapsed } : attr
-    );
-    onUpdate('attributes', newAttributes);
+    ));
   };
 
   return (
@@ -38,22 +37,27 @@ const AttributesSection = ({ character, onUpdate, isCollapsed, toggleSection, bu
       </h2>
       {!isCollapsed && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {(character.attributes || []).map((attr) => {
               const tempValue = buffModifiers[attr.name] || 0;
               const totalValue = (attr.base || 0) + (attr.perm || 0) + tempValue + (attr.arma || 0);
-              
-              if (attr.isCollapsed) {
-                return (
-                  <div key={attr.id} className="p-3 bg-gray-600 rounded-md shadow-sm border border-gray-500 flex justify-between items-center cursor-pointer" onClick={() => handleToggleCollapsed(attr.id)}>
-                    <span className="font-semibold text-lg text-white flex-grow">{attr.name || 'Atributo Sem Nome'} <span className="ml-2 font-bold text-purple-300">{totalValue >= 0 ? '+' : ''}{totalValue}</span></span>
-                    <button className="px-4 py-1 bg-gray-500 text-white font-bold rounded-lg whitespace-nowrap ml-4 text-sm shadow-md cursor-not-allowed" disabled>Rolar</button>
-                  </div>
-                );
-              }
+              const isAttrCollapsed = attr.isCollapsed !== false;
 
-              return (
-                <div key={attr.id} className="p-3 bg-gray-600 rounded-md shadow-sm border border-gray-500 relative flex flex-col gap-3">
+              return isAttrCollapsed ? (
+                <div key={attr.id} className="p-3 bg-gray-600 rounded-md shadow-sm border border-gray-500 flex justify-between items-center">
+                  <span className="font-semibold text-lg text-white flex-grow cursor-pointer truncate" onClick={() => handleToggleCollapsed(attr.id)}>
+                      {attr.name || 'Atributo Sem Nome'} 
+                      <span className="ml-2 font-bold text-purple-300">{totalValue >= 0 ? '+' : ''}{totalValue}</span>
+                  </span>
+                  <button 
+                      onClick={() => onOpenRollModal(attr.id)}
+                      className="px-4 py-1 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg whitespace-nowrap ml-4 text-sm shadow-md"
+                  >
+                      Rolar
+                  </button>
+                </div>
+              ) : (
+                <div key={attr.id} className="col-span-1 md:col-span-2 p-3 bg-gray-600 rounded-md shadow-sm border border-gray-500 relative flex flex-col gap-3">
                   <div className="flex items-center gap-2 cursor-pointer" onClick={() => handleToggleCollapsed(attr.id)}>
                     <input type="text" placeholder="Nome do Atributo" value={attr.name} onClick={(e) => e.stopPropagation()} onChange={(e) => handleAttributeChange(attr.id, 'name', e.target.value)} className="w-full flex-grow p-2 bg-gray-700 border border-gray-500 rounded-md text-white font-semibold cursor-text" />
                     <span className="text-gray-400 text-xs whitespace-nowrap">Recolher ▲</span>
