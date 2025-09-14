@@ -1,3 +1,5 @@
+// CharacterSheet.jsx - VERSÃO COM CORREÇÃO DEFINITIVA DO CÁLCULO DE CUSTO
+
 import React, { useState, useMemo } from 'react';
 import { useCharacter } from '../hooks/useCharacter.js';
 import Modal from './Modal.jsx';
@@ -36,12 +38,17 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
   const buffModifiers = useMemo(() => {
     const modifiers = { attributes: {}, dice: [] };
     if (!character?.buffs) return modifiers;
+    
     character.buffs.forEach(buff => {
-      if (buff.isActive && buff.target && buff.type === 'attribute') {
-        const value = parseInt(buff.value, 10) || 0;
-        modifiers.attributes[buff.target] = (modifiers.attributes[buff.target] || 0) + value;
-      } else if (buff.isActive && buff.value && buff.type === 'dice') {
-        modifiers.dice.push({ name: buff.name, value: buff.value });
+      if (buff.isActive && buff.effects) {
+        buff.effects.forEach(effect => {
+          if (effect.type === 'attribute' && effect.target) {
+            const value = parseInt(effect.value, 10) || 0;
+            modifiers.attributes[effect.target] = (modifiers.attributes[effect.target] || 0) + value;
+          } else if (effect.type === 'dice' && effect.value) {
+            modifiers.dice.push({ name: buff.name, value: effect.value });
+          }
+        });
       }
     });
     return modifiers;
@@ -118,23 +125,33 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
   const handleExecuteFormulaAction = async (actionId) => {
     const action = (character.formulaActions || []).find(a => a.id === actionId);
     if (!action) return;
+    
     let totalCost = { HP: 0, MP: 0 };
     let costDetails = [];
     const activeBuffs = (character.buffs || []).filter(b => b.isActive);
+
+    // --- CORREÇÃO APLICADA AQUI ---
+    // Garante que o custo da AÇÃO é tratado como número
     if (action.costType && action.costValue > 0) {
-        totalCost[action.costType] += action.costValue;
+        totalCost[action.costType] += parseInt(action.costValue, 10) || 0;
         costDetails.push(`Ação: ${action.costValue} ${action.costType}`);
     }
+    
+    // E garante que o custo de CADA BUFF ATIVO também é tratado como número
     activeBuffs.forEach(buff => {
         if(buff.costType && buff.costValue > 0) {
-            totalCost[buff.costType] += buff.costValue;
-            costDetails.push(`${buff.name}: ${buff.costValue} ${buff.costType}`);
+            const buffCost = parseInt(buff.costValue, 10) || 0;
+            totalCost[buff.costType] += buffCost;
+            costDetails.push(`${buff.name}: ${buffCost} ${buff.costType}`);
         }
     });
+    // --- FIM DA CORREÇÃO ---
+
     if (character.mainAttributes.hp.current < totalCost.HP || character.mainAttributes.mp.current < totalCost.MP) {
         setModal({ isVisible: true, message: `Custo de HP/MP insuficiente!`, type: 'info', onConfirm: () => setModal({ isVisible: false }) });
         return;
     }
+
     let totalResult = 0;
     let rollDetails = [];
     const multiplier = action.multiplier || 1;
@@ -172,25 +189,25 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
             }
         }
     }
-    activeBuffs.forEach(buff => {
-        if (buff.type === 'dice' && buff.value) {
-            const match = (buff.value || '').match(/(\d+)d(\d+)/i);
-            if (match) {
-                const numDice = parseInt(match[1], 10); const numSides = parseInt(match[2], 10);
-                let rolls = [];
-                for (let d = 0; d < numDice; d++) {
-                    const roll = Math.floor(Math.random() * numSides) + 1;
-                    rolls.push(roll);
-                    totalResult += roll;
-                }
-                rollDetails.push(`${buff.name}(${rolls.join('+')})`);
-            } else {
-                const num = parseInt(buff.value, 10) || 0;
-                totalResult += num;
-                rollDetails.push(`${buff.name}(${num})`);
+    
+    buffModifiers.dice.forEach(diceBuff => {
+        const match = (diceBuff.value || '').match(/(\d+)d(\d+)/i);
+        if (match) {
+            const numDice = parseInt(match[1], 10); const numSides = parseInt(match[2], 10);
+            let rolls = [];
+            for (let d = 0; d < numDice; d++) {
+                const roll = Math.floor(Math.random() * numSides) + 1;
+                rolls.push(roll);
+                totalResult += roll;
             }
+            rollDetails.push(`${diceBuff.name}(${rolls.join('+')})`);
+        } else {
+            const num = parseInt(diceBuff.value, 10) || 0;
+            totalResult += num;
+            rollDetails.push(`${diceBuff.name}(${num})`);
         }
     });
+
     if (totalCost.HP > 0 || totalCost.MP > 0) {
       const newMainAttributes = { ...character.mainAttributes };
       newMainAttributes.hp.current -= totalCost.HP;
