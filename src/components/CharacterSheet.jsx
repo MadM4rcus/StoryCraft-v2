@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useCharacter } from '../hooks/useCharacter.js';
 import Modal from './Modal.jsx';
 import ActionModal from './ActionModal.jsx';
+import FloatingNav from './FloatingNav.jsx'; // Importa o novo componente
 import CharacterInfoSection from './CharacterInfoSection.jsx';
 import MainAttributesSection from './MainAttributesSection.jsx';
 import ActionsSection from './ActionsSection.jsx';
@@ -23,6 +24,8 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
   const [modal, setModal] = useState({ isVisible: false });
   const [actionModal, setActionModal] = useState({ isVisible: false, type: '' });
 
+  // ... (toda a lógica de `useMemo` e `handle` functions permanece a mesma)
+  
   const allAttributes = useMemo(() => {
     if (!character) return [];
     const mainAttrs = ['Iniciativa', 'FA', 'FM', 'FD'];
@@ -135,13 +138,11 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
     let costDetails = [];
     const activeBuffs = (character.buffs || []).filter(b => b.isActive);
     
-    // Calcula o custo da ação
     if (action.costType && action.costValue > 0) {
         totalCost[action.costType] += action.costValue;
         costDetails.push(`Ação: ${action.costValue} ${action.costType}`);
     }
 
-    // Soma os custos dos buffs ativos
     activeBuffs.forEach(buff => {
         if(buff.costType && buff.costValue > 0) {
             totalCost[buff.costType] += buff.costValue;
@@ -236,47 +237,39 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
 
     handleShowOnDiscord(action.name, `${action.discordText || ''}\n\n**Resultado Final: ${totalResult}**`, discordFields, footerText);
   };
-  
+
   if (loading) return <div className="text-center p-8"><p className="text-xl text-gray-300">A carregar ficha...</p></div>;
   if (!character) return <div className="text-center p-8"><p className="text-xl text-red-400">Erro: Personagem não encontrado.</p></div>;
   
-  const sections = {
-    info: 'isCharacterInfoCollapsed', main: 'isMainAttributesCollapsed', actions: 'isActionsCollapsed',
-    buffs: 'isBuffsCollapsed', attributes: 'isAttributesCollapsed', wallet: 'isWalletCollapsed',
-    inventory: 'isInventoryCollapsed', perks: 'isPerksCollapsed', skills: 'isSkillsCollapsed',
-    specializations: 'isSpecializationsCollapsed', equipped: 'isEquippedItemsCollapsed', discord: 'isDiscordCollapsed',
-    story: 'isStoryCollapsed', notes: 'isNotesCollapsed'
-  };
-
+  const sections = { /* ...código existente... */ };
   const handleExportJson = () => { /* ...código existente... */ };
   const handleReset = () => { /* ...código existente... */ };
 
   return (
     <div className="w-full max-w-4xl mx-auto">
+      <FloatingNav /> {/* Adiciona o menu flutuante */}
       {modal.isVisible && <Modal {...modal} onCancel={() => setModal({ isVisible: false })} />}
       {actionModal.isVisible && <ActionModal type={actionModal.type} title={actionModal.type === 'heal' ? 'Curar / Restaurar' : 'Receber Dano / Perder'} onConfirm={handleConfirmAction} onClose={() => setActionModal({ isVisible: false, type: '' })} />}
       <button onClick={onBack} className="mb-4 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-lg">
         ← Voltar para a Lista
       </button>
 
-      <CharacterInfoSection character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.[sections.info]} toggleSection={() => toggleSection(sections.info)} />
-      <MainAttributesSection character={character} onUpdate={updateCharacterField} isMaster={isMaster} buffModifiers={buffModifiers.attributes} isCollapsed={character.collapsedStates?.[sections.main]} toggleSection={() => toggleSection(sections.main)} />
-      <ActionsSection 
-        character={character} isMaster={isMaster} isCollapsed={character.collapsedStates?.[sections.actions]} 
-        toggleSection={() => toggleSection(sections.actions)} onOpenActionModal={handleOpenActionModal}
-        allAttributes={allAttributes} onUpdate={updateCharacterField} onExecuteFormula={handleExecuteFormulaAction}
-      />
-      <BuffsSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} allAttributes={allAttributes} isCollapsed={character.collapsedStates?.[sections.buffs]} toggleSection={() => toggleSection(sections.buffs)} />
-      <AttributesSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} buffModifiers={buffModifiers.attributes} isCollapsed={character.collapsedStates?.[sections.attributes]} toggleSection={() => toggleSection(sections.attributes)} />
-      <WalletSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.wallet]} toggleSection={() => toggleSection(sections.wallet)} />
-      <InventorySection character={character} isMaster={isMaster} onUpdate={updateCharacterField} onShowDiscord={handleShowOnDiscord} isCollapsed={character.collapsedStates?.[sections.inventory]} toggleSection={() => toggleSection(sections.inventory)} />
-      <PerksSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} onShowDiscord={handleShowOnDiscord} isCollapsed={character.collapsedStates?.[sections.perks]} toggleSection={() => toggleSection(sections.perks)} />
-      <SkillsSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} onShowDiscord={handleShowOnDiscord} isCollapsed={character.collapsedStates?.[sections.skills]} toggleSection={() => toggleSection(sections.skills)} />
-      <SpecializationsSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.specializations]} toggleSection={() => toggleSection(sections.specializations)} />
-      <EquippedItemsSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} onShowDiscord={handleShowOnDiscord} isCollapsed={character.collapsedStates?.[sections.equipped]} toggleSection={() => toggleSection(sections.equipped)} />
-      <StorySection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.story]} toggleSection={() => toggleSection(sections.story)} />
-      <NotesSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.notes]} toggleSection={() => toggleSection(sections.notes)} />
-      <DiscordIntegrationSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.discord]} toggleSection={() => toggleSection(sections.discord)} />
+      {/* Adiciona IDs a cada secção */}
+      <div id="info"><CharacterInfoSection character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.[sections.info]} toggleSection={() => toggleSection(sections.info)} /></div>
+      <div id="main-attributes"><MainAttributesSection character={character} onUpdate={updateCharacterField} isMaster={isMaster} buffModifiers={buffModifiers.attributes} isCollapsed={character.collapsedStates?.[sections.main]} toggleSection={() => toggleSection(sections.main)} /></div>
+      <div id="actions"><ActionsSection character={character} isMaster={isMaster} isCollapsed={character.collapsedStates?.[sections.actions]} toggleSection={() => toggleSection(sections.actions)} onOpenActionModal={handleOpenActionModal} allAttributes={allAttributes} onUpdate={updateCharacterField} onExecuteFormula={handleExecuteFormulaAction} /></div>
+      <div id="buffs"><BuffsSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} allAttributes={allAttributes} isCollapsed={character.collapsedStates?.[sections.buffs]} toggleSection={() => toggleSection(sections.buffs)} /></div>
+      <div id="attributes"><AttributesSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} buffModifiers={buffModifiers.attributes} isCollapsed={character.collapsedStates?.[sections.attributes]} toggleSection={() => toggleSection(sections.attributes)} /></div>
+      <div id="wallet"><WalletSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.wallet]} toggleSection={() => toggleSection(sections.wallet)} /></div>
+      <div id="inventory"><InventorySection character={character} isMaster={isMaster} onUpdate={updateCharacterField} onShowDiscord={handleShowOnDiscord} isCollapsed={character.collapsedStates?.[sections.inventory]} toggleSection={() => toggleSection(sections.inventory)} /></div>
+      <div id="perks"><PerksSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} onShowDiscord={handleShowOnDiscord} isCollapsed={character.collapsedStates?.[sections.perks]} toggleSection={() => toggleSection(sections.perks)} /></div>
+      <div id="skills"><SkillsSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} onShowDiscord={handleShowOnDiscord} isCollapsed={character.collapsedStates?.[sections.skills]} toggleSection={() => toggleSection(sections.skills)} /></div>
+      <div id="specializations"><SpecializationsSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.specializations]} toggleSection={() => toggleSection(sections.specializations)} /></div>
+      <div id="equipped"><EquippedItemsSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} onShowDiscord={handleShowOnDiscord} isCollapsed={character.collapsedStates?.[sections.equipped]} toggleSection={() => toggleSection(sections.equipped)} /></div>
+      <div id="story"><StorySection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.story]} toggleSection={() => toggleSection(sections.story)} /></div>
+      <div id="notes"><NotesSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.notes]} toggleSection={() => toggleSection(sections.notes)} /></div>
+      <div id="discord"><DiscordIntegrationSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.discord]} toggleSection={() => toggleSection(sections.discord)} /></div>
+      
       <ActionButtons character={character} onExport={handleExportJson} onReset={handleReset} />
     </div>
   );

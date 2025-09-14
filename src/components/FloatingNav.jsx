@@ -1,0 +1,47 @@
+import React from 'react';
+
+// Subcomponente para cada botão individual, agora mais pequeno
+const NavButton = ({ href, title, children }) => (
+  <a
+    href={href}
+    title={title}
+    className="bg-gray-800 hover:bg-gray-700 text-white w-10 h-10 rounded-lg flex items-center justify-center text-xl shadow-md transition-transform transform hover:scale-110 border border-gray-600"
+  >
+    {children}
+  </a>
+);
+
+const FloatingNav = () => {
+  const sections = [
+    { href: '#info', title: 'Informações', icon: '👤' },
+    { href: '#main-attributes', title: 'Atributos Principais', icon: '❤️' },
+    { href: '#actions', title: 'Ações', icon: '⚔️' },
+    { href: '#buffs', title: 'Buffs', icon: '✨' },
+    { href: '#attributes', title: 'Atributos', icon: '📊' },
+    { href: '#wallet', title: 'Carteira', icon: '💰' },
+    { href: '#inventory', title: 'Inventário', icon: '🎒' },
+    { href: '#perks', title: 'Vantagens', icon: '🌟' },
+    { href: '#skills', title: 'Habilidades', icon: '🎯' },
+    { href: '#specializations', title: 'Especializações', icon: '📜' },
+    { href: '#equipped', title: 'Equipados', icon: '🛡️' },
+    { href: '#story', title: 'História', icon: '📖' },
+    { href: '#notes', title: 'Anotações', icon: '📝' },
+    { href: '#discord', title: 'Discord', icon: '💬' },
+  ];
+
+  return (
+    // O "controlo remoto" que envolve os botões
+    <div className="fixed bottom-4 right-4 z-40 bg-gray-900 bg-opacity-80 backdrop-blur-sm p-2 rounded-xl shadow-2xl border border-gray-700">
+      <div className="grid grid-cols-2 gap-2">
+        {/* Mapeia todos os botões diretamente */}
+        {sections.map(section => (
+          <NavButton key={section.href} href={section.href} title={section.title}>
+            {section.icon}
+          </NavButton>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default FloatingNav;
