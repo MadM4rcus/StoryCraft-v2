@@ -1,9 +1,8 @@
-import React from 'react';
+import React, { useMemo, useRef } from 'react';
 import { useAuth } from '../hooks/useAuth';
 
-// Componente para os campos de texto que se auto-ajustam
 const AutoResizingTextarea = ({ value, onChange, placeholder, className, disabled }) => {
-    const textareaRef = React.useRef(null);
+    const textareaRef = useRef(null);
     React.useEffect(() => {
         if (textareaRef.current) {
             textareaRef.current.style.height = 'auto';
@@ -25,10 +24,9 @@ const ActionsSection = ({
     onExecuteFormula
 }) => {
     const { user } = useAuth();
-    if (!character || !user) return null; // Proteção para garantir que os dados existem
+    if (!character || !user) return null;
     const canEdit = user.uid === character.ownerUid || isMaster;
 
-    // Funções de manipulação locais que chamam onUpdate
     const handleAddFormulaAction = () => {
         const newAction = {
           id: crypto.randomUUID(), name: 'Nova Ação', components: [{ id: crypto.randomUUID(), type: 'dice', value: '1d6' }],
@@ -44,7 +42,12 @@ const ActionsSection = ({
     const handleFormulaActionChange = (actionId, field, value) => {
         const updatedActions = (character.formulaActions || []).map(a => 
             a.id === actionId 
-            ? { ...a, [field]: (field === 'multiplier' || field === 'costValue') ? (parseInt(value, 10) || 0) : value } 
+            ? { ...a, 
+                [field]: 
+                    field === 'multiplier' 
+                    ? (parseInt(value, 10) || 1) 
+                    : (field === 'costValue' ? (parseInt(value, 10) || 0) : value) 
+              } 
             : a
         );
         onUpdate('formulaActions', updatedActions);
@@ -75,12 +78,10 @@ const ActionsSection = ({
     };
 
     const toggleItemCollapsed = (id) => {
-        const updatedActions = (character.formulaActions || []).map(action =>
+        onUpdate('formulaActions', (character.formulaActions || []).map(action =>
           action.id === id ? { ...action, isCollapsed: !action.isCollapsed } : action
-        );
-        onUpdate('formulaActions', updatedActions);
+        ));
     };
-
 
   return (
     <section className="mb-8 p-6 bg-gray-700 rounded-xl shadow-inner border border-gray-600">
@@ -101,20 +102,26 @@ const ActionsSection = ({
 
             <div className="mb-6">
                 <h3 className="text-xl font-semibold text-purple-300 mb-3">Construtor de Ações Rápidas</h3>
-                <div className="space-y-4">
-                    {(character.formulaActions || []).map(action => (
-                        <div key={action.id} className="p-4 bg-gray-600 rounded-md shadow-sm border border-gray-500">
-                            <div className="flex justify-between items-center gap-2 mb-3">
-                                <span className="font-semibold text-lg cursor-pointer text-white flex-grow" onClick={() => toggleItemCollapsed(action.id)}>
-                                    {action.name || 'Ação Sem Nome'} {action.isCollapsed ? '...' : ''}
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {(character.formulaActions || []).map(action => {
+                        const isActionCollapsed = action.isCollapsed !== false;
+                        return isActionCollapsed ? (
+                            <div key={action.id} className="p-3 bg-gray-600 rounded-md shadow-sm border border-gray-500 flex justify-between items-center">
+                                <span className="font-semibold text-lg cursor-pointer text-white flex-grow truncate" onClick={() => toggleItemCollapsed(action.id)}>
+                                    {action.name || 'Ação Sem Nome'}
                                 </span>
-                                <button onClick={() => onExecuteFormula(action.id)} className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg whitespace-nowrap">Usar</button>
-                                {canEdit && (
-                                    <button onClick={() => handleRemoveFormulaAction(action.id)} className="w-10 h-10 bg-red-600 text-white text-lg rounded-md flex items-center justify-center font-bold">X</button>
-                                )}
+                                <button onClick={() => onExecuteFormula(action.id)} className="px-4 py-1 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg whitespace-nowrap ml-2 text-sm">Usar</button>
                             </div>
-                            
-                            {!action.isCollapsed && (
+                        ) : (
+                            <div key={action.id} className="col-span-1 sm:col-span-2 lg:col-span-3 p-4 bg-gray-600 rounded-md shadow-sm border border-gray-500">
+                                <div className="flex justify-between items-center gap-2 mb-3">
+                                    <span className="font-semibold text-lg cursor-pointer text-white flex-grow" onClick={() => toggleItemCollapsed(action.id)}>
+                                        {action.name || 'Ação Sem Nome'}
+                                    </span>
+                                    <button onClick={() => onExecuteFormula(action.id)} className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg whitespace-nowrap">Usar</button>
+                                    {canEdit && <button onClick={() => handleRemoveFormulaAction(action.id)} className="w-10 h-10 bg-red-600 text-white text-lg rounded-md flex items-center justify-center font-bold">X</button>}
+                                </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-500 pt-3 mt-3">
                                     <div>
                                         <label className="text-sm font-medium text-gray-300 block mb-1">Nome da Ação:</label>
@@ -173,9 +180,9 @@ const ActionsSection = ({
                                         </div>
                                     </div>
                                 </div>
-                            )}
-                        </div>
-                    ))}
+                            </div>
+                        );
+                    })}
                 </div>
                 {canEdit && (
                     <div className="flex justify-center mt-4">
@@ -188,5 +195,4 @@ const ActionsSection = ({
     </section>
   );
 };
-
 export default ActionsSection;
