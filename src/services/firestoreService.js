@@ -1,19 +1,34 @@
 import { db } from './firebase';
-// A correção está aqui: a função 'doc' foi adicionada à lista de importação.
 import { collection, query, getDocs, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
 
 const appId = "1:727724875985:web:97411448885c68c289e5f0";
 
-export const getCharactersForUser = async (userId) => {
+// A função agora pode buscar todas as fichas se fetchAll for verdadeiro
+export const getCharactersForUser = async (userId, fetchAll = false) => {
   if (!userId) return [];
   try {
-    const charactersRef = collection(db, `artifacts2/${appId}/users/${userId}/characterSheets`);
-    const q = query(charactersRef);
-    const querySnapshot = await getDocs(q);
-    const characters = [];
-    querySnapshot.forEach((doc) => {
-      characters.push({ id: doc.id, ...doc.data() });
-    });
+    let characters = [];
+    if (fetchAll) {
+      // Busca em todos os utilizadores
+      const usersRef = collection(db, `artifacts2/${appId}/users`);
+      const usersSnapshot = await getDocs(usersRef);
+      for (const userDoc of usersSnapshot.docs) {
+        const charactersRef = collection(db, `artifacts2/${appId}/users/${userDoc.id}/characterSheets`);
+        const q = query(charactersRef);
+        const querySnapshot = await getDocs(q);
+        querySnapshot.forEach((doc) => {
+          characters.push({ id: doc.id, ownerUid: userDoc.id, ...doc.data() });
+        });
+      }
+    } else {
+      // Busca apenas no utilizador atual
+      const charactersRef = collection(db, `artifacts2/${appId}/users/${userId}/characterSheets`);
+      const q = query(charactersRef);
+      const querySnapshot = await getDocs(q);
+      querySnapshot.forEach((doc) => {
+        characters.push({ id: doc.id, ...doc.data() });
+      });
+    }
     return characters;
   } catch (error) {
     console.error("Erro ao buscar personagens:", error);

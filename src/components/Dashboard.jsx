@@ -15,32 +15,28 @@ const Dashboard = () => {
   const [characters, setCharacters] = useState([]);
   const [modal, setModal] = useState({ isVisible: false });
   const fileInputRef = useRef(null);
+  const [viewingAll, setViewingAll] = useState(false);
 
-  // Função para buscar os personagens do Firestore
   const fetchCharacters = async () => {
     if (user) {
-      const userCharacters = await getCharactersForUser(user.uid);
+      const userCharacters = await getCharactersForUser(user.uid, isMaster && viewingAll);
       setCharacters(userCharacters);
     }
   };
 
-  // Carrega a lista quando o utilizador é detetado
   useEffect(() => {
     fetchCharacters();
-  }, [user]);
+  }, [user, viewingAll, isMaster]);
   
-  // Função para o botão "Criar Novo Personagem"
   const handleCreateClick = async () => {
     const newChar = await createNewCharacter(user.uid);
     if (newChar) {
-      fetchCharacters(); // Atualiza a lista para mostrar o novo personagem
+      fetchCharacters();
     }
   };
 
-  // Função para o botão "Importar JSON"
   const handleImportClick = () => fileInputRef.current.click();
 
-  // Lógica que lê o ficheiro JSON importado
   const handleFileChange = (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -71,16 +67,15 @@ const Dashboard = () => {
     event.target.value = null;
   };
 
-  // LÓGICA DE EXCLUSÃO CORRIGIDA
   const handleDeleteClick = (charToDelete) => {
+    const ownerId = charToDelete.ownerUid || user.uid;
     setModal({
       isVisible: true,
       message: `Tem a certeza que deseja excluir permanentemente a ficha de "${charToDelete.name}"?`,
       type: 'confirm',
       onConfirm: async () => {
-        const success = await deleteCharacter(user.uid, charToDelete.id);
+        const success = await deleteCharacter(ownerId, charToDelete.id);
         if (success) {
-          // A correção está aqui: removemos o personagem da lista localmente
           setCharacters(prevChars => prevChars.filter(c => c.id !== charToDelete.id));
         } else {
           alert("Não foi possível excluir a ficha. Verifique a consola para mais detalhes.");
@@ -91,7 +86,6 @@ const Dashboard = () => {
     });
   };
 
-  // Se um personagem estiver selecionado, mostra a ficha
   if (selectedCharacter) {
     return (
       <CharacterSheet 
@@ -105,7 +99,6 @@ const Dashboard = () => {
     );
   }
 
-  // Se não, mostra o painel principal
   return (
     <div className="w-full max-w-5xl mx-auto p-4 md:p-8">
       {modal.isVisible && <Modal {...modal} onCancel={() => setModal({ isVisible: false })} />}
@@ -126,11 +119,15 @@ const Dashboard = () => {
 
       <main>
         <CharacterList 
+          user={user} // Propriedade que faltava
           onSelectCharacter={setSelectedCharacter}
           handleImportClick={handleImportClick}
           handleDeleteClick={handleDeleteClick}
-          handleCreateClick={handleCreateClick} // Passa a função correta
+          handleCreateClick={handleCreateClick}
           characters={characters}
+          isMaster={isMaster}
+          viewingAll={viewingAll}
+          onToggleView={setViewingAll}
         />
       </main>
     </div>
