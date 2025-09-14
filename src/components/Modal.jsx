@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 
-const Modal = ({ message, onConfirm, onCancel, type = 'info' }) => {
+const Modal = ({ message, onConfirm, onCancel, type = 'info', showCopyButton, copyText }) => {
   const [inputValue, setInputValue] = useState('');
+  const [copySuccess, setCopySuccess] = useState('');
 
   useEffect(() => {
     if (type === 'prompt') {
@@ -17,6 +18,21 @@ const Modal = ({ message, onConfirm, onCancel, type = 'info' }) => {
       onConfirm();
     }
   };
+  
+  const handleCopy = () => {
+    const textArea = document.createElement("textarea");
+    textArea.value = copyText;
+    document.body.appendChild(textArea);
+    textArea.select();
+    try {
+        document.execCommand('copy');
+        setCopySuccess('Copiado!');
+        setTimeout(() => setCopySuccess(''), 2000);
+    } catch (err) {
+        setCopySuccess('Falhou em copiar.');
+    }
+    document.body.removeChild(textArea);
+  };
 
   const confirmButtonText = type === 'confirm' ? 'Confirmar' : 'OK';
   const confirmButtonClass = type === 'confirm' 
@@ -28,6 +44,14 @@ const Modal = ({ message, onConfirm, onCancel, type = 'info' }) => {
       <div className="bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md border border-gray-700">
         <div className="text-lg text-gray-100 mb-4 text-center whitespace-pre-wrap">{message}</div>
         
+        {showCopyButton && (
+            <div className="my-4 p-2 bg-gray-900 rounded-md text-center">
+                <p className="text-gray-400 text-sm mb-1">Comando para Discord/Roll20:</p>
+                <code className="text-purple-300 break-words">{copyText}</code>
+                <button onClick={handleCopy} className="ml-4 px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-md">{copySuccess || 'Copiar'}</button>
+            </div>
+        )}
+
         {type === 'prompt' && (
           <input
             id="prompt-input"

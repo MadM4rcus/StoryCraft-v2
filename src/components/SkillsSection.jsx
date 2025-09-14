@@ -1,7 +1,6 @@
 import React from 'react';
 import { useAuth } from '../hooks/useAuth';
 
-// Sub-componente para os campos de texto que se auto-ajustam
 const AutoResizingTextarea = ({ value, onChange, placeholder, className, disabled }) => {
     const textareaRef = React.useRef(null);
     React.useEffect(() => {
@@ -13,8 +12,7 @@ const AutoResizingTextarea = ({ value, onChange, placeholder, className, disable
     return <textarea ref={textareaRef} value={value} onChange={onChange} placeholder={placeholder} className={`${className} resize-none overflow-hidden`} rows="1" disabled={disabled} />;
 };
 
-// Componente principal da Secção de Habilidades
-const AbilitiesSection = ({ character, isMaster, onUpdate, isCollapsed, toggleSection }) => {
+const AbilitiesSection = ({ character, isMaster, onUpdate, isCollapsed, toggleSection, onShowDiscord }) => {
     const { user } = useAuth();
     const canEdit = user.uid === character.ownerUid || isMaster;
 
@@ -32,10 +30,6 @@ const AbilitiesSection = ({ character, isMaster, onUpdate, isCollapsed, toggleSe
             item.id === id ? { ...item, isCollapsed: !item.isCollapsed } : item
         );
         onUpdate('abilities', newList);
-    };
-
-    const handleShowOnDiscord = (title, description) => {
-        alert(`Mostrar no Discord:\n\nTítulo: ${title}\nDescrição: ${description}`);
     };
 
     return (
@@ -57,7 +51,7 @@ const AbilitiesSection = ({ character, isMaster, onUpdate, isCollapsed, toggleSe
                                         {ability.title || 'Habilidade Sem Título'} {ability.isCollapsed ? '...' : ''}
                                     </span>
                                     <div className="flex items-center gap-2 flex-shrink-0 ml-4">
-                                        <button onClick={() => handleShowOnDiscord(ability.title, ability.description)} className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold rounded-md">Mostrar</button>
+                                        <button onClick={() => onShowDiscord(ability.title, ability.description)} className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold rounded-md">Mostrar</button>
                                         {canEdit && <button onClick={() => handleRemoveAbility(ability.id)} className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-md">Remover</button>}
                                     </div>
                                 </div>

@@ -1,10 +1,8 @@
 import React from 'react';
 import { useAuth } from '../hooks/useAuth';
 
-const PerksSection = ({ character, isMaster, onUpdate, isCollapsed, toggleSection }) => {
+const PerksSection = ({ character, isMaster, onUpdate, isCollapsed, toggleSection, onShowDiscord }) => {
   const { user } = useAuth();
-
-  // Apenas o dono da ficha ou o mestre podem editar
   const canEdit = user.uid === character.ownerUid || isMaster;
 
   const handleAddPerk = (type) => {
@@ -46,10 +44,6 @@ const PerksSection = ({ character, isMaster, onUpdate, isCollapsed, toggleSectio
     onUpdate(type, newPerks);
   };
 
-  const handleShowOnDiscord = (name, description) => {
-    alert(`Mostrar no Discord:\n\nTítulo: ${name}\nDescrição: ${description}`);
-  };
-
   return (
     <section className="mb-8 p-6 bg-gray-700 rounded-xl shadow-inner border border-gray-600">
       <h2 
@@ -61,12 +55,11 @@ const PerksSection = ({ character, isMaster, onUpdate, isCollapsed, toggleSectio
       </h2>
       {!isCollapsed && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Coluna de Vantagens */}
           <div>
             <h3 className="text-xl font-semibold text-purple-300 mb-3 border-b border-purple-500 pb-1">Vantagens</h3>
             <div className="space-y-2">
               {(character.advantages || []).map(perk => (
-                <PerkItem key={perk.id} perk={perk} type="advantages" canEdit={canEdit} onRemove={handleRemovePerk} onChange={handlePerkChange} onOriginChange={handlePerkOriginChange} onToggleCollapse={toggleItemCollapsed} onShowDiscord={handleShowOnDiscord} />
+                <PerkItem key={perk.id} perk={perk} type="advantages" canEdit={canEdit} onRemove={handleRemovePerk} onChange={handlePerkChange} onOriginChange={handlePerkOriginChange} onToggleCollapse={toggleItemCollapsed} onShowDiscord={onShowDiscord} />
               ))}
               {canEdit && (
                 <div className="flex justify-end mt-4">
@@ -75,12 +68,11 @@ const PerksSection = ({ character, isMaster, onUpdate, isCollapsed, toggleSectio
               )}
             </div>
           </div>
-          {/* Coluna de Desvantagens */}
           <div>
             <h3 className="text-xl font-semibold text-purple-300 mb-3 border-b border-purple-500 pb-1">Desvantagens</h3>
             <div className="space-y-2">
               {(character.disadvantages || []).map(perk => (
-                <PerkItem key={perk.id} perk={perk} type="disadvantages" canEdit={canEdit} onRemove={handleRemovePerk} onChange={handlePerkChange} onOriginChange={handlePerkOriginChange} onToggleCollapse={toggleItemCollapsed} onShowDiscord={handleShowOnDiscord} />
+                <PerkItem key={perk.id} perk={perk} type="disadvantages" canEdit={canEdit} onRemove={handleRemovePerk} onChange={handlePerkChange} onOriginChange={handlePerkOriginChange} onToggleCollapse={toggleItemCollapsed} onShowDiscord={onShowDiscord} />
               ))}
               {canEdit && (
                 <div className="flex justify-end mt-4">
@@ -95,7 +87,6 @@ const PerksSection = ({ character, isMaster, onUpdate, isCollapsed, toggleSectio
   );
 };
 
-// Sub-componente para cada Vantagem/Desvantagem
 const PerkItem = ({ perk, type, canEdit, onRemove, onChange, onOriginChange, onToggleCollapse, onShowDiscord }) => (
   <div className="flex flex-col p-3 bg-gray-600 rounded-md shadow-sm">
     <div className="flex justify-between items-center mb-1">

@@ -1,6 +1,6 @@
 import React from 'react';
 
-const InventorySection = ({ character, onUpdate, isCollapsed, toggleSection }) => {
+const InventorySection = ({ character, onUpdate, isCollapsed, toggleSection, onShowDiscord }) => {
   const handleAddItem = () => {
     const newItem = { id: crypto.randomUUID(), name: '', description: '', isCollapsed: false };
     const newInventory = [...(character.inventory || []), newItem];
@@ -26,11 +26,6 @@ const InventorySection = ({ character, onUpdate, isCollapsed, toggleSection }) =
     onUpdate('inventory', newInventory);
   };
 
-  // Placeholder para a função do Discord
-  const handleShowOnDiscord = (name, description) => {
-    alert(`Mostrar no Discord:\n\nTítulo: ${name}\nDescrição: ${description}`);
-  };
-
   return (
     <section className="mb-8 p-6 bg-gray-700 rounded-xl shadow-inner border border-gray-600">
       <h2 
@@ -53,7 +48,7 @@ const InventorySection = ({ character, onUpdate, isCollapsed, toggleSection }) =
                       {item.name || 'Item Sem Nome'} {item.isCollapsed ? '...' : ''}
                     </span>
                     <div className="flex items-center gap-2 flex-shrink-0 ml-4">
-                      <button onClick={() => handleShowOnDiscord(item.name, item.description)} title="Mostrar no Discord" className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold rounded-md whitespace-nowrap">Mostrar</button>
+                      <button onClick={() => onShowDiscord(item.name, item.description)} title="Mostrar no Discord" className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold rounded-md whitespace-nowrap">Mostrar</button>
                       <button onClick={() => handleRemoveItem(item.id)} className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-md">Remover</button>
                     </div>
                   </div>

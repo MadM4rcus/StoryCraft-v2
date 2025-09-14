@@ -75,6 +75,43 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
     });
   };
 
+  const handleShowOnDiscord = async (title, description) => {
+    if (!character) return;
+
+    const embed = {
+        author: {
+            name: character.name || 'Personagem',
+            icon_url: character.photoUrl || 'https://placehold.co/64x64/7c3aed/FFFFFF?text=SC'
+        },
+        title: title || "Sem Título",
+        description: description || "Sem Descrição.",
+        color: 0x7c3aed, // Roxo
+    };
+
+    if (character.discordWebhookUrl) {
+        try {
+            await fetch(character.discordWebhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ embeds: [embed] })
+            });
+        } catch (e) {
+            console.error("Falha ao enviar para o Discord:", e);
+            setModal({ isVisible: true, message: `Falha ao enviar para o Discord: ${e.message}`, type: 'info', onConfirm: () => setModal({ isVisible: false }) });
+        }
+    } else {
+        const discordCommand = `**${title || "Sem Título"}**\n${description || "Sem Descrição."}`;
+        setModal({
+            isVisible: true,
+            message: 'Copie e cole no Discord:',
+            type: 'info',
+            showCopyButton: true,
+            copyText: discordCommand,
+            onConfirm: () => setModal({ isVisible: false }),
+        });
+    }
+  };
+
 
   return (
     <div className="w-full max-w-4xl mx-auto">
@@ -89,11 +126,11 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
       <BuffsSection isCollapsed={character.collapsedStates?.[sections.buffs]} toggleSection={() => toggleSection(sections.buffs)} />
       <AttributesSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.attributes]} toggleSection={() => toggleSection(sections.attributes)} />
       <WalletSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.wallet]} toggleSection={() => toggleSection(sections.wallet)} />
-      <InventorySection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.inventory]} toggleSection={() => toggleSection(sections.inventory)} />
-      <PerksSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.perks]} toggleSection={() => toggleSection(sections.perks)} />
-      <SkillsSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.skills]} toggleSection={() => toggleSection(sections.skills)} />
+      <InventorySection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.inventory]} toggleSection={() => toggleSection(sections.inventory)} onShowDiscord={handleShowOnDiscord}/>
+      <PerksSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.perks]} toggleSection={() => toggleSection(sections.perks)} onShowDiscord={handleShowOnDiscord}/>
+      <SkillsSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.skills]} toggleSection={() => toggleSection(sections.skills)} onShowDiscord={handleShowOnDiscord}/>
       <SpecializationsSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.specializations]} toggleSection={() => toggleSection(sections.specializations)} />
-      <EquippedItemsSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.equipped]} toggleSection={() => toggleSection(sections.equipped)} />
+      <EquippedItemsSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.equipped]} toggleSection={() => toggleSection(sections.equipped)} onShowDiscord={handleShowOnDiscord}/>
       <StorySection character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.[sections.story]} toggleSection={() => toggleSection(sections.story)} />
       
       <NotesSection
@@ -122,3 +159,4 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
 };
 
 export default CharacterSheet;
+

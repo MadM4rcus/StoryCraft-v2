@@ -12,7 +12,7 @@ const AutoResizingTextarea = ({ value, onChange, placeholder, className, disable
     return <textarea ref={textareaRef} value={value} onChange={onChange} placeholder={placeholder} className={`${className} resize-none overflow-hidden`} rows="1" disabled={disabled} />;
 };
 
-const EquippedItemsSection = ({ character, isMaster, onUpdate, isCollapsed, toggleSection }) => {
+const EquippedItemsSection = ({ character, isMaster, onUpdate, isCollapsed, toggleSection, onShowDiscord }) => {
     const { user } = useAuth();
     const canEdit = user.uid === character.ownerUid || isMaster;
 
@@ -28,7 +28,6 @@ const EquippedItemsSection = ({ character, isMaster, onUpdate, isCollapsed, togg
         );
         onUpdate('equippedItems', newList);
     };
-    const handleShowOnDiscord = (name, description) => alert(`Mostrar no Discord:\n\nTítulo: ${name}\nDescrição: ${description}`);
 
     return (
         <section className="mb-8 p-6 bg-gray-700 rounded-xl shadow-inner border border-gray-600">
@@ -44,7 +43,7 @@ const EquippedItemsSection = ({ character, isMaster, onUpdate, isCollapsed, togg
                                 <div className="flex justify-between items-center mb-1">
                                     <span className="font-semibold text-lg w-full cursor-pointer text-white" onClick={() => toggleItemCollapsed(item.id)}>{item.name || 'Item Sem Nome'} {item.isCollapsed ? '...' : ''}</span>
                                     <div className="flex items-center gap-2 flex-shrink-0 ml-4">
-                                        <button onClick={() => handleShowOnDiscord(item.name, item.description)} className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold rounded-md">Mostrar</button>
+                                        <button onClick={() => onShowDiscord(item.name, item.description)} className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold rounded-md">Mostrar</button>
                                         {canEdit && <button onClick={() => handleRemoveItem(item.id)} className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-md">Remover</button>}
                                     </div>
                                 </div>
