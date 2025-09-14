@@ -1,6 +1,6 @@
 import React from 'react';
 
-const AttributesSection = ({ character, onUpdate, isCollapsed, toggleSection }) => {
+const AttributesSection = ({ character, onUpdate, isCollapsed, toggleSection, buffModifiers }) => {
   
   const handleAddAttribute = () => {
     const newAttribute = { id: crypto.randomUUID(), name: '', base: 0, perm: 0, arma: 0, isCollapsed: false };
@@ -40,7 +40,7 @@ const AttributesSection = ({ character, onUpdate, isCollapsed, toggleSection }) 
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {(character.attributes || []).map((attr) => {
-              const tempValue = 0; // Placeholder
+              const tempValue = buffModifiers[attr.name] || 0;
               const totalValue = (attr.base || 0) + (attr.perm || 0) + tempValue + (attr.arma || 0);
               
               if (attr.isCollapsed) {

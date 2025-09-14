@@ -1,18 +1,26 @@
 import React, { useMemo } from 'react';
 import { useAuth } from '../hooks/useAuth';
 
-const MainAttributesSection = ({ character, onUpdate, isMaster, isCollapsed, toggleSection }) => {
+const MainAttributesSection = ({ character, onUpdate, isMaster, isCollapsed, toggleSection, buffModifiers }) => {
   const { user } = useAuth();
   
-  // O dono da ficha OU o mestre podem editar estes campos
   const canEditGeneral = user.uid === character.ownerUid || isMaster;
 
   const dexterityValue = useMemo(() => {
-    // A lógica completa será adicionada quando a secção de Atributos estiver pronta
-    return 0;
-  }, []);
+    const searchTerms = ['dex', 'des', 'agi'];
+    const dexterityAttr = (character.attributes || []).find(attr => {
+        if (!attr.name) return false;
+        const lowerCaseName = attr.name.toLowerCase();
+        return searchTerms.some(term => lowerCaseName.includes(term));
+    });
 
-  const initiativeTotal = dexterityValue + (character.mainAttributes?.initiative || 0);
+    if (!dexterityAttr) return 0;
+    
+    const tempValue = buffModifiers[dexterityAttr.name] || 0;
+    return (dexterityAttr.base || 0) + (dexterityAttr.perm || 0) + tempValue + (dexterityAttr.arma || 0);
+  }, [character.attributes, buffModifiers]);
+
+  const initiativeTotal = dexterityValue + (buffModifiers['Iniciativa'] || 0);
   
   const handleMainAttributeChange = (e, attributeKey) => {
     const { name, value } = e.target;
@@ -24,7 +32,7 @@ const MainAttributesSection = ({ character, onUpdate, isMaster, isCollapsed, tog
     onUpdate('mainAttributes', { ...character.mainAttributes, [name]: parseInt(value, 10) || 0 });
   };
   
-  const calculateTotal = (base) => (base || 0); // Placeholder
+  const calculateTotal = (base, key) => (base || 0) + (buffModifiers[key] || 0);
 
   return (
     <section className="mb-8 p-6 bg-gray-700 rounded-xl shadow-inner border border-gray-600">
@@ -34,7 +42,6 @@ const MainAttributesSection = ({ character, onUpdate, isMaster, isCollapsed, tog
       </h2>
       {!isCollapsed && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* --- HP & MP (Apenas Mestre) --- */}
           <div className="flex flex-col items-center p-2 bg-gray-600 rounded-md">
             <label className="text-lg font-medium text-gray-300 mb-1 uppercase">HP</label>
             <div className="flex items-center gap-1">
@@ -61,10 +68,9 @@ const MainAttributesSection = ({ character, onUpdate, isMaster, isCollapsed, tog
               <span className="w-14 p-2 text-center bg-gray-800 border border-gray-600 rounded-md text-white text-xl font-bold">{initiativeTotal}</span>
             </div>
           </div>
-          {/* --- FA, FM, FD (Dono ou Mestre) --- */}
           {['fa', 'fm', 'fd'].map(key => {
             const baseValue = character.mainAttributes?.[key] || 0;
-            const total = calculateTotal(baseValue);
+            const total = calculateTotal(baseValue, key.toUpperCase());
             return (
               <div key={key} className="flex flex-col items-center p-2 bg-gray-600 rounded-md">
                 <label htmlFor={key} className="capitalize text-lg font-medium text-gray-300 mb-1">{key.toUpperCase()}:</label>
