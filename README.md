@@ -10,7 +10,7 @@ Catálogo de Temas Públicos: Uma galeria de temas criados pela comunidade, disp
 
 Autenticação Segura: Login com Google para guardar e aceder às fichas de forma segura.
 
-Integração com Discord/Roll20: Envio de rolagens de dados e informações da ficha diretamente para as plataformas de jogo.
+Integração com Discord: Envio de rolagens de dados e informações da ficha diretamente para as plataformas de jogo.
 
 Lógica Modular: Código separado por responsabilidades (UI, lógica de dados, serviços) para facilitar a manutenção e a adição de novas funcionalidades.
 
