@@ -1,49 +1,66 @@
-StoryCraft V2
-Bem-vindo ao StoryCraft V2, uma ficha de personagem de RPG interativa e personalizável, construída com tecnologias web modernas. Este projeto é a evolução da ficha original, agora com uma arquitetura de código mais robusta, modular e preparada para futuras expansões.
+# StoryCraft V2 - Ficha de Personagem RPG
 
-✨ Funcionalidades Planeadas
-Ficha de Personagem Dinâmica: Gestão completa de atributos, inventário, habilidades e história do personagem.
+Bem-vindo ao repositório do StoryCraft V2! Este é um sistema de fichas de personagem de RPG dinâmico e personalizável, construído com React e Firebase.
 
-Sistema de Temas Personalizáveis: Permite que cada utilizador altere a aparência da sua ficha, incluindo cores, fontes e imagens de fundo.
+## 🚀 Rodando o Projeto (Ambiente de Desenvolvimento)
 
-Catálogo de Temas Públicos: Uma galeria de temas criados pela comunidade, disponíveis para todos.
+Para trabalhar em novas funcionalidades, testar mudanças ou corrigir bugs, você deve usar o servidor de desenvolvimento local. Este modo **não afeta** a versão que está online.
 
-Autenticação Segura: Login com Google para guardar e aceder às fichas de forma segura.
+1.  **Abra o projeto em um ambiente como o GitHub Codespaces.**
 
-Integração com Discord: Envio de rolagens de dados e informações da ficha diretamente para as plataformas de jogo.
+2.  **Instale as dependências (se for a primeira vez):**
+    Abra o terminal e execute:
+    ```bash
+    npm install
+    ```
 
-Lógica Modular: Código separado por responsabilidades (UI, lógica de dados, serviços) para facilitar a manutenção e a adição de novas funcionalidades.
+3.  **Inicie o servidor de desenvolvimento:**
+    ```bash
+    npm run dev
+    ```
+    Isso iniciará um servidor local (geralmente em uma porta como `5173`). O Codespaces irá te mostrar um pop-up para abrir o site em uma nova aba do navegador. Todas as alterações que você fizer no código serão atualizadas automaticamente nesta aba.
 
-🚀 Tecnologias Utilizadas
-React: Biblioteca para a construção da interface do utilizador.
+## 🛰️ Publicando Atualizações (Deploy para a Web)
 
-Vite: Ferramenta de build extremamente rápida para o desenvolvimento.
+Quando você tiver certeza de que suas alterações estão prontas, siga estes passos para atualizar o site que está no ar em **`https://storycraftrpg.web.app`**.
 
-Tailwind CSS: Framework de CSS para estilização rápida e responsiva.
+**Pré-requisito Importante:** Antes de publicar, sempre salve seu progresso no GitHub!
+```bash
+git add .
+git commit -m "Descreva suas alterações aqui"
+git push
 
-Firebase: Plataforma para autenticação de utilizadores e base de dados em tempo real (Firestore).
+O processo de deploy tem 2 comandos:
 
-GitHub: Controlo de versão e hospedagem do código.
+"Empacotar" o Projeto: Este comando cria a versão otimizada do seu site na pasta dist/.
 
-Netlify/Vercel: Plataforma para deployment e hospedagem do site ao vivo.
+Bash
 
-🏁 Como Começar
-Clone o repositório:
+npm run build
+"Enviar" para o Firebase: Este comando pega a pasta dist/ e a envia para o servidor, atualizando o site online.
 
-git clone [https://github.com/seu-usuario/StoryCraft-v2.git](https://github.com/seu-usuario/StoryCraft-v2.git)
+Bash
 
-Instale as dependências:
+firebase deploy
+Ao final, o terminal confirmará que o deploy foi concluído e o seu site estará atualizado!
 
-npm install
+⚙️ Configuração Única do Firebase (Para um Novo Codespace)
+Se você abrir este projeto em um ambiente Codespaces novo no futuro, talvez precise fazer o login no Firebase novamente. O processo é simples:
 
-Configure o Firebase:
+Instale as ferramentas do Firebase no ambiente:
 
-Crie um ficheiro .env.local na raiz do projeto.
+Bash
 
-Adicione as suas credenciais do Firebase a este ficheiro.
+npm install -g firebase-tools
+Faça o login (modo para ambientes de nuvem):
 
-Rode o servidor de desenvolvimento:
+Bash
 
-npm run dev
+firebase login --no-localhost
+O terminal vai gerar um link. Copie e abra no navegador.
 
-Este projeto está em desenvolvimento ativo.
+Faça o login com sua conta Google e autorize.
+
+O navegador vai te dar um código. Copie e cole de volta no terminal.
+
+Depois disso, você estará pronto para rodar o comando firebase deploy novamente.
