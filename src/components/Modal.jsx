@@ -42,7 +42,6 @@ const Modal = ({ message, onConfirm, onCancel, type = 'info', showCopyButton, co
     : 'bg-green-600 hover:bg-green-700';
 
   return (
-    // AQUI ESTÁ A CORREÇÃO: z-50 foi alterado para z-[60]
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[60] p-4">
       <div className="bg-bgSurface rounded-lg shadow-xl p-6 w-full max-w-md border border-bgElement">
         <div className="text-lg text-textPrimary mb-4 text-center whitespace-pre-wrap">{message}</div>
@@ -51,7 +50,7 @@ const Modal = ({ message, onConfirm, onCancel, type = 'info', showCopyButton, co
             <div className="my-4 p-2 bg-bgElement rounded-md text-center">
                 <p className="text-textSecondary text-sm mb-1">Comando para Discord/Roll20:</p>
                 <code className="text-textAccent break-words">{copyText}</code>
-                <button onClick={handleCopy} className="ml-4 px-3 py-1 bg-btnHighlightBg hover:bg-opacity-80 text-btnHighlightText text-xs font-bold rounded-md">{copySuccess || 'Copiar'}</button>
+                <button onClick={handleCopy} className="ml-4 px-3 py-1 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText text-xs font-bold rounded-md">{copySuccess || 'Copiar'}</button>
             </div>
         )}
 
