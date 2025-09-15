@@ -1,5 +1,3 @@
-// src/components/ActionsSection.jsx
-
 import React, { useRef } from 'react';
 import { useAuth } from '../hooks/useAuth';
 
@@ -142,8 +140,8 @@ const ActionsSection = ({
                                     <div>
                                         <label className="text-sm font-medium text-textSecondary block mb-2">Multiplicador:</label>
                                         <input type="number" value={action.multiplier || ''} onChange={(e) => handleFormulaActionChange(action.id, 'multiplier', e.target.value)} className="w-20 p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary mb-3" placeholder="1" disabled={!canEdit} />
-                                        <label className="text-sm font-medium text-textSecondary block mb-2">Descrição da Ação (Discord):</label>
-                                        <AutoResizingTextarea placeholder="Descrição para Discord/Roll20..." value={action.discordText} onChange={(e) => handleFormulaActionChange(action.id, 'discordText', e.target.value)} className="w-full p-2 bg-bgInput border border-bgElement rounded-md text-textPrimary text-sm" disabled={!canEdit} />
+                                        <label className="text-sm font-medium text-textSecondary block mb-2">Descrição da Ação (Cole um link de imagem/gif aqui!):</label>
+                                        <AutoResizingTextarea placeholder="Descrição e/ou link de imagem..." value={action.discordText} onChange={(e) => handleFormulaActionChange(action.id, 'discordText', e.target.value)} className="w-full p-2 bg-bgInput border border-bgElement rounded-md text-textPrimary text-sm" disabled={!canEdit} />
                                         <label className="text-sm font-medium text-textSecondary block mb-2 mt-3">Custo da Ação:</label>
                                         <div className="flex items-center gap-2">
                                             <input type="number" placeholder="Custo" value={action.costValue || ''} onChange={(e) => handleFormulaActionChange(action.id, 'costValue', e.target.value)} className="w-20 p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary" disabled={!canEdit} />
