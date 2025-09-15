@@ -1,5 +1,3 @@
-// tailwind.config.js
-
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
@@ -9,20 +7,22 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Mapeamos nomes de cores para variáveis CSS que vamos controlar via JavaScript
-        'background': 'var(--color-background)',
-        'surface': 'var(--color-surface)',
-        'primary': 'var(--color-primary)',
-        'secondary': 'var(--color-secondary)',
-        'accent': 'var(--color-accent)',
-        'highlight': 'var(--color-highlight)',
+        'bgPage': 'var(--color-bgPage)',
+        'bgSurface': 'rgba(var(--color-bgSurface-rgb), var(--surface-opacity))',
+        'bgElement': 'var(--color-bgElement)',
+        'bgInput': 'var(--color-bgInput)',
+        'textPrimary': 'var(--color-textPrimary)',
+        'textSecondary': 'var(--color-textSecondary)',
+        'borderAccent': 'var(--color-borderAccent)',
+        'textAccent': 'var(--color-textAccent)',
+        'btnHighlightBg': 'var(--color-btnHighlightBg)',
+        'btnHighlightText': 'var(--color-btnHighlightText)',
       },
       fontFamily: {
-        // A fonte principal do tema também será uma variável
         'sans': ['var(--font-family)', 'ui-sans-serif', 'system-ui'],
       },
+      // ADICIONADO DE VOLTA
       backgroundImage: {
-        // A imagem de fundo do tema também será uma variável
         'theme': 'var(--background-image)',
       }
     },

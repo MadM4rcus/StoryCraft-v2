@@ -1,9 +1,10 @@
 // src/services/themeService.js
 
 import { db } from './firebase';
-import { collection, query, where, getDocs, addDoc, doc, setDoc, deleteDoc } from 'firebase/firestore';
+// AQUI ESTÁ A CORREÇÃO: Adicionado 'getDoc' à lista de importação
+import { collection, query, where, getDocs, getDoc, addDoc, doc, setDoc, deleteDoc } from 'firebase/firestore';
 
-const appId = "1:727724875985:web:97411448885c68c289e5f0"; // O mesmo appId dos outros serviços
+const appId = "1:727724875985:web:97411448885c68c289e5f0";
 
 /**
  * Busca todos os temas criados por um utilizador específico.
@@ -50,12 +51,10 @@ export const getThemeById = async (themeId) => {
 export const saveTheme = async (themeData) => {
   try {
     if (themeData.id) {
-      // Se já tem um ID, é uma atualização
       const themeRef = doc(db, 'themes', themeData.id);
       await setDoc(themeRef, themeData, { merge: true });
       return themeData.id;
     } else {
-      // Se não tem ID, é um novo tema
       const themesRef = collection(db, 'themes');
       const docRef = await addDoc(themesRef, themeData);
       return docRef.id;

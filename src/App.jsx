@@ -4,53 +4,70 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from './hooks/useAuth';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
-import { getThemeById } from './services/themeService';
-import { db } from './services/firebase';
-import { doc, onSnapshot } from 'firebase/firestore';
 
-const appId = "1:727724875985:web:97411448885c68c289e5f0";
+function hexToRgb(hex) {
+  if (!hex) return '55, 65, 81';
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '55, 65, 81';
+}
+
+const applyThemeStyles = (styles) => {
+  const root = document.documentElement;
+  if (styles) {
+    // ALTERADO: Em vez de aplicar diretamente ao body, definimos uma variável
+    root.style.setProperty('--background-image', styles.backgroundImage || 'none');
+    
+    root.style.setProperty('--font-family', styles.fontFamily || 'ui-sans-serif');
+    root.style.setProperty('--color-bgSurface-rgb', hexToRgb(styles.colors.bgSurface));
+    root.style.setProperty('--surface-opacity', (styles.surfaceOpacity || 80) / 100);
+    root.style.setProperty('--color-bgPage', styles.colors.bgPage);
+    root.style.setProperty('--color-bgElement', styles.colors.bgElement);
+    root.style.setProperty('--color-bgInput', styles.colors.bgInput);
+    root.style.setProperty('--color-textPrimary', styles.colors.textPrimary);
+    root.style.setProperty('--color-textSecondary', styles.colors.textSecondary);
+    root.style.setProperty('--color-borderAccent', styles.colors.borderAccent);
+    root.style.setProperty('--color-textAccent', styles.colors.textAccent);
+    root.style.setProperty('--color-btnHighlightBg', styles.colors.btnHighlightBg);
+    root.style.setProperty('--color-btnHighlightText', styles.colors.btnHighlightText);
+  } else { // Estilos Padrão
+    root.style.setProperty('--background-image', 'none');
+    root.style.setProperty('--font-family', 'ui-sans-serif');
+    root.style.setProperty('--color-bgSurface-rgb', '55, 65, 81');
+    root.style.setProperty('--surface-opacity', '0.8');
+    root.style.setProperty('--color-bgPage', '#111827');
+    root.style.setProperty('--color-bgElement', '#374151');
+    root.style.setProperty('--color-bgInput', '#4b5563');
+    root.style.setProperty('--color-textPrimary', '#f9fafb');
+    root.style.setProperty('--color-textSecondary', '#9ca3af');
+    root.style.setProperty('--color-borderAccent', '#f59e0b');
+    root.style.setProperty('--color-textAccent', '#fcd34d');
+    root.style.setProperty('--color-btnHighlightBg', '#8b5cf6');
+    root.style.setProperty('--color-btnHighlightText', '#ffffff');
+  }
+};
 
 function App() {
   const { user, loading } = useAuth();
   const [activeTheme, setActiveTheme] = useState(null);
-  
-  // Efeito para aplicar o tema visualmente quando ele muda
+  const [previewTheme, setPreviewTheme] = useState(null);
+
   useEffect(() => {
-    const root = document.documentElement;
-    if (activeTheme && activeTheme.styles) {
-      // Aplicar estilos do tema
-      document.body.style.backgroundImage = activeTheme.styles.backgroundImage || 'none';
-      root.style.setProperty('--font-family', activeTheme.styles.fontFamily || 'ui-sans-serif');
-      root.style.setProperty('--color-background', activeTheme.styles.colors.background);
-      root.style.setProperty('--color-surface', activeTheme.styles.colors.surface);
-      root.style.setProperty('--color-primary', activeTheme.styles.colors.primary);
-      root.style.setProperty('--color-secondary', activeTheme.styles.colors.secondary);
-      root.style.setProperty('--color-accent', activeTheme.styles.colors.accent);
-      root.style.setProperty('--color-highlight', activeTheme.styles.colors.highlight);
-    } else {
-      // Aplicar estilos padrão se não houver tema
-      document.body.style.backgroundImage = 'none';
-      root.style.setProperty('--font-family', 'ui-sans-serif');
-      root.style.setProperty('--color-background', '#1f2937'); // bg-gray-800
-      root.style.setProperty('--color-surface', '#374151'); // bg-gray-700
-      root.style.setProperty('--color-primary', '#f9fafb'); // text-gray-100
-      root.style.setProperty('--color-secondary', '#9ca3af'); // text-gray-400
-      root.style.setProperty('--color-accent', '#f59e0b'); // border-yellow-500
-      root.style.setProperty('--color-highlight', '#8b5cf6'); // bg-purple-600
-    }
-  }, [activeTheme]);
+    const themeToApply = previewTheme || activeTheme;
+    applyThemeStyles(themeToApply ? themeToApply.styles : null);
+  }, [activeTheme, previewTheme]);
   
   if (loading) {
     return (
-      <div className="bg-background text-primary min-h-screen flex items-center justify-center">
+      <div className="bg-bgPage text-textPrimary min-h-screen flex items-center justify-center">
         <h1 className="text-3xl">A carregar StoryCraft...</h1>
       </div>
     );
   }
   
   return (
-    <div className="bg-background text-primary min-h-screen">
-      {user ? <Dashboard /> : <Login />}
+    // ALTERADO: Adicionadas classes para controlar a imagem de fundo
+    <div className="bg-bgPage bg-theme bg-cover bg-center bg-fixed text-textPrimary min-h-screen">
+      {user ? <Dashboard activeTheme={activeTheme} setActiveTheme={setActiveTheme} setPreviewTheme={setPreviewTheme} /> : <Login />}
     </div>
   );
 }

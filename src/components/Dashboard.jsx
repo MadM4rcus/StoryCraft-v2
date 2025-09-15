@@ -1,21 +1,51 @@
+// src/components/Dashboard.jsx
+
 import React, { useState, useEffect, useRef } from 'react';
 import CharacterList from './CharacterList.jsx';
 import CharacterSheet from './CharacterSheet.jsx';
 import Modal from './Modal.jsx';
+import ThemeEditor from './ThemeEditor.jsx';
 import { useAuth } from '../hooks/useAuth.js';
 import { getCharactersForUser, createNewCharacter, deleteCharacter } from '../services/firestoreService';
-import { doc, setDoc, collection } from 'firebase/firestore';
+import { getThemeById } from '../services/themeService';
+import { doc, setDoc, collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../services/firebase.js';
 
 const appId = "1:727724875985:web:97411448885c68c289e5f0";
 
-const Dashboard = () => {
+const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
   const { user, googleSignOut, isMaster } = useAuth();
   const [selectedCharacter, setSelectedCharacter] = useState(null);
   const [characters, setCharacters] = useState([]);
   const [modal, setModal] = useState({ isVisible: false });
   const fileInputRef = useRef(null);
   const [viewingAll, setViewingAll] = useState(false);
+  const [isThemeEditorOpen, setIsThemeEditorOpen] = useState(false);
+
+  useEffect(() => {
+    if (selectedCharacter?.id && selectedCharacter?.ownerUid) {
+        const charRef = doc(db, `artifacts2/${appId}/users/${selectedCharacter.ownerUid}/characterSheets/${selectedCharacter.id}`);
+        const unsubscribe = onSnapshot(charRef, async (docSnap) => {
+            if (docSnap.exists()) {
+                const characterData = docSnap.data();
+                if (characterData.activeThemeId) {
+                    const theme = await getThemeById(characterData.activeThemeId);
+                    setActiveTheme(theme);
+                } else {
+                    setActiveTheme(null);
+                }
+            }
+        });
+        return () => unsubscribe();
+    } else {
+        setActiveTheme(null);
+    }
+  }, [selectedCharacter, setActiveTheme]);
+
+  const handleCloseEditor = () => {
+    setIsThemeEditorOpen(false);
+    setPreviewTheme(null);
+  };
 
   const fetchCharacters = async () => {
     if (user) {
@@ -27,7 +57,7 @@ const Dashboard = () => {
   useEffect(() => {
     fetchCharacters();
   }, [user, viewingAll, isMaster]);
-  
+
   const handleCreateClick = async () => {
     const newChar = await createNewCharacter(user.uid);
     if (newChar) {
@@ -35,7 +65,9 @@ const Dashboard = () => {
     }
   };
 
-  const handleImportClick = () => fileInputRef.current.click();
+  const handleImportClick = () => {
+    fileInputRef.current.click();
+  };
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
@@ -44,8 +76,8 @@ const Dashboard = () => {
     reader.onload = (e) => {
       try {
         const importedData = JSON.parse(e.target.result);
-        if (!importedData.name || !importedData.mainAttributes) {
-            throw new Error("Ficheiro JSON inválido ou incompatível.");
+        if (!importedData.name) {
+          throw new Error("Ficheiro JSON inválido ou incompatível.");
         }
         setModal({
           isVisible: true,
@@ -53,7 +85,9 @@ const Dashboard = () => {
           type: 'confirm',
           onConfirm: async () => {
             const newCharRef = doc(collection(db, `artifacts2/${appId}/users/${user.uid}/characterSheets`));
-            await setDoc(newCharRef, { ...importedData, ownerUid: user.uid, id: newCharRef.id });
+            const finalData = { ...importedData, ownerUid: user.uid };
+            delete finalData.id;
+            await setDoc(newCharRef, finalData);
             fetchCharacters();
             setModal({ isVisible: false });
           },
@@ -78,7 +112,7 @@ const Dashboard = () => {
         if (success) {
           setCharacters(prevChars => prevChars.filter(c => c.id !== charToDelete.id));
         } else {
-          alert("Não foi possível excluir a ficha. Verifique a consola para mais detalhes.");
+          alert("Não foi possível excluir a ficha.");
         }
         setModal({ isVisible: false });
       },
@@ -88,14 +122,11 @@ const Dashboard = () => {
 
   if (selectedCharacter) {
     return (
-      <CharacterSheet 
-        character={selectedCharacter} 
-        onBack={() => {
-          setSelectedCharacter(null);
-          fetchCharacters();
-        }}
-        isMaster={isMaster}
-      />
+      <>
+        {isThemeEditorOpen && <ThemeEditor character={selectedCharacter} originalTheme={activeTheme} setPreviewTheme={setPreviewTheme} onClose={handleCloseEditor} />}
+        <button onClick={() => setIsThemeEditorOpen(true)} className="fixed top-4 right-4 z-[60] px-4 py-2 bg-btnHighlightBg text-btnHighlightText font-bold rounded-lg shadow-lg">Editor de Temas</button>
+        <CharacterSheet character={selectedCharacter} onBack={() => setSelectedCharacter(null)} isMaster={isMaster} />
+      </>
     );
   }
 
@@ -103,32 +134,19 @@ const Dashboard = () => {
     <div className="w-full max-w-5xl mx-auto p-4 md:p-8">
       {modal.isVisible && <Modal {...modal} onCancel={() => setModal({ isVisible: false })} />}
       <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".json" className="hidden" />
-      
+      {isThemeEditorOpen && <ThemeEditor originalTheme={activeTheme} setPreviewTheme={setPreviewTheme} onClose={handleCloseEditor} />}
       <header className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-white">Seu Painel</h1>
-          <p className="text-gray-400">Bem-vindo, {user.displayName}!</p>
+          <h1 className="text-2xl font-bold text-textPrimary">Seu Painel</h1>
+          <p className="text-textSecondary">Bem-vindo, {user.displayName}!</p>
         </div>
-        <button
-          onClick={googleSignOut}
-          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg"
-        >
-          Sair
-        </button>
+        <div className="flex items-center gap-4">
+          <button onClick={() => setIsThemeEditorOpen(true)} className="px-4 py-2 bg-btnHighlightBg text-btnHighlightText font-semibold rounded-lg">Editor de Temas</button>
+          <button onClick={googleSignOut} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg">Sair</button>
+        </div>
       </header>
-
       <main>
-        <CharacterList 
-          user={user} // Propriedade que faltava
-          onSelectCharacter={setSelectedCharacter}
-          handleImportClick={handleImportClick}
-          handleDeleteClick={handleDeleteClick}
-          handleCreateClick={handleCreateClick}
-          characters={characters}
-          isMaster={isMaster}
-          viewingAll={viewingAll}
-          onToggleView={setViewingAll}
-        />
+        <CharacterList user={user} onSelectCharacter={setSelectedCharacter} handleImportClick={handleImportClick} handleDeleteClick={handleDeleteClick} handleCreateClick={handleCreateClick} characters={characters} isMaster={isMaster} viewingAll={viewingAll} onToggleView={setViewingAll} />
       </main>
     </div>
   );
