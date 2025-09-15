@@ -1,6 +1,7 @@
 // src/components/AttributesSection.jsx
 
 import React from 'react';
+import SheetSkin from './SheetSkin';
 
 const AttributesSection = ({ character, onUpdate, isCollapsed, toggleSection, buffModifiers, onOpenRollModal }) => {
   
@@ -29,12 +30,7 @@ const AttributesSection = ({ character, onUpdate, isCollapsed, toggleSection, bu
   };
 
   return (
-    <section className="mb-8 p-6 bg-bgSurface backdrop-blur-sm rounded-xl shadow-inner border border-bgElement">
-      <h2 className="text-2xl font-bold text-textAccent mb-4 border-b-2 border-borderAccent pb-2 cursor-pointer flex justify-between items-center" onClick={toggleSection}>
-        Atributos
-        <span>{isCollapsed ? '▼' : '▲'}</span>
-      </h2>
-      {!isCollapsed && (
+    <SheetSkin title="Atributos" isCollapsed={isCollapsed} toggleSection={toggleSection}>
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {(character.attributes || []).map((attr) => {
@@ -85,8 +81,7 @@ const AttributesSection = ({ character, onUpdate, isCollapsed, toggleSection, bu
             <button onClick={handleAddAttribute} className="w-10 h-10 bg-green-600 hover:bg-green-700 text-white text-2xl font-bold rounded-full shadow-lg flex items-center justify-center">+</button>
           </div>
         </>
-      )}
-    </section>
+    </SheetSkin>
   );
 };
 

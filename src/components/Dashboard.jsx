@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import CharacterList from './CharacterList.jsx';
 import CharacterSheet from './CharacterSheet.jsx';
-import Modal from './Modal.jsx';
+import ModalManager from './ModalManager.jsx'; // <--- USA O NOVO GERENCIADOR
 import ThemeEditor from './ThemeEditor.jsx';
 import { useAuth } from '../hooks/useAuth.js';
 import { getCharactersForUser, createNewCharacter, deleteCharacter } from '../services/firestoreService';
@@ -17,10 +17,13 @@ const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
   const { user, googleSignOut, isMaster } = useAuth();
   const [selectedCharacter, setSelectedCharacter] = useState(null);
   const [characters, setCharacters] = useState([]);
-  const [modal, setModal] = useState({ isVisible: false });
   const fileInputRef = useRef(null);
   const [viewingAll, setViewingAll] = useState(false);
   const [isThemeEditorOpen, setIsThemeEditorOpen] = useState(false);
+
+  // NOVO ESTADO UNIFICADO PARA MODAIS DO DASHBOARD
+  const [modalState, setModalState] = useState({ type: null, props: {} });
+  const closeModal = () => setModalState({ type: null, props: {} });
 
   useEffect(() => {
     if (selectedCharacter?.id && selectedCharacter?.ownerUid) {
@@ -79,22 +82,24 @@ const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
         if (!importedData.name) {
           throw new Error("Ficheiro JSON inválido ou incompatível.");
         }
-        setModal({
-          isVisible: true,
-          message: `Deseja criar um novo personagem com os dados de "${importedData.name}"?`,
+        // ATUALIZADO PARA USAR O NOVO SISTEMA DE MODAL
+        setModalState({
           type: 'confirm',
-          onConfirm: async () => {
-            const newCharRef = doc(collection(db, `artifacts2/${appId}/users/${user.uid}/characterSheets`));
-            const finalData = { ...importedData, ownerUid: user.uid };
-            delete finalData.id;
-            await setDoc(newCharRef, finalData);
-            fetchCharacters();
-            setModal({ isVisible: false });
-          },
-          onCancel: () => setModal({ isVisible: false }),
+          props: {
+            message: `Deseja criar um novo personagem com os dados de "${importedData.name}"?`,
+            onConfirm: async () => {
+              const newCharRef = doc(collection(db, `artifacts2/${appId}/users/${user.uid}/characterSheets`));
+              const finalData = { ...importedData, ownerUid: user.uid };
+              delete finalData.id;
+              await setDoc(newCharRef, finalData);
+              fetchCharacters();
+              closeModal();
+            },
+            onCancel: closeModal,
+          }
         });
       } catch (error) {
-        setModal({ isVisible: true, message: `Erro ao ler arquivo: ${error.message}`, type: 'info', onConfirm: () => setModal({ isVisible: false }) });
+        setModalState({ type: 'info', props: { message: `Erro ao ler arquivo: ${error.message}`, onConfirm: closeModal } });
       }
     };
     reader.readAsText(file);
@@ -103,20 +108,22 @@ const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
 
   const handleDeleteClick = (charToDelete) => {
     const ownerId = charToDelete.ownerUid || user.uid;
-    setModal({
-      isVisible: true,
-      message: `Tem a certeza que deseja excluir permanentemente a ficha de "${charToDelete.name}"?`,
+    // ATUALIZADO PARA USAR O NOVO SISTEMA DE MODAL
+    setModalState({
       type: 'confirm',
-      onConfirm: async () => {
-        const success = await deleteCharacter(ownerId, charToDelete.id);
-        if (success) {
-          setCharacters(prevChars => prevChars.filter(c => c.id !== charToDelete.id));
-        } else {
-          alert("Não foi possível excluir a ficha.");
-        }
-        setModal({ isVisible: false });
-      },
-      onCancel: () => setModal({ isVisible: false }),
+      props: {
+        message: `Tem a certeza que deseja excluir permanentemente a ficha de "${charToDelete.name}"?`,
+        onConfirm: async () => {
+          const success = await deleteCharacter(ownerId, charToDelete.id);
+          if (success) {
+            setCharacters(prevChars => prevChars.filter(c => c.id !== charToDelete.id));
+          } else {
+            alert("Não foi possível excluir a ficha.");
+          }
+          closeModal();
+        },
+        onCancel: closeModal,
+      }
     });
   };
 
@@ -132,7 +139,9 @@ const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
 
   return (
     <div className="w-full max-w-5xl mx-auto p-4 md:p-8">
-      {modal.isVisible && <Modal {...modal} onCancel={() => setModal({ isVisible: false })} />}
+      {/* RENDERIZA O NOVO GERENCIADOR DE MODAIS */}
+      <ModalManager modalState={modalState} closeModal={closeModal} />
+      
       <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".json" className="hidden" />
       {isThemeEditorOpen && <ThemeEditor originalTheme={activeTheme} setPreviewTheme={setPreviewTheme} onClose={handleCloseEditor} />}
       <header className="flex justify-between items-center mb-8">

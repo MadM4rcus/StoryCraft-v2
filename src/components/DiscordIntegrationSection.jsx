@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useAuth } from '../hooks/useAuth';
-import Section from './Section'; // Importamos o nosso novo componente
+import SheetSkin from './SheetSkin'; // O nome do import muda de Section para SheetSkin
 
 const DiscordIntegrationSection = ({ character, onUpdate, isMaster, isCollapsed, toggleSection }) => {
     const { user } = useAuth();
@@ -13,7 +13,7 @@ const DiscordIntegrationSection = ({ character, onUpdate, isMaster, isCollapsed,
     };
 
     return (
-        <Section title="Integração com Discord" isCollapsed={isCollapsed} toggleSection={toggleSection}>
+        <SheetSkin title="Integração com Discord" isCollapsed={isCollapsed} toggleSection={toggleSection}>
             <div>
                 <label htmlFor="discordWebhookUrl" className="block text-sm font-medium text-textSecondary mb-1">URL do Webhook do Canal:</label>
                 <input
@@ -30,7 +30,7 @@ const DiscordIntegrationSection = ({ character, onUpdate, isMaster, isCollapsed,
                     Com a URL do Webhook configurada, os comandos de rolagem serão enviados diretamente para o seu canal do Discord.
                 </p>
             </div>
-        </Section>
+        </SheetSkin>
     );
 };
 

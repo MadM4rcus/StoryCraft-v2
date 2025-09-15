@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { getThemesForUser, saveTheme, deleteTheme, applyThemeToCharacter } from '../services/themeService';
-import Modal from './Modal';
+import ModalManager from './ModalManager'; // 1. IMPORTAÇÃO CORRIGIDA
 
 const defaultTheme = {
   name: 'Novo Tema',
@@ -34,7 +34,10 @@ const ThemeEditor = ({ character, setPreviewTheme, onClose }) => {
   const { user } = useAuth();
   const [themes, setThemes] = useState([]);
   const [selectedTheme, setSelectedTheme] = useState(defaultTheme);
-  const [modal, setModal] = useState({ isVisible: false });
+  
+  // 2. ESTADO DE MODAL ATUALIZADO
+  const [modalState, setModalState] = useState({ type: null, props: {} });
+  const closeModal = () => setModalState({ type: null, props: {} });
 
   useEffect(() => {
     if (user) {
@@ -54,12 +57,13 @@ const ThemeEditor = ({ character, setPreviewTheme, onClose }) => {
   const handleColorChange = (key, value) => setSelectedTheme(prev => ({ ...prev, styles: { ...prev.styles, colors: { ...prev.styles.colors, [key]: value } } }));
   const handleNameChange = (e) => setSelectedTheme(prev => ({ ...prev, name: e.target.value }));
 
+  // 3. FUNÇÕES ATUALIZADAS PARA USAR setModalState
   const handleSave = async () => {
     const themeToSave = { ...selectedTheme, ownerUid: user.uid };
     try {
       const savedId = await saveTheme(themeToSave);
       if (savedId) {
-        setModal({ isVisible: true, message: 'Tema salvo com sucesso!', type: 'info', onConfirm: () => setModal({isVisible: false}) });
+        setModalState({ type: 'info', props: { message: 'Tema salvo com sucesso!', onConfirm: closeModal } });
         const updatedThemes = await getThemesForUser(user.uid);
         setThemes(updatedThemes);
         const newlySavedTheme = updatedThemes.find(t => t.id === (themeToSave.id || savedId));
@@ -67,37 +71,45 @@ const ThemeEditor = ({ character, setPreviewTheme, onClose }) => {
       } else { throw new Error("Ocorreu um erro desconhecido ao salvar."); }
     } catch (error) {
       console.error("Falha ao salvar o tema:", error);
-      setModal({ isVisible: true, message: `Falha ao salvar o tema.`, type: 'info', onConfirm: () => setModal({isVisible: false}) });
+      setModalState({ type: 'info', props: { message: `Falha ao salvar o tema.`, onConfirm: closeModal } });
     }
   };
 
   const handleDelete = () => {
     if (!selectedTheme.id) {
-        setModal({ isVisible: true, message: 'Não pode apagar um tema que ainda não foi salvo.', type: 'info', onConfirm: () => setModal({isVisible: false}) }); return;
+        setModalState({ type: 'info', props: { message: 'Não pode apagar um tema que ainda não foi salvo.', onConfirm: closeModal } }); 
+        return;
     }
-    setModal({
-        isVisible: true, message: `Tem a certeza que quer apagar o tema "${selectedTheme.name}"?`, type: 'confirm',
-        onConfirm: async () => {
-            await deleteTheme(selectedTheme.id);
-            setModal({ isVisible: false });
-            getThemesForUser(user.uid).then(setThemes);
-            handleThemeSelection('new');
-        }, onCancel: () => setModal({ isVisible: false }),
+    setModalState({
+        type: 'confirm', 
+        props: {
+            message: `Tem a certeza que quer apagar o tema "${selectedTheme.name}"?`,
+            onConfirm: async () => {
+                await deleteTheme(selectedTheme.id);
+                closeModal();
+                getThemesForUser(user.uid).then(setThemes);
+                handleThemeSelection('new');
+            },
+            onCancel: closeModal,
+        }
     });
   };
 
   const handleApply = async () => {
     if (!character || !selectedTheme.id) {
-      setModal({ isVisible: true, message: 'Precisa ter uma ficha selecionada e um tema salvo para aplicar.', type: 'info', onConfirm: () => setModal({isVisible: false}) }); return;
+      setModalState({ type: 'info', props: { message: 'Precisa ter uma ficha selecionada e um tema salvo para aplicar.', onConfirm: closeModal } });
+      return;
     }
     await saveTheme(selectedTheme);
     await applyThemeToCharacter(character.ownerUid, character.id, selectedTheme.id);
-    setModal({ isVisible: true, message: `Tema "${selectedTheme.name}" aplicado!`, type: 'info', onConfirm: () => { setModal({isVisible: false}); onClose(); } });
+    setModalState({ type: 'info', props: { message: `Tema "${selectedTheme.name}" aplicado!`, onConfirm: () => { closeModal(); onClose(); } }});
   };
 
   return (
     <>
-      {modal.isVisible && <Modal {...modal} onCancel={() => setModal({ isVisible: false })} />}
+      {/* 4. RENDERIZAÇÃO ATUALIZADA */}
+      <ModalManager modalState={modalState} closeModal={closeModal} />
+      
       <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
         <div className="bg-bgSurface rounded-lg shadow-xl p-6 w-full max-w-3xl border border-bgElement max-h-[90vh] flex flex-col">
           <h2 className="text-2xl font-bold text-textAccent mb-4">Editor de Temas</h2>
