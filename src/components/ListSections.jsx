@@ -30,7 +30,6 @@ const InventoryList = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
         <SheetSkin title="Inventário" isCollapsed={isCollapsed} toggleSection={toggleSection}>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {(character.inventory || []).map(item => {
-                    // ... (O JSX interno do item do inventário permanece o mesmo)
                     const isItemCollapsed = item.isCollapsed !== false;
                     return isItemCollapsed ? (
                         <div key={item.id} className="p-3 bg-bgElement rounded-md shadow-sm border border-bgInput flex justify-between items-center">
@@ -41,7 +40,7 @@ const InventoryList = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
                             </div>
                         </div>
                     ) : (
-                        <div key={item.id} className="col-span-1 sm:col-span-2 lg:col-span-3 flex flex-col p-3 bg-bgElement rounded-md shadow-sm border border-bgInput">
+                        <div key={item.id} className="col-span-1 sm:grid-cols-2 lg:col-span-3 flex flex-col p-3 bg-bgElement rounded-md shadow-sm border border-bgInput">
                            <div className="flex justify-between items-center mb-1">
                                 <span className="font-semibold text-lg w-full cursor-pointer text-textPrimary" onClick={() => toggleItemCollapsed(item.id)}>{item.name || 'Item Sem Nome'}</span>
                                 <div className="flex items-center gap-2 flex-shrink-0 ml-4">
@@ -61,7 +60,6 @@ const InventoryList = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
     );
 };
 
-
 // --- Sub-componente para Itens Equipados ---
 const EquippedItemsList = ({ character, isMaster, onUpdate, onShowDiscord, isCollapsed, toggleSection }) => {
     const { user } = useAuth();
@@ -75,7 +73,6 @@ const EquippedItemsList = ({ character, isMaster, onUpdate, onShowDiscord, isCol
         <SheetSkin title="Itens Equipados" isCollapsed={isCollapsed} toggleSection={toggleSection}>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {(character.equippedItems || []).map(item => {
-                    // ... (O JSX interno do item equipado permanece o mesmo)
                      const isItemCollapsed = item.isCollapsed !== false;
                     return isItemCollapsed ? (
                         <div key={item.id} className="p-3 bg-bgElement rounded-md shadow-sm border border-bgInput flex justify-between items-center">
@@ -86,7 +83,7 @@ const EquippedItemsList = ({ character, isMaster, onUpdate, onShowDiscord, isCol
                             </div>
                         </div>
                     ) : (
-                        <div key={item.id} className="col-span-1 sm:col-span-2 lg:col-span-3 flex flex-col p-3 bg-bgElement rounded-md shadow-sm">
+                        <div key={item.id} className="col-span-1 sm:grid-cols-2 lg:col-span-3 flex flex-col p-3 bg-bgElement rounded-md shadow-sm">
                             <div className="flex justify-between items-center mb-1">
                                 <span className="font-semibold text-lg w-full cursor-pointer text-textPrimary" onClick={() => toggleItemCollapsed(item.id)}>{item.name || 'Item Sem Nome'}</span>
                                 <div className="flex items-center gap-2 flex-shrink-0 ml-4">
@@ -107,7 +104,6 @@ const EquippedItemsList = ({ character, isMaster, onUpdate, onShowDiscord, isCol
     );
 };
 
-
 // --- Sub-componente para Habilidades ---
 const SkillsList = ({ character, isMaster, onUpdate, isCollapsed, toggleSection, onShowDiscord }) => {
     const { user } = useAuth();
@@ -121,7 +117,6 @@ const SkillsList = ({ character, isMaster, onUpdate, isCollapsed, toggleSection,
         <SheetSkin title="Habilidades" isCollapsed={isCollapsed} toggleSection={toggleSection}>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                  {(character.abilities || []).map(ability => {
-                    // ... (O JSX interno da habilidade permanece o mesmo)
                     const isAbilityCollapsed = ability.isCollapsed !== false;
                     return isAbilityCollapsed ? (
                         <div key={ability.id} className="p-3 bg-bgElement rounded-md shadow-sm border border-bgInput flex justify-between items-center">
@@ -132,7 +127,7 @@ const SkillsList = ({ character, isMaster, onUpdate, isCollapsed, toggleSection,
                             </div>
                         </div>
                     ) : (
-                        <div key={ability.id} className="col-span-1 sm:col-span-2 lg:col-span-3 flex flex-col p-3 bg-bgElement rounded-md shadow-sm">
+                        <div key={ability.id} className="col-span-1 sm:grid-cols-2 lg:col-span-3 flex flex-col p-3 bg-bgElement rounded-md shadow-sm">
                             <div className="flex justify-between items-center mb-1">
                                 <span className="font-semibold text-lg w-full cursor-pointer text-textPrimary" onClick={() => toggleItemCollapsed(ability.id)}>{ability.title || 'Habilidade Sem Título'}</span>
                                 <div className="flex items-center gap-2 flex-shrink-0 ml-4">
@@ -154,7 +149,6 @@ const SkillsList = ({ character, isMaster, onUpdate, isCollapsed, toggleSection,
 
 // --- Sub-componente para Vantagens/Desvantagens ---
 const PerksList = ({ character, onUpdate, isCollapsed, toggleSection, onShowDiscord }) => {
-    // ... (Lógica do PerksSection aqui)
     const canEdit = true;
     const handleAddPerk = (type) => onUpdate(type, [...(character[type] || []), { id: crypto.randomUUID(), name: '', description: '', origin: { class: false, race: false, manual: true }, value: 0, isCollapsed: false }]);
     const handleRemovePerk = (type, id) => onUpdate(type, (character[type] || []).filter(p => p.id !== id));
@@ -185,7 +179,6 @@ const PerksList = ({ character, onUpdate, isCollapsed, toggleSection, onShowDisc
 };
 
 const PerkItem = ({ perk, type, canEdit, onRemove, onChange, onOriginChange, onToggleCollapse, onShowDiscord }) => (
-    // ... (O JSX do PerkItem permanece o mesmo)
     <div className="flex flex-col p-3 bg-bgElement rounded-md shadow-sm">
         <div className="flex justify-between items-center mb-1">
           <span className="font-semibold text-lg w-full cursor-pointer text-textPrimary" onClick={() => onToggleCollapse(type, perk.id)}>{perk.name || 'Sem Nome'} {perk.isCollapsed ? '...' : ''}</span>
@@ -207,7 +200,6 @@ const PerkItem = ({ perk, type, canEdit, onRemove, onChange, onOriginChange, onT
     </div>
 );
 
-
 // --- Sub-componente para Perícias ---
 const SpecializationsList = ({ character, isMaster, onUpdate, isCollapsed, toggleSection }) => {
     const { user } = useAuth();
@@ -221,7 +213,6 @@ const SpecializationsList = ({ character, isMaster, onUpdate, isCollapsed, toggl
         <SheetSkin title="Perícias" isCollapsed={isCollapsed} toggleSection={toggleSection}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {(character.specializations || []).map(spec => (
-                    // ... (O JSX da perícia permanece o mesmo)
                      <div key={spec.id} className="flex flex-col p-3 bg-bgElement rounded-md shadow-sm">
                         <div className="flex justify-between items-center mb-1">
                             <span className="font-semibold text-lg w-full cursor-pointer text-textPrimary" onClick={() => toggleItemCollapsed(spec.id)}>{spec.name || 'Perícia Sem Nome'} {spec.isCollapsed ? '...' : ''}</span>
@@ -243,27 +234,5 @@ const SpecializationsList = ({ character, isMaster, onUpdate, isCollapsed, toggl
 };
 
 
-// --- Componente Principal Exportado ---
-const ListSections = ({ character, isMaster, onUpdate, onShowDiscord, collapsedStates, toggleSection }) => {
-    return (
-        <>
-            <div id="inventory">
-                <InventoryList character={character} onUpdate={onUpdate} isMaster={isMaster} onShowDiscord={onShowDiscord} isCollapsed={collapsedStates?.inventory} toggleSection={() => toggleSection('inventory')} />
-            </div>
-            <div id="perks">
-                <PerksList character={character} onUpdate={onUpdate} onShowDiscord={onShowDiscord} isCollapsed={collapsedStates?.perks} toggleSection={() => toggleSection('perks')} />
-            </div>
-            <div id="skills">
-                <SkillsList character={character} onUpdate={onUpdate} isMaster={isMaster} onShowDiscord={onShowDiscord} isCollapsed={collapsedStates?.skills} toggleSection={() => toggleSection('skills')} />
-            </div>
-             <div id="specializations">
-                <SpecializationsList character={character} onUpdate={onUpdate} isMaster={isMaster} isCollapsed={collapsedStates?.specializations} toggleSection={() => toggleSection('specializations')} />
-            </div>
-            <div id="equipped">
-                <EquippedItemsList character={character} onUpdate={onUpdate} isMaster={isMaster} onShowDiscord={onShowDiscord} isCollapsed={collapsedStates?.equipped} toggleSection={() => toggleSection('equipped')} />
-            </div>
-        </>
-    );
-};
-
-export default ListSections;
+// Exporta cada componente individualmente para que o CharacterSheet possa controlá-los
+export { InventoryList, EquippedItemsList, SkillsList, PerksList, SpecializationsList };

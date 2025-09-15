@@ -1,6 +1,7 @@
+// src/components/FloatingNav.jsx
+
 import React from 'react';
 
-// Subcomponente para cada botão individual, agora mais pequeno
 const NavButton = ({ href, title, children }) => (
   <a
     href={href}
@@ -12,6 +13,7 @@ const NavButton = ({ href, title, children }) => (
 );
 
 const FloatingNav = () => {
+  // Array de seções com a NOVA ORDEM
   const sections = [
     { href: '#info', title: 'Informações', icon: '👤' },
     { href: '#main-attributes', title: 'Atributos Principais', icon: '❤️' },
@@ -20,20 +22,18 @@ const FloatingNav = () => {
     { href: '#attributes', title: 'Atributos', icon: '📊' },
     { href: '#wallet', title: 'Carteira', icon: '💰' },
     { href: '#inventory', title: 'Inventário', icon: '🎒' },
+    { href: '#equipped', title: 'Equipados', icon: '🛡️' }, // <-- MOVIDO PARA CÁ
     { href: '#perks', title: 'Vantagens', icon: '🌟' },
     { href: '#skills', title: 'Habilidades', icon: '🎯' },
     { href: '#specializations', title: 'Especializações', icon: '📜' },
-    { href: '#equipped', title: 'Equipados', icon: '🛡️' },
     { href: '#story', title: 'História', icon: '📖' },
     { href: '#notes', title: 'Anotações', icon: '📝' },
     { href: '#discord', title: 'Discord', icon: '💬' },
   ];
 
   return (
-    // O "controlo remoto" que envolve os botões
     <div className="fixed bottom-4 right-4 z-40 bg-gray-900 bg-opacity-80 backdrop-blur-sm p-2 rounded-xl shadow-2xl border border-gray-700">
       <div className="grid grid-cols-2 gap-2">
-        {/* Mapeia todos os botões diretamente */}
         {sections.map(section => (
           <NavButton key={section.href} href={section.href} title={section.title}>
             {section.icon}

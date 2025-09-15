@@ -129,18 +129,5 @@ const renderBlock = (block, canEdit, updateBlock, removeBlock) => (
 );
 
 
-// --- Componente Principal Exportado ---
-const ContentSections = ({ character, isMaster, onUpdate, collapsedStates, toggleSection }) => {
-    return (
-        <>
-            <div id="story">
-                <Story character={character} onUpdate={onUpdate} isMaster={isMaster} isCollapsed={collapsedStates?.story} toggleSection={() => toggleSection('story')} />
-            </div>
-            <div id="notes">
-                <Notes character={character} onUpdate={onUpdate} isMaster={isMaster} isCollapsed={collapsedStates?.notes} toggleSection={() => toggleSection('notes')} />
-            </div>
-        </>
-    );
-};
-
-export default ContentSections;
+// Exporta cada componente individualmente para que o CharacterSheet possa controlá-los
+export { Story, Notes };
