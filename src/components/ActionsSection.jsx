@@ -215,7 +215,7 @@ const ActionsSection = ({
                                                                         className="w-12 p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary"
                                                                         disabled={!canEdit}
                                                                     />
-                                                                    <span className="flex-shrink-0">Atributo Bônus:</span>
+                                                                    <span className="flex-shrink-0">Bônus:</span>
                                                                     <select
                                                                         value={comp.critBonusAttribute || ''}
                                                                         onChange={(e) => handleLocalComponentChange(action.id, comp.id, 'critBonusAttribute', e.target.value)}
