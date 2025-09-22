@@ -1,5 +1,3 @@
-// src/components/CharacterSheet.jsx
-
 import React, { useState, useMemo } from 'react';
 import { useCharacter } from '../hooks/useCharacter.js';
 import ModalManager from './ModalManager.jsx';
@@ -181,160 +179,174 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
 // LÓGICA DE CUSTO E RECUPERAÇÃO DA AÇÃO E CRÍTICO AJUSTADA AQUI
 // -----------------------------------------------------------------------------------------------------
 const handleExecuteFormulaAction = async (action) => {
-    if (!action) return;
+    if (!action) return;
 
-    let totalResult = 0;
-    let rollDetails = [];
-    let criticals = [];
-    const multiplier = action.multiplier || 1;
+    let totalResult = 0;
+    let rollDetails = [];
+    let criticals = [];
+    const multiplier = action.multiplier || 1;
 
-    for (let i = 0; i < multiplier; i++) {
-        for (const comp of (action.components || [])) {
-            if (comp.type === 'attribute') {
-                const attrName = comp.value;
-                let attrValue = 0;
-                if (['Iniciativa', 'FA', 'FM', 'FD'].includes(attrName)) {
-                    attrValue = (character.mainAttributes[attrName.toLowerCase()] || 0) + (buffModifiers.attributes[attrName] || 0);
-                } else {
-                    const dynamicAttr = (character.attributes || []).find(a => a.name === attrName);
-                    if (dynamicAttr) { attrValue = (dynamicAttr.base || 0) + (dynamicAttr.perm || 0) + (dynamicAttr.arma || 0) + (buffModifiers.attributes[attrName] || 0); }
-                }
-                totalResult += attrValue;
-                rollDetails.push(`${attrName}(${attrValue})`);
-            } else if (comp.type === 'critDice') { // Novo tipo: Dado Crítico
-                const match = (comp.value || '').match(/(\d+)d(\d+)/i);
-                if (match) {
-                    const numDice = parseInt(match[1], 10);
-                    const numSides = parseInt(match[2], 10);
-                    let rolls = [];
-                    let diceRollResult = 0;
-                    for (let d = 0; d < numDice; d++) {
-                        const roll = Math.floor(Math.random() * numSides) + 1;
-                        rolls.push(roll);
-                        diceRollResult += roll;
+    for (let i = 0; i < multiplier; i++) {
+        for (const comp of (action.components || [])) {
+            if (comp.type === 'attribute') {
+                const attrName = comp.value;
+                let attrValue = 0;
+                if (['Iniciativa', 'FA', 'FM', 'FD'].includes(attrName)) {
+                    attrValue = (character.mainAttributes[attrName.toLowerCase()] || 0) + (buffModifiers.attributes[attrName] || 0);
+                } else {
+                    const dynamicAttr = (character.attributes || []).find(a => a.name === attrName);
+                    if (dynamicAttr) { attrValue = (dynamicAttr.base || 0) + (dynamicAttr.perm || 0) + (dynamicAttr.arma || 0) + (buffModifiers.attributes[attrName] || 0); }
+                }
+                totalResult += attrValue;
+                rollDetails.push(`${attrName}(${attrValue})`);
+            } else if (comp.type === 'critDice') { // Novo tipo: Dado Crítico
+                const match = (comp.value || '').match(/(\d+)d(\d+)/i);
+                if (match) {
+                    const numDice = parseInt(match[1], 10);
+                    const numSides = parseInt(match[2], 10);
+                    let rolls = [];
+                    let diceRollResult = 0;
+                    for (let d = 0; d < numDice; d++) {
+                        const roll = Math.floor(Math.random() * numSides) + 1;
+                        rolls.push(roll);
+                        diceRollResult += roll;
 
-                        // Verifica se o dado tirou um crítico
-                        if (roll >= (comp.critValue || numSides)) {
-                            let bonusAttributeValue = 0;
-                            const bonusAttrName = comp.critBonusAttribute;
-                            if (['Iniciativa', 'FA', 'FM', 'FD'].includes(bonusAttrName)) {
-                                bonusAttributeValue = (character.mainAttributes[bonusAttrName.toLowerCase()] || 0) + (buffModifiers.attributes[bonusAttrName] || 0);
-                            } else {
-                                const bonusAttr = (character.attributes || []).find(a => a.name === bonusAttrName);
-                                if (bonusAttr) { bonusAttributeValue = (bonusAttr.base || 0) + (bonusAttr.perm || 0) + (bonusAttr.arma || 0) + (buffModifiers.attributes[bonusAttrName] || 0); }
-                            }
-                            const totalBonus = bonusAttributeValue * (comp.critBonusMultiplier || 1);
-                            diceRollResult += totalBonus;
-                            criticals.push(`Crítico no ${roll}! Adiciona ${bonusAttrName} (${totalBonus})`);
-                        }
-                    }
-                    totalResult += diceRollResult;
-                    rollDetails.push(`${comp.value}(${rolls.join('+')})`);
-                } else {
-                    const num = parseInt(comp.value, 10) || 0;
-                    totalResult += num;
-                    rollDetails.push(`${num}`);
-                }
-            } else { // dice (dado comum)
-                const match = (comp.value || '').match(/(\d+)d(\d+)/i);
-                if (match) {
-                    const numDice = parseInt(match[1], 10);
-                    const numSides = parseInt(match[2], 10);
-                    let rolls = [];
-                    for (let d = 0; d < numDice; d++) {
-                        const roll = Math.floor(Math.random() * numSides) + 1;
-                        rolls.push(roll);
-                        totalResult += roll;
-                    }
-                    rollDetails.push(`${comp.value}(${rolls.join('+')})`);
-                } else {
-                    const num = parseInt(comp.value, 10) || 0;
-                    totalResult += num;
-                    rollDetails.push(`${num}`);
-                }
-            }
-        }
-    }
+                        // Verifica se o dado tirou um crítico
+                        if (roll >= (comp.critValue || numSides)) {
+                            let bonusAttributeValue = 0;
+                            const bonusAttrName = comp.critBonusAttribute;
+                            if (['Iniciativa', 'FA', 'FM', 'FD'].includes(bonusAttrName)) {
+                                bonusAttributeValue = (character.mainAttributes[bonusAttrName.toLowerCase()] || 0) + (buffModifiers.attributes[bonusAttrName] || 0);
+                            } else {
+                                const bonusAttr = (character.attributes || []).find(a => a.name === bonusAttrName);
+                                if (bonusAttr) { bonusAttributeValue = (bonusAttr.base || 0) + (bonusAttr.perm || 0) + (bonusAttr.arma || 0) + (buffModifiers.attributes[bonusAttrName] || 0); }
+                            }
+                            const totalBonus = bonusAttributeValue * (comp.critBonusMultiplier || 1);
+                            diceRollResult += totalBonus;
+                            criticals.push(`Crítico no ${roll}! Adiciona ${bonusAttrName} (${totalBonus})`);
+                        }
+                    }
+                    totalResult += diceRollResult;
+                    rollDetails.push(`${comp.value}(${rolls.join('+')})`);
+                } else {
+                    const num = parseInt(comp.value, 10) || 0;
+                    totalResult += num;
+                    rollDetails.push(`${num}`);
+                }
+            } else { // dice (dado comum)
+                const match = (comp.value || '').match(/(\d+)d(\d+)/i);
+                if (match) {
+                    const numDice = parseInt(match[1], 10);
+                    const numSides = parseInt(match[2], 10);
+                    let rolls = [];
+                    for (let d = 0; d < numDice; d++) {
+                        const roll = Math.floor(Math.random() * numSides) + 1;
+                        rolls.push(roll);
+                        totalResult += roll;
+                    }
+                    rollDetails.push(`${comp.value}(${rolls.join('+')})`);
+                } else {
+                    const num = parseInt(comp.value, 10) || 0;
+                    totalResult += num;
+                    rollDetails.push(`${num}`);
+                }
+            }
+        }
+    }
 
-    buffModifiers.dice.forEach(diceBuff => {
-        const match = (diceBuff.value || '').match(/(\d+)d(\d+)/i);
-        if (match) {
-            const numDice = parseInt(match[1], 10);
-            const numSides = parseInt(match[2], 10);
-            let rolls = [];
-            for (let d = 0; d < numDice; d++) {
-                const roll = Math.floor(Math.random() * numSides) + 1;
-                rolls.push(roll);
-                totalResult += roll;
-            }
-            rollDetails.push(`${diceBuff.name}(${rolls.join('+')})`);
-        } else {
-            const num = parseInt(diceBuff.value, 10) || 0;
-            totalResult += num;
-            rollDetails.push(`${diceBuff.name}(${num})`);
-        }
-    });
+    buffModifiers.dice.forEach(diceBuff => {
+        const match = (diceBuff.value || '').match(/(\d+)d(\d+)/i);
+        if (match) {
+            const numDice = parseInt(match[1], 10);
+            const numSides = parseInt(match[2], 10);
+            let rolls = [];
+            for (let d = 0; d < numDice; d++) {
+                const roll = Math.floor(Math.random() * numSides) + 1;
+                rolls.push(roll);
+                totalResult += roll;
+            }
+            rollDetails.push(`${diceBuff.name}(${rolls.join('+')})`);
+        } else {
+            const num = parseInt(diceBuff.value, 10) || 0;
+            totalResult += num;
+            rollDetails.push(`${diceBuff.name}(${num})`);
+        }
+    });
 
-    const totalCost = { HP: 0, MP: 0 };
-    let costDetails = [];
-    const activeBuffs = (character.buffs || []).filter(b => b.isActive);
-    const costValue = (action.costType && action.costIsRollResult) ? -totalResult : (parseInt(action.costValue, 10) || 0);
+    const totalCost = { HP: 0, MP: 0 };
+    let costDetails = [];
+    const activeBuffs = (character.buffs || []).filter(b => b.isActive);
+    const costValue = (action.costType && action.costIsRollResult) ? -totalResult : (parseInt(action.costValue, 10) || 0);
 
-    if (action.costType) {
-        if (costValue !== 0) {
-            totalCost[action.costType] += costValue;
-            costDetails.push(`Ação: ${costValue >= 0 ? '+' : ''}${costValue} ${action.costType}`);
-        }
-    }
+    // Lógica de custo da ação
+    if (action.costType) {
+        if (costValue !== 0) {
+            totalCost[action.costType] += costValue;
+            costDetails.push(`Ação: ${costValue >= 0 ? '+' : ''}${costValue} ${action.costType}`);
+        }
+    }
+    
+    // Lógica de recuperação de HP e MP
+    const totalRecovery = { HP: 0, MP: 0 };
+    if (action.recoverHP) {
+      totalRecovery.HP = totalResult;
+      costDetails.push(`Recupera: ${totalResult} HP`);
+    }
+    if (action.recoverMP) {
+      totalRecovery.MP = totalResult;
+      costDetails.push(`Recupera: ${totalResult} MP`);
+    }
 
-    activeBuffs.forEach(buff => {
-        if (buff.costType && buff.costValue !== undefined) {
-            const buffCost = parseInt(buff.costValue, 10) || 0;
-            if (buffCost !== 0) {
-                totalCost[buff.costType] += buffCost;
-                costDetails.push(`${buff.name}: ${buffCost >= 0 ? '+' : ''}${buffCost} ${buff.costType}`);
-            }
-        }
-    });
+    activeBuffs.forEach(buff => {
+        if (buff.costType && buff.costValue !== undefined) {
+            const buffCost = parseInt(buff.costValue, 10) || 0;
+            if (buffCost !== 0) {
+                totalCost[buff.costType] += buffCost;
+                costDetails.push(`${buff.name}: ${buffCost >= 0 ? '+' : ''}${buffCost} ${buff.costType}`);
+            }
+        }
+    });
 
-    const totalNegativeCostHP = Math.abs(Math.min(0, totalCost.HP));
-    const totalNegativeCostMP = Math.abs(Math.min(0, totalCost.MP));
-    if ((character.mainAttributes.hp.current < totalNegativeCostHP) || (character.mainAttributes.mp.current < totalNegativeCostMP)) {
-        setModalState({ type: 'info', props: { message: `Custo de HP/MP insuficiente!`, onConfirm: closeModal } });
-        return;
-    }
+    const totalNegativeCostHP = Math.abs(Math.min(0, totalCost.HP));
+    const totalNegativeCostMP = Math.abs(Math.min(0, totalCost.MP));
+    if ((character.mainAttributes.hp.current < totalNegativeCostHP) || (character.mainAttributes.mp.current < totalNegativeCostMP)) {
+        setModalState({ type: 'info', props: { message: `Custo de HP/MP insuficiente!`, onConfirm: closeModal } });
+        return;
+    }
 
-    const urlRegex = /(https?:\/\/[^\s]+)/i;
-    let imageUrl = '';
-    let descriptionText = action.discordText || '';
-    const match = descriptionText.match(urlRegex);
-    if (match) {
-        imageUrl = match[0];
-        descriptionText = descriptionText.replace(urlRegex, '').trim();
-    }
+    const urlRegex = /(https?:\/\/[^\s]+)/i;
+    let imageUrl = '';
+    let descriptionText = action.discordText || '';
+    const match = descriptionText.match(urlRegex);
+    if (match) {
+        imageUrl = match[0];
+        descriptionText = descriptionText.replace(urlRegex, '').trim();
+    }
 
-    if (totalCost.HP !== 0 || totalCost.MP !== 0) {
-        const newMainAttributes = { ...character.mainAttributes };
-        newMainAttributes.hp.current = newMainAttributes.hp.current - totalCost.HP;
-        newMainAttributes.mp.current = newMainAttributes.mp.current - totalCost.MP;
+    if (totalCost.HP !== 0 || totalCost.MP !== 0 || totalRecovery.HP > 0 || totalRecovery.MP > 0) {
+        const newMainAttributes = { ...character.mainAttributes };
+        
+        // Aplica o custo (negativo) e recuperação (positivo)
+        newMainAttributes.hp.current = newMainAttributes.hp.current - totalCost.HP + totalRecovery.HP;
+        newMainAttributes.mp.current = newMainAttributes.mp.current - totalCost.MP + totalRecovery.MP;
 
-        newMainAttributes.hp.current = Math.min(newMainAttributes.hp.current, newMainAttributes.hp.max);
-        newMainAttributes.hp.current = Math.max(newMainAttributes.hp.current, 0);
-        newMainAttributes.mp.current = Math.min(newMainAttributes.mp.current, newMainAttributes.mp.max);
-        newMainAttributes.mp.current = Math.max(newMainAttributes.mp.current, 0);
+        newMainAttributes.hp.current = Math.min(newMainAttributes.hp.current, newMainAttributes.hp.max);
+        newMainAttributes.hp.current = Math.max(newMainAttributes.hp.current, 0);
+        newMainAttributes.mp.current = Math.min(newMainAttributes.mp.current, newMainAttributes.mp.max);
+        newMainAttributes.mp.current = Math.max(newMainAttributes.mp.current, 0);
 
-        await updateCharacterField('mainAttributes', newMainAttributes);
-    }
+        await updateCharacterField('mainAttributes', newMainAttributes);
+    }
 
-    const discordFields = [{ name: 'Detalhes da Rolagem', value: rollDetails.join(' + ') || 'N/A', inline: false }];
-    if (criticals.length > 0) {
-        discordFields.push({ name: 'Críticos', value: criticals.join('\n'), inline: false });
-    }
-    if (activeBuffs.length > 0) {
-        discordFields.push({ name: 'Buffs Ativos', value: activeBuffs.map(b => b.name).join(', '), inline: false });
-    }
-    const footerText = costDetails.length > 0 ? `Custo Total: ${costDetails.join(' | ')}` : '';
-    handleShowOnDiscord(action.name, `${descriptionText}\n\n**Resultado Final: ${totalResult}**`, discordFields, footerText, imageUrl);
+    const discordFields = [{ name: 'Detalhes da Rolagem', value: rollDetails.join(' + ') || 'N/A', inline: false }];
+    if (criticals.length > 0) {
+        discordFields.push({ name: 'Críticos', value: criticals.join('\n'), inline: false });
+    }
+    if (activeBuffs.length > 0) {
+        discordFields.push({ name: 'Buffs Ativos', value: activeBuffs.map(b => b.name).join(', '), inline: false });
+    }
+    const footerText = costDetails.length > 0 ? `Custo Total: ${costDetails.join(' | ')}` : '';
+    handleShowOnDiscord(action.name, `${descriptionText}\n\n**Resultado Final: ${totalResult}**`, discordFields, footerText, imageUrl);
 };
 
   const handleReset = () => {

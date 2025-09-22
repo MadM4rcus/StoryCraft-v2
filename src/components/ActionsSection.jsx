@@ -1,5 +1,3 @@
-// src/components/ActionsSection.jsx
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import SheetSkin from './SheetSkin';
@@ -32,6 +30,8 @@ const ActionsSection = ({
         const newAction = {
             id: crypto.randomUUID(), name: 'Nova Ação', components: [{ id: crypto.randomUUID(), type: 'dice', value: '1d6' }],
             multiplier: 1, discordText: '', isCollapsed: false, costValue: 0, costType: '',
+            recoverHP: false,
+            recoverMP: false,
         };
         onUpdate('formulaActions', [...(character.formulaActions || []), newAction]);
     };
@@ -46,19 +46,21 @@ const ActionsSection = ({
         ));
     };
 
-    const handleSaveActionChange = useCallback((actionId, field) => {
+    const handleSaveActionChange = useCallback((actionId, field, valueOverride) => {
         const localAction = localActions.find(a => a.id === actionId);
         const originalAction = (character.formulaActions || []).find(a => a.id === actionId);
 
-        if (localAction && originalAction && localAction[field] !== originalAction[field]) {
-            const finalValue = field === 'multiplier' || field === 'costValue' ? (parseInt(localAction[field], 10) || (field === 'multiplier' ? 1 : 0)) : localAction[field];
-            onUpdate('formulaActions', (character.formulaActions || []).map(a =>
-                a.id === actionId ? { ...a, [field]: finalValue } : a
-            ));
+        if (localAction && originalAction) {
+            const finalValue = valueOverride !== undefined ? valueOverride : localAction[field];
+
+            if (finalValue !== originalAction[field]) {
+                onUpdate('formulaActions', (character.formulaActions || []).map(a =>
+                    a.id === actionId ? { ...a, [field]: finalValue } : a
+                ));
+            }
         }
     }, [localActions, character.formulaActions, onUpdate]);
 
-    // Lógica para componentes da fórmula
     const handleAddActionComponent = (actionId, type) => {
         let newComponent;
         if (type === 'dice') {
@@ -90,22 +92,24 @@ const ActionsSection = ({
         ));
     };
 
-    const handleSaveComponentChange = useCallback((actionId, componentId, field) => {
+    const handleSaveComponentChange = useCallback((actionId, componentId, field, valueOverride) => {
         const localAction = localActions.find(a => a.id === actionId);
         const localComponent = localAction?.components.find(c => c.id === componentId);
         const originalAction = (character.formulaActions || []).find(a => a.id === actionId);
         const originalComponent = originalAction?.components.find(c => c.id === componentId);
 
-        if (localComponent && originalComponent && localComponent[field] !== originalComponent[field]) {
-            const finalValue = field === 'critBonusMultiplier' || field === 'critValue' ? (parseInt(localComponent[field], 10) || 1) : localComponent[field];
+        if (localComponent && originalComponent) {
+            const finalValue = valueOverride !== undefined ? valueOverride : localComponent[field];
 
-            onUpdate('formulaActions', (character.formulaActions || []).map(a =>
-                a.id === actionId ? {
-                    ...a, components: a.components.map(c =>
-                        c.id === componentId ? { ...c, [field]: finalValue } : c
-                    )
-                } : a
-            ));
+            if (finalValue !== originalComponent[field]) {
+                onUpdate('formulaActions', (character.formulaActions || []).map(a =>
+                    a.id === actionId ? {
+                        ...a, components: a.components.map(c =>
+                            c.id === componentId ? { ...c, [field]: finalValue } : c
+                        )
+                    } : a
+                ));
+            }
         }
     }, [localActions, character.formulaActions, onUpdate]);
 
@@ -263,7 +267,7 @@ const ActionsSection = ({
                                             />
                                             <label className="text-sm font-medium text-textSecondary block mb-2">Descrição da Ação:</label>
                                             <AutoResizingTextarea
-                                                placeholder="Descrição e/ou link de imagem..."
+                                                placeholder="Descrição..."
                                                 value={action.discordText}
                                                 onChange={(e) => handleLocalActionChange(action.id, 'discordText', e.target.value)}
                                                 onBlur={() => handleSaveActionChange(action.id, 'discordText')}
@@ -293,6 +297,32 @@ const ActionsSection = ({
                                                     <option value="MP">MP</option>
                                                 </select>
                                             </div>
+                                            {canEdit && (
+                                                <div className="flex gap-4 mt-4">
+                                                    <div className="flex items-center">
+                                                        <input
+                                                            type="checkbox"
+                                                            id={`recover-hp-${action.id}`}
+                                                            checked={action.recoverHP || false}
+                                                            onChange={(e) => handleSaveActionChange(action.id, 'recoverHP', e.target.checked)}
+                                                            className="form-checkbox text-green-500 rounded-sm"
+                                                            disabled={!canEdit}
+                                                        />
+                                                        <label htmlFor={`recover-hp-${action.id}`} className="ml-2 text-sm text-textSecondary">Recuperar HP</label>
+                                                    </div>
+                                                    <div className="flex items-center">
+                                                        <input
+                                                            type="checkbox"
+                                                            id={`recover-mp-${action.id}`}
+                                                            checked={action.recoverMP || false}
+                                                            onChange={(e) => handleSaveActionChange(action.id, 'recoverMP', e.target.checked)}
+                                                            className="form-checkbox text-blue-500 rounded-sm"
+                                                            disabled={!canEdit}
+                                                        />
+                                                        <label htmlFor={`recover-mp-${action.id}`} className="ml-2 text-sm text-textSecondary">Recuperar MP</label>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
