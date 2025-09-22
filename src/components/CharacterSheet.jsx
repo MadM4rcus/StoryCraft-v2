@@ -134,7 +134,6 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
     });
   };
 
-  // ALTERAÇÃO AQUI: Passamos o objeto `attribute` para a função `onConfirm`
   const handleOpenRollModal = (attributeId) => {
     const attribute = (character.attributes || []).find(attr => attr.id === attributeId);
     if (attribute) { 
@@ -142,16 +141,14 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
             type: 'rollAttribute', 
             props: { 
                 attributeName: attribute.name, 
-                onConfirm: (dice, bonus) => handleConfirmAttributeRoll(dice, bonus, attribute), // <-- Alteração 1
+                onConfirm: (dice, bonus) => handleConfirmAttributeRoll(dice, bonus, attribute),
                 onClose: closeModal 
             } 
         }); 
     }
   };
 
-  // ALTERAÇÃO AQUI: A função agora recebe `attribute` como um argumento
   const handleConfirmAttributeRoll = (dice, bonus, attribute) => {
-    // Removemos a busca por `modalState.props.attribute`
     if (!attribute) return;
     const tempValue = buffModifiers.attributes[attribute.name] || 0;
     const attributeTotal = (attribute.base || 0) + (attribute.perm || 0) + tempValue + (attribute.arma || 0);
@@ -180,97 +177,165 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
     closeModal();
   };
 
-  const handleExecuteFormulaAction = async (actionId) => {
-    const action = (character.formulaActions || []).find(a => a.id === actionId);
-    if (!action) return;
-    
-    let totalCost = { HP: 0, MP: 0 };
-    let costDetails = [];
-    const activeBuffs = (character.buffs || []).filter(b => b.isActive);
-    
-    if (action.costType && action.costValue > 0) {
-        totalCost[action.costType] += parseInt(action.costValue, 10) || 0;
-        costDetails.push(`Ação: ${action.costValue} ${action.costType}`);
-    }
-    
-    activeBuffs.forEach(buff => {
-        if(buff.costType && buff.costValue > 0) {
-            const buffCost = parseInt(buff.costValue, 10) || 0;
-            totalCost[buff.costType] += buffCost;
-            costDetails.push(`${buff.name}: ${buffCost} ${buff.costType}`);
-        }
-    });
+// -----------------------------------------------------------------------------------------------------
+// LÓGICA DE CUSTO E RECUPERAÇÃO DA AÇÃO E CRÍTICO AJUSTADA AQUI
+// -----------------------------------------------------------------------------------------------------
+const handleExecuteFormulaAction = async (action) => {
+    if (!action) return;
 
-    if (character.mainAttributes.hp.current < totalCost.HP || character.mainAttributes.mp.current < totalCost.MP) {
-        setModalState({ type: 'info', props: { message: `Custo de HP/MP insuficiente!`, onConfirm: closeModal } });
-        return;
-    }
-    
-    let totalResult = 0;
-    let rollDetails = [];
-    const multiplier = action.multiplier || 1;
-    for (let i = 0; i < multiplier; i++) {
-        for (const comp of (action.components || [])) {
-            if (comp.type === 'attribute') {
-                const attrName = comp.value;
-                let attrValue = 0;
-                if (['Iniciativa', 'FA', 'FM', 'FD'].includes(attrName)) {
-                    attrValue = (character.mainAttributes[attrName.toLowerCase()] || 0) + (buffModifiers.attributes[attrName] || 0);
-                } else {
-                    const dynamicAttr = (character.attributes || []).find(a => a.name === attrName);
-                    if (dynamicAttr) { attrValue = (dynamicAttr.base || 0) + (dynamicAttr.perm || 0) + (dynamicAttr.arma || 0) + (buffModifiers.attributes[attrName] || 0); }
-                }
-                totalResult += attrValue;
-                rollDetails.push(`${attrName}(${attrValue})`);
-            } else { // dice
-                const match = (comp.value || '').match(/(\d+)d(\d+)/i);
-                if (match) {
-                    const numDice = parseInt(match[1], 10); const numSides = parseInt(match[2], 10);
-                    let rolls = [];
-                    for (let d = 0; d < numDice; d++) { const roll = Math.floor(Math.random() * numSides) + 1; rolls.push(roll); totalResult += roll; }
-                    rollDetails.push(`${comp.value}(${rolls.join('+')})`);
-                } else {
-                    const num = parseInt(comp.value, 10) || 0;
-                    totalResult += num;
-                    rollDetails.push(`${num}`);
-                }
-            }
-        }
-    }
-    buffModifiers.dice.forEach(diceBuff => {
-        const match = (diceBuff.value || '').match(/(\d+)d(\d+)/i);
-        if (match) {
-            const numDice = parseInt(match[1], 10); const numSides = parseInt(match[2], 10);
-            let rolls = [];
-            for (let d = 0; d < numDice; d++) { const roll = Math.floor(Math.random() * numSides) + 1; rolls.push(roll); totalResult += roll; }
-            rollDetails.push(`${diceBuff.name}(${rolls.join('+')})`);
-        } else {
-            const num = parseInt(diceBuff.value, 10) || 0;
-            totalResult += num;
-            rollDetails.push(`${diceBuff.name}(${num})`);
-        }
-    });
-    const urlRegex = /(https?:\/\/[^\s]+)/i;
-    let imageUrl = '';
-    let descriptionText = action.discordText || '';
-    const match = descriptionText.match(urlRegex);
-    if (match) {
-        imageUrl = match[0];
-        descriptionText = descriptionText.replace(urlRegex, '').trim();
-    }
-    if (totalCost.HP > 0 || totalCost.MP > 0) {
-      const newMainAttributes = { ...character.mainAttributes };
-      newMainAttributes.hp.current -= totalCost.HP;
-      newMainAttributes.mp.current -= totalCost.MP;
-      await updateCharacterField('mainAttributes', newMainAttributes);
-    }
-    const discordFields = [ { name: 'Detalhes da Rolagem', value: rollDetails.join(' + ') || 'N/A', inline: false } ];
-    if (activeBuffs.length > 0) {
-        discordFields.push({ name: 'Buffs Ativos', value: activeBuffs.map(b => b.name).join(', '), inline: false });
-    }
-    const footerText = costDetails.length > 0 ? `Custo Total: ${costDetails.join(' | ')}` : '';
-    handleShowOnDiscord(action.name, `${descriptionText}\n\n**Resultado Final: ${totalResult}**`, discordFields, footerText, imageUrl);
-  };
+    let totalResult = 0;
+    let rollDetails = [];
+    let criticals = [];
+    const multiplier = action.multiplier || 1;
+
+    for (let i = 0; i < multiplier; i++) {
+        for (const comp of (action.components || [])) {
+            if (comp.type === 'attribute') {
+                const attrName = comp.value;
+                let attrValue = 0;
+                if (['Iniciativa', 'FA', 'FM', 'FD'].includes(attrName)) {
+                    attrValue = (character.mainAttributes[attrName.toLowerCase()] || 0) + (buffModifiers.attributes[attrName] || 0);
+                } else {
+                    const dynamicAttr = (character.attributes || []).find(a => a.name === attrName);
+                    if (dynamicAttr) { attrValue = (dynamicAttr.base || 0) + (dynamicAttr.perm || 0) + (dynamicAttr.arma || 0) + (buffModifiers.attributes[attrName] || 0); }
+                }
+                totalResult += attrValue;
+                rollDetails.push(`${attrName}(${attrValue})`);
+            } else if (comp.type === 'critDice') { // Novo tipo: Dado Crítico
+                const match = (comp.value || '').match(/(\d+)d(\d+)/i);
+                if (match) {
+                    const numDice = parseInt(match[1], 10);
+                    const numSides = parseInt(match[2], 10);
+                    let rolls = [];
+                    let diceRollResult = 0;
+                    for (let d = 0; d < numDice; d++) {
+                        const roll = Math.floor(Math.random() * numSides) + 1;
+                        rolls.push(roll);
+                        diceRollResult += roll;
+
+                        // Verifica se o dado tirou um crítico
+                        if (roll >= (comp.critValue || numSides)) {
+                            let bonusAttributeValue = 0;
+                            const bonusAttrName = comp.critBonusAttribute;
+                            if (['Iniciativa', 'FA', 'FM', 'FD'].includes(bonusAttrName)) {
+                                bonusAttributeValue = (character.mainAttributes[bonusAttrName.toLowerCase()] || 0) + (buffModifiers.attributes[bonusAttrName] || 0);
+                            } else {
+                                const bonusAttr = (character.attributes || []).find(a => a.name === bonusAttrName);
+                                if (bonusAttr) { bonusAttributeValue = (bonusAttr.base || 0) + (bonusAttr.perm || 0) + (bonusAttr.arma || 0) + (buffModifiers.attributes[bonusAttrName] || 0); }
+                            }
+                            const totalBonus = bonusAttributeValue * (comp.critBonusMultiplier || 1);
+                            diceRollResult += totalBonus;
+                            criticals.push(`Crítico no ${roll}! Adiciona ${bonusAttrName} (${totalBonus})`);
+                        }
+                    }
+                    totalResult += diceRollResult;
+                    rollDetails.push(`${comp.value}(${rolls.join('+')})`);
+                } else {
+                    const num = parseInt(comp.value, 10) || 0;
+                    totalResult += num;
+                    rollDetails.push(`${num}`);
+                }
+            } else { // dice (dado comum)
+                const match = (comp.value || '').match(/(\d+)d(\d+)/i);
+                if (match) {
+                    const numDice = parseInt(match[1], 10);
+                    const numSides = parseInt(match[2], 10);
+                    let rolls = [];
+                    for (let d = 0; d < numDice; d++) {
+                        const roll = Math.floor(Math.random() * numSides) + 1;
+                        rolls.push(roll);
+                        totalResult += roll;
+                    }
+                    rollDetails.push(`${comp.value}(${rolls.join('+')})`);
+                } else {
+                    const num = parseInt(comp.value, 10) || 0;
+                    totalResult += num;
+                    rollDetails.push(`${num}`);
+                }
+            }
+        }
+    }
+
+    buffModifiers.dice.forEach(diceBuff => {
+        const match = (diceBuff.value || '').match(/(\d+)d(\d+)/i);
+        if (match) {
+            const numDice = parseInt(match[1], 10);
+            const numSides = parseInt(match[2], 10);
+            let rolls = [];
+            for (let d = 0; d < numDice; d++) {
+                const roll = Math.floor(Math.random() * numSides) + 1;
+                rolls.push(roll);
+                totalResult += roll;
+            }
+            rollDetails.push(`${diceBuff.name}(${rolls.join('+')})`);
+        } else {
+            const num = parseInt(diceBuff.value, 10) || 0;
+            totalResult += num;
+            rollDetails.push(`${diceBuff.name}(${num})`);
+        }
+    });
+
+    const totalCost = { HP: 0, MP: 0 };
+    let costDetails = [];
+    const activeBuffs = (character.buffs || []).filter(b => b.isActive);
+    const costValue = (action.costType && action.costIsRollResult) ? -totalResult : (parseInt(action.costValue, 10) || 0);
+
+    if (action.costType) {
+        if (costValue !== 0) {
+            totalCost[action.costType] += costValue;
+            costDetails.push(`Ação: ${costValue >= 0 ? '+' : ''}${costValue} ${action.costType}`);
+        }
+    }
+
+    activeBuffs.forEach(buff => {
+        if (buff.costType && buff.costValue !== undefined) {
+            const buffCost = parseInt(buff.costValue, 10) || 0;
+            if (buffCost !== 0) {
+                totalCost[buff.costType] += buffCost;
+                costDetails.push(`${buff.name}: ${buffCost >= 0 ? '+' : ''}${buffCost} ${buff.costType}`);
+            }
+        }
+    });
+
+    const totalNegativeCostHP = Math.abs(Math.min(0, totalCost.HP));
+    const totalNegativeCostMP = Math.abs(Math.min(0, totalCost.MP));
+    if ((character.mainAttributes.hp.current < totalNegativeCostHP) || (character.mainAttributes.mp.current < totalNegativeCostMP)) {
+        setModalState({ type: 'info', props: { message: `Custo de HP/MP insuficiente!`, onConfirm: closeModal } });
+        return;
+    }
+
+    const urlRegex = /(https?:\/\/[^\s]+)/i;
+    let imageUrl = '';
+    let descriptionText = action.discordText || '';
+    const match = descriptionText.match(urlRegex);
+    if (match) {
+        imageUrl = match[0];
+        descriptionText = descriptionText.replace(urlRegex, '').trim();
+    }
+
+    if (totalCost.HP !== 0 || totalCost.MP !== 0) {
+        const newMainAttributes = { ...character.mainAttributes };
+        newMainAttributes.hp.current = newMainAttributes.hp.current - totalCost.HP;
+        newMainAttributes.mp.current = newMainAttributes.mp.current - totalCost.MP;
+
+        newMainAttributes.hp.current = Math.min(newMainAttributes.hp.current, newMainAttributes.hp.max);
+        newMainAttributes.hp.current = Math.max(newMainAttributes.hp.current, 0);
+        newMainAttributes.mp.current = Math.min(newMainAttributes.mp.current, newMainAttributes.mp.max);
+        newMainAttributes.mp.current = Math.max(newMainAttributes.mp.current, 0);
+
+        await updateCharacterField('mainAttributes', newMainAttributes);
+    }
+
+    const discordFields = [{ name: 'Detalhes da Rolagem', value: rollDetails.join(' + ') || 'N/A', inline: false }];
+    if (criticals.length > 0) {
+        discordFields.push({ name: 'Críticos', value: criticals.join('\n'), inline: false });
+    }
+    if (activeBuffs.length > 0) {
+        discordFields.push({ name: 'Buffs Ativos', value: activeBuffs.map(b => b.name).join(', '), inline: false });
+    }
+    const footerText = costDetails.length > 0 ? `Custo Total: ${costDetails.join(' | ')}` : '';
+    handleShowOnDiscord(action.name, `${descriptionText}\n\n**Resultado Final: ${totalResult}**`, discordFields, footerText, imageUrl);
+};
 
   const handleReset = () => {
     setModalState({ type: 'confirm', props: { message: `Tem a certeza que deseja resetar PERMANENTEMENTE a ficha de "${character.name}"?`, onConfirm: async () => { const fieldsToReset = { photoUrl: '', age: '', height: '', gender: '', race: '', class: '', alignment: '', level: 1, xp: 0, mainAttributes: { hp: { current: 10, max: 10, temp: 0 }, mp: { current: 10, max: 10 }, initiative: 0, fa: 0, fm: 0, fd: 0 }, attributes: [], inventory: [], wallet: { zeni: 0, inspiration: 0 }, advantages: [], disadvantages: [], abilities: [], specializations: [], equippedItems: [], history: [], notes: [], buffs: [], formulaActions: [], discordWebhookUrl: '', }; for (const [field, value] of Object.entries(fieldsToReset)) { await updateCharacterField(field, value); } closeModal(); }, onCancel: closeModal } });

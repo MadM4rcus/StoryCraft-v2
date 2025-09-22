@@ -1,19 +1,19 @@
 // src/components/ContentSections.jsx
 
-import React from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import SheetSkin from './SheetSkin';
 
 // Helper de Textarea (reutilizado)
-const AutoResizingTextarea = ({ value, onChange, placeholder, className, disabled }) => {
-    const textareaRef = React.useRef(null);
-    React.useEffect(() => {
+const AutoResizingTextarea = ({ value, onChange, placeholder, className, disabled, onBlur }) => {
+    const textareaRef = useRef(null);
+    useEffect(() => {
         if (textareaRef.current) {
             textareaRef.current.style.height = 'auto';
             textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
         }
     }, [value]);
-    return <textarea ref={textareaRef} value={value} onChange={onChange} placeholder={placeholder} className={`${className} resize-none overflow-hidden`} rows="1" disabled={disabled} />;
+    return <textarea ref={textareaRef} value={value} onChange={onChange} onBlur={onBlur} placeholder={placeholder} className={`${className} resize-none overflow-hidden`} rows="1" disabled={disabled} />;
 };
 
 // --- Sub-componente para a História ---
@@ -91,43 +91,85 @@ const renderBlock = (block, canEdit, updateBlock, removeBlock) => (
     <div key={block.id} className="p-3 bg-bgElement rounded-md shadow-sm border border-bgInput relative">
         {canEdit && <button onClick={() => removeBlock(block.id)} className="absolute top-2 right-2 w-6 h-6 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-full flex items-center justify-center z-10">X</button>}
         {block.type === 'text' ? (
-            block.isCollapsed ? (
-                <div className="cursor-pointer" onClick={() => updateBlock(block.id, 'isCollapsed', false)}>
-                    <p className="text-lg font-semibold mb-1 text-textPrimary">Bloco de Texto</p>
-                    <p className="text-sm italic text-textSecondary truncate">{block.value || 'Vazio...'}</p>
-                </div>
-            ) : (
-                <>
-                    <AutoResizingTextarea value={block.value} onChange={(e) => updateBlock(block.id, 'value', e.target.value)} placeholder="Digite aqui..." className="w-full p-2 bg-bgInput border border-bgElement rounded-md text-textPrimary" disabled={!canEdit} />
-                    <div onClick={() => updateBlock(block.id, 'isCollapsed', true)} className="mt-2 text-center p-1 bg-bgInput hover:opacity-80 text-xs font-bold rounded-md cursor-pointer text-textSecondary">Ocultar ▲</div>
-                </>
-            )
+            <TextBlock block={block} canEdit={canEdit} updateBlock={updateBlock} />
         ) : ( 
-            block.isCollapsed ? (
-                <div className="cursor-pointer text-center py-2" onClick={() => updateBlock(block.id, 'isCollapsed', false)}>
-                    <p className="text-lg font-semibold text-textPrimary">Mostrar Imagem</p>
-                </div>
-            ) : (
-                <div className="flex flex-col items-center">
-                    <img src={block.value} alt="Imagem" className="max-w-full h-auto rounded-md shadow-md" style={{ width: block.fitWidth ? '100%' : (block.width ? `${block.width}px` : 'auto'), height: block.fitWidth ? 'auto' : (block.height ? `${block.height}px` : 'auto'), objectFit: 'contain' }} onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/300x200/1f2937/FFFFFF?text=Erro'; }} />
-                    {canEdit && (
-                        <div className="flex flex-wrap items-center justify-center gap-4 mt-2 text-sm text-textSecondary">
-                            <label><input type="checkbox" checked={block.fitWidth} onChange={(e) => updateBlock(block.id, 'fitWidth', e.target.checked)} className="form-checkbox text-btnHighlightBg rounded" /> Ajustar à Largura</label>
-                            {!block.fitWidth && (
-                                <>
-                                    <label>Largura (px): <input type="number" value={block.width === 0 ? '' : block.width} onChange={(e) => updateBlock(block.id, 'width', parseInt(e.target.value) || 0)} className="w-20 p-1 bg-bgInput border border-bgElement rounded-md text-center text-textPrimary" /></label>
-                                    <label>Altura (px): <input type="number" value={block.height === 0 ? '' : block.height} onChange={(e) => updateBlock(block.id, 'height', parseInt(e.target.value) || 0)} className="w-20 p-1 bg-bgInput border border-bgElement rounded-md text-center text-textPrimary" /></label>
-                                </>
-                            )}
-                        </div>
-                    )}
-                    <div onClick={() => updateBlock(block.id, 'isCollapsed', true)} className="mt-2 w-full text-center p-1 bg-bgInput hover:opacity-80 text-xs font-bold rounded-md cursor-pointer text-textSecondary">Ocultar ▲</div>
-                </div>
-            )
+            <ImageBlock block={block} canEdit={canEdit} updateBlock={updateBlock} />
         )}
     </div>
 );
 
+// Componente para blocos de texto, agora com o estado local para evitar o bug do cursor
+const TextBlock = ({ block, canEdit, updateBlock }) => {
+    const [localValue, setLocalValue] = useState(block.value || '');
+
+    useEffect(() => {
+        setLocalValue(block.value || '');
+    }, [block.value]);
+
+    const handleSave = useCallback(() => {
+        if (localValue !== block.value) {
+            updateBlock(block.id, 'value', localValue);
+        }
+    }, [localValue, block.value, block.id, updateBlock]);
+
+    return block.isCollapsed ? (
+        <div className="cursor-pointer" onClick={() => updateBlock(block.id, 'isCollapsed', false)}>
+            <p className="text-lg font-semibold mb-1 text-textPrimary">Bloco de Texto</p>
+            <p className="text-sm italic text-textSecondary truncate">{block.value || 'Vazio...'}</p>
+        </div>
+    ) : (
+        <>
+            <AutoResizingTextarea
+                value={localValue}
+                onChange={(e) => setLocalValue(e.target.value)}
+                onBlur={handleSave}
+                placeholder="Digite aqui..."
+                className="w-full p-2 bg-bgInput border border-bgElement rounded-md text-textPrimary"
+                disabled={!canEdit}
+            />
+            <div onClick={() => updateBlock(block.id, 'isCollapsed', true)} className="mt-2 text-center p-1 bg-bgInput hover:opacity-80 text-xs font-bold rounded-md cursor-pointer text-textSecondary">Ocultar ▲</div>
+        </>
+    );
+};
+
+// Componente para blocos de imagem, agora com o estado local para evitar o bug do cursor
+const ImageBlock = ({ block, canEdit, updateBlock }) => {
+    const [localWidth, setLocalWidth] = useState(block.width === 0 ? '' : block.width);
+    const [localHeight, setLocalHeight] = useState(block.height === 0 ? '' : block.height);
+    const [localFitWidth, setLocalFitWidth] = useState(block.fitWidth);
+
+    useEffect(() => {
+        setLocalWidth(block.width === 0 ? '' : block.width);
+        setLocalHeight(block.height === 0 ? '' : block.height);
+        setLocalFitWidth(block.fitWidth);
+    }, [block.width, block.height, block.fitWidth]);
+
+    const handleWidthSave = useCallback(() => updateBlock(block.id, 'width', parseInt(localWidth) || 0), [block.id, updateBlock, localWidth]);
+    const handleHeightSave = useCallback(() => updateBlock(block.id, 'height', parseInt(localHeight) || 0), [block.id, updateBlock, localHeight]);
+    const handleFitWidthSave = useCallback((e) => updateBlock(block.id, 'fitWidth', e.target.checked), [block.id, updateBlock]);
+
+    return block.isCollapsed ? (
+        <div className="cursor-pointer text-center py-2" onClick={() => updateBlock(block.id, 'isCollapsed', false)}>
+            <p className="text-lg font-semibold text-textPrimary">Mostrar Imagem</p>
+        </div>
+    ) : (
+        <div className="flex flex-col items-center">
+            <img src={block.value} alt="Imagem" className="max-w-full h-auto rounded-md shadow-md" style={{ width: localFitWidth ? '100%' : (localWidth ? `${localWidth}px` : 'auto'), height: localFitWidth ? 'auto' : (localHeight ? `${localHeight}px` : 'auto'), objectFit: 'contain' }} onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/300x200/1f2937/FFFFFF?text=Erro'; }} />
+            {canEdit && (
+                <div className="flex flex-wrap items-center justify-center gap-4 mt-2 text-sm text-textSecondary">
+                    <label>Ajustar à Largura: <input type="checkbox" checked={localFitWidth} onChange={(e) => { setLocalFitWidth(e.target.checked); handleFitWidthSave(e); }} className="form-checkbox text-btnHighlightBg rounded" /></label>
+                    {!localFitWidth && (
+                        <>
+                            <label>Largura (px): <input type="number" value={localWidth} onChange={(e) => setLocalWidth(e.target.value)} onBlur={handleWidthSave} className="w-20 p-1 bg-bgInput border border-bgElement rounded-md text-center text-textPrimary" /></label>
+                            <label>Altura (px): <input type="number" value={localHeight} onChange={(e) => setLocalHeight(e.target.value)} onBlur={handleHeightSave} className="w-20 p-1 bg-bgInput border border-bgElement rounded-md text-center text-textPrimary" /></label>
+                        </>
+                    )}
+                </div>
+            )}
+            <div onClick={() => updateBlock(block.id, 'isCollapsed', true)} className="mt-2 w-full text-center p-1 bg-bgInput hover:opacity-80 text-xs font-bold rounded-md cursor-pointer text-textSecondary">Ocultar ▲</div>
+        </div>
+    );
+};
 
 // Exporta cada componente individualmente para que o CharacterSheet possa controlá-los
 export { Story, Notes };
