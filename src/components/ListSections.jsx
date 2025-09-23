@@ -5,7 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 import SheetSkin from './SheetSkin';
 
 // Helper de Textarea (usado por vários sub-componentes)
-const AutoResizingTextarea = ({ value, onChange, onBlur, placeholder, className, disabled }) => {
+const AutoResizingTextarea = ({ value, onChange, onBlur, placeholder, className, disabled, name }) => {
     const textareaRef = useRef(null);
     useEffect(() => {
         if (textareaRef.current) {
@@ -13,7 +13,7 @@ const AutoResizingTextarea = ({ value, onChange, onBlur, placeholder, className,
             textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
         }
     }, [value]);
-    return <textarea ref={textareaRef} value={value} onChange={onChange} onBlur={onBlur} placeholder={placeholder} className={`${className} resize-none overflow-hidden`} rows="1" disabled={disabled} />;
+    return <textarea ref={textareaRef} value={value} onChange={onChange} onBlur={onBlur} placeholder={placeholder} className={`${className} resize-none overflow-hidden`} rows="1" disabled={disabled} name={name} />;
 };
 
 // --- Sub-componente para Inventário ---
@@ -84,6 +84,7 @@ const InventoryList = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
                                 disabled={!canEdit}
                             />
                             <AutoResizingTextarea
+                                name="description"
                                 value={item.description}
                                 onChange={(e) => handleLocalChange(item.id, 'description', e.target.value)}
                                 onBlur={() => handleSave(item.id, 'description')}
@@ -297,11 +298,11 @@ const PerkItem = ({ perk, type, canEdit, onRemove, onChange, onOriginChange, onT
 
     useEffect(() => {
         setLocalPerk(perk);
-    }, [perk]);
+    }, [perk.id]);
 
     const handleLocalChange = (e) => {
-        const { name, value, type } = e.target;
-        const parsedValue = type === 'number' ? parseInt(value, 10) || 0 : value;
+        const { name, value, type: inputType } = e.target;
+        const parsedValue = inputType === 'number' ? parseInt(value, 10) || 0 : value;
         setLocalPerk(prev => ({ ...prev, [name]: parsedValue }));
     };
 
@@ -314,13 +315,13 @@ const PerkItem = ({ perk, type, canEdit, onRemove, onChange, onOriginChange, onT
     return (
         <div className="flex flex-col p-3 bg-bgElement rounded-md shadow-sm">
             <div className="flex justify-between items-center mb-1">
-                <span className="font-semibold text-lg w-full cursor-pointer text-textPrimary" onClick={() => onToggleCollapse(type, perk.id)}>{localPerk.name || 'Sem Nome'} {localPerk.isCollapsed ? '...' : ''}</span>
+                <span className="font-semibold text-lg w-full cursor-pointer text-textPrimary" onClick={() => onToggleCollapse(type, perk.id)}>{localPerk.name || 'Sem Nome'} {perk.isCollapsed ? '...' : ''}</span>
                 <div className="flex items-center gap-2 flex-shrink-0 ml-4">
                     <button onClick={() => onShowDiscord(localPerk.name, localPerk.description)} title="Mostrar no Discord" className="px-3 py-1 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText text-sm font-bold rounded-md">Mostrar</button>
                     {canEdit && <button onClick={() => onRemove(type, perk.id)} className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-md">Remover</button>}
                 </div>
             </div>
-            {!localPerk.isCollapsed && (<>
+            {!perk.isCollapsed && (<>
                 <div className="flex items-center gap-2 mb-2">
                     <input
                         type="text"
@@ -353,7 +354,18 @@ const PerkItem = ({ perk, type, canEdit, onRemove, onChange, onOriginChange, onT
                     disabled={!canEdit}
                 />
                 <div className="flex gap-3 text-sm text-textSecondary mt-2">
-                    {['class', 'race', 'manual'].map(originType => (<label key={originType} className="flex items-center gap-1"><input type="checkbox" checked={localPerk.origin?.[originType]} onChange={() => onOriginChange(type, perk.id, originType)} className="form-checkbox text-btnHighlightBg rounded" disabled={!canEdit} /> {originType.charAt(0).toUpperCase() + originType.slice(1)}</label>))}
+                    {['class', 'race', 'manual'].map(originType => (
+                        <label key={originType} className="flex items-center gap-1">
+                            <input
+                                type="checkbox"
+                                checked={perk.origin?.[originType] || false}
+                                onChange={() => onOriginChange(type, perk.id, originType)}
+                                className="form-checkbox text-btnHighlightBg rounded"
+                                disabled={!canEdit}
+                            />
+                            {originType.charAt(0).toUpperCase() + originType.slice(1)}
+                        </label>
+                    ))}
                 </div>
             </>)}
         </div>
