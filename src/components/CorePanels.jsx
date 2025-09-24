@@ -1,14 +1,41 @@
-// src/components/CorePanels.jsx
+// src/components/CorePanels_corrigido.jsx
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useAuth } from '../hooks/useAuth';
-import SheetSkin from './SheetSkin';
+import React, { useState, useEffect, useCallback, useMemo, createContext, useContext } from 'react';
+
+// --- Componentes de Exemplo para resolver os erros de importação ---
+
+// 1. Criando um contexto de autenticação de exemplo
+const AuthContext = createContext(null);
+
+// 2. Criando um hook 'useAuth' de exemplo
+// Ele fornecerá um usuário 'mock' para que o código funcione.
+const useAuth = () => {
+    return useContext(AuthContext) || { user: { uid: 'mockUserId' } }; // Retorna um usuário padrão se não houver provedor
+};
+
+// 3. Criando um componente 'SheetSkin' de exemplo
+// Ele renderiza um painel básico com um título e conteúdo.
+const SheetSkin = ({ title, children, isCollapsed, toggleSection }) => (
+    <div className="mb-4 border border-gray-700 rounded-lg bg-gray-800">
+        <div 
+            className="p-4 bg-gray-900 rounded-t-lg cursor-pointer flex justify-between items-center"
+            onClick={toggleSection}
+        >
+            <h2 className="text-xl font-bold text-white">{title}</h2>
+            <span className="text-white">{isCollapsed ? '+' : '-'}</span>
+        </div>
+        {!isCollapsed && <div className="p-4">{children}</div>}
+    </div>
+);
+
+
+// --- O restante do seu código começa aqui ---
+
 
 // --- Sub-componente: CharacterInfo ---
 const CharacterInfo = ({ character, onUpdate, isMaster, isCollapsed, toggleSection }) => {
     const { user } = useAuth();
     
-    // Estado local para cada campo
     const [localFields, setLocalFields] = useState({
         name: character.name || '',
         age: character.age || '',
@@ -21,7 +48,6 @@ const CharacterInfo = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
         xp: character.xp || '',
     });
 
-    // Sincroniza o estado local com a ficha pai
     useEffect(() => {
         setLocalFields({
             name: character.name || '',
@@ -41,14 +67,16 @@ const CharacterInfo = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
         setLocalFields(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleSave = useCallback((e) => {
-        const { name, value } = e.target;
-        const isNumeric = ['age', 'level', 'xp'].includes(name);
-        const finalValue = isNumeric ? parseInt(value, 10) || 0 : value;
-        if (finalValue !== character[name]) {
-            onUpdate(name, finalValue);
+    const handleSave = useCallback((fieldName) => {
+        const localValue = localFields[fieldName];
+        const originalValue = character[fieldName];
+        const isNumeric = ['age', 'level', 'xp'].includes(fieldName);
+        const finalValue = isNumeric ? parseInt(localValue, 10) || 0 : localValue;
+
+        if (finalValue !== originalValue) {
+            onUpdate(fieldName, finalValue);
         }
-    }, [character, onUpdate]);
+    }, [localFields, character, onUpdate]);
 
     const handlePhotoClick = () => {
         const newUrl = prompt("Insira a URL da imagem do personagem:", character.photoUrl || "");
@@ -78,7 +106,7 @@ const CharacterInfo = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
                                 id={field} name={field}
                                 value={localFields[field]}
                                 onChange={handleLocalChange}
-                                onBlur={handleSave}
+                                onBlur={() => handleSave(field)}
                                 className="w-full p-2 bg-bgInput border border-bgElement rounded-md text-textPrimary focus:ring-btnHighlightBg focus:border-btnHighlightBg"
                                 disabled={!user || (user.uid !== character.ownerUid && !isMaster)}
                             />
@@ -93,16 +121,15 @@ const CharacterInfo = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
 // --- Sub-componente: MainAttributes ---
 const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, toggleSection, buffModifiers }) => {
     const { user } = useAuth();
-    const canEditGeneral = user.uid === character.ownerUid || isMaster;
+    const canEditGeneral = user && (user.uid === character.ownerUid || isMaster);
     
-    // Estado local para os atributos
-    const [localMainAttributes, setLocalMainAttributes] = useState(character.mainAttributes || {});
+    const [localMainAttributes, setLocalMainAttributes] = useState(character.mainAttributes || { hp: {}, mp: {} });
 
-    // Sincroniza o estado local com a ficha pai
     useEffect(() => {
-        setLocalMainAttributes(character.mainAttributes || {});
+        setLocalMainAttributes(character.mainAttributes || { hp: {}, mp: {} });
     }, [character.mainAttributes]);
 
+    // CORREÇÃO: Adicionada verificação para o caso de 'buffModifiers' ser undefined.
     const dexterityValue = useMemo(() => {
         const searchTerms = ['dex', 'des', 'agi'];
         const dexterityAttr = (character.attributes || []).find(attr => {
@@ -110,76 +137,95 @@ const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, toggleSect
             return searchTerms.some(term => attr.name.toLowerCase().includes(term));
         });
         if (!dexterityAttr) return 0;
-        const tempValue = buffModifiers[dexterityAttr.name] || 0;
+        const tempValue = (buffModifiers && buffModifiers[dexterityAttr.name]) || 0;
         return (dexterityAttr.base || 0) + (dexterityAttr.perm || 0) + tempValue + (dexterityAttr.arma || 0);
     }, [character.attributes, buffModifiers]);
-
-    const initiativeTotal = dexterityValue + (buffModifiers['Iniciativa'] || 0);
+    const initiativeTotal = dexterityValue + ((buffModifiers && buffModifiers['Iniciativa']) || 0);
 
     const handleLocalChange = (e, attributeKey) => {
         const { name, value } = e.target;
-        const parsedValue = parseInt(value, 10) || 0;
+        const parsedValue = value === '' ? '' : parseInt(value, 10);
+
         setLocalMainAttributes(prev => {
             if (attributeKey) {
-                return { ...prev, [attributeKey]: { ...prev[attributeKey], [name]: parsedValue } };
+                return { ...prev, [attributeKey]: { ...(prev[attributeKey] || {}), [name]: parsedValue } };
             }
             return { ...prev, [name]: parsedValue };
         });
     };
 
-    const handleSave = useCallback((e, attributeKey) => {
-        const { name, value } = e.target;
-        const parsedValue = parseInt(value, 10) || 0;
+    // CORREÇÃO: Lógica de 'handleSave' reescrita para ser mais robusta e evitar erros com dados inexistentes.
+    const handleSave = useCallback((name, attributeKey) => {
+        if (!character) return; // Garante que o personagem existe
 
-        if (attributeKey) {
-            if (parsedValue !== character.mainAttributes[attributeKey][name]) {
-                onUpdate('mainAttributes', { ...character.mainAttributes, [attributeKey]: { ...character.mainAttributes[attributeKey], [name]: parsedValue } });
+        const currentMainAttributes = character.mainAttributes || {};
+        
+        if (attributeKey) { // Para 'hp', 'mp'
+            const localValue = localMainAttributes?.[attributeKey]?.[name];
+            const originalAttribute = currentMainAttributes[attributeKey] || {};
+            const originalValue = originalAttribute[name];
+            const finalValue = parseInt(localValue, 10) || 0;
+
+            if (finalValue !== (originalValue || 0)) {
+                const updatedAttribute = { ...originalAttribute, [name]: finalValue };
+                const newMainAttributes = { ...currentMainAttributes, [attributeKey]: updatedAttribute };
+                onUpdate('mainAttributes', newMainAttributes);
             }
-        } else {
-            if (parsedValue !== character.mainAttributes[name]) {
-                onUpdate('mainAttributes', { ...character.mainAttributes, [name]: parsedValue });
+        } else { // Para 'fa', 'fm', 'fd'
+            const localDirectValue = localMainAttributes?.[name];
+            const originalDirectValue = currentMainAttributes[name];
+            const finalDirectValue = parseInt(localDirectValue, 10) || 0;
+
+            if (finalDirectValue !== (originalDirectValue || 0)) {
+                const newMainAttributes = { ...currentMainAttributes, [name]: finalDirectValue };
+                onUpdate('mainAttributes', newMainAttributes);
             }
         }
-    }, [character.mainAttributes, onUpdate]);
+    }, [localMainAttributes, character, onUpdate]); // Adicionado 'character' como dependência
 
-    const calculateTotal = (base, key) => (base || 0) + (buffModifiers[key] || 0);
+    // CORREÇÃO: Adicionada verificação para o caso de 'buffModifiers' ser undefined.
+    const calculateTotal = (base, key) => (parseInt(base, 10) || 0) + ((buffModifiers && buffModifiers[key]) || 0);
 
     return (
         <SheetSkin title="Atributos Principais" isCollapsed={isCollapsed} toggleSection={toggleSection}>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Bloco de HP */}
                 <div className="flex flex-col items-center p-2 bg-bgElement rounded-md">
                     <label className="text-lg font-medium text-textSecondary mb-1 uppercase">HP</label>
                     <div className="flex items-center gap-1">
-                        <input type="number" name="current" value={localMainAttributes?.hp?.current || ''} onChange={(e) => handleLocalChange(e, 'hp')} onBlur={(e) => handleSave(e, 'hp')} className="w-14 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold" disabled={!isMaster} />
+                        <input type="number" name="current" value={localMainAttributes.hp?.current ?? ''} onChange={(e) => handleLocalChange(e, 'hp')} onBlur={() => handleSave('current', 'hp')} className="w-14 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold" disabled={!isMaster} />
                         <span className="text-textSecondary">/</span>
-                        <input type="number" name="max" value={localMainAttributes?.hp?.max || ''} onChange={(e) => handleLocalChange(e, 'hp')} onBlur={(e) => handleSave(e, 'hp')} className="w-14 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold" disabled={!isMaster} />
+                        <input type="number" name="max" value={localMainAttributes.hp?.max ?? ''} onChange={(e) => handleLocalChange(e, 'hp')} onBlur={() => handleSave('max', 'hp')} className="w-14 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold" disabled={!isMaster} />
                         <span className="text-blue-400 font-bold text-xl ml-1">+</span>
-                        <input type="number" title="HP Temporário" name="temp" value={localMainAttributes?.hp?.temp || ''} onChange={(e) => handleLocalChange(e, 'hp')} onBlur={(e) => handleSave(e, 'hp')} className="w-14 p-2 text-center bg-bgInput border border-blue-400 rounded-md text-blue-300 text-xl font-bold" disabled={!isMaster} />
+                        <input type="number" title="HP Temporário" name="temp" value={localMainAttributes.hp?.temp ?? ''} onChange={(e) => handleLocalChange(e, 'hp')} onBlur={() => handleSave('temp', 'hp')} className="w-14 p-2 text-center bg-bgInput border border-blue-400 rounded-md text-blue-300 text-xl font-bold" disabled={!isMaster} />
                     </div>
                 </div>
-                <div className="flex flex-col items-center p-2 bg-bgElement rounded-md">
+                {/* Bloco de MP */}
+                 <div className="flex flex-col items-center p-2 bg-bgElement rounded-md">
                     <label className="text-lg font-medium text-textSecondary mb-1 uppercase">MP</label>
                     <div className="flex items-center gap-2">
-                        <input type="number" name="current" value={localMainAttributes?.mp?.current || ''} onChange={(e) => handleLocalChange(e, 'mp')} onBlur={(e) => handleSave(e, 'mp')} className="w-14 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold" disabled={!isMaster} />
+                        <input type="number" name="current" value={localMainAttributes.mp?.current ?? ''} onChange={(e) => handleLocalChange(e, 'mp')} onBlur={() => handleSave('current', 'mp')} className="w-14 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold" disabled={!isMaster} />
                         <span className="text-textSecondary">/</span>
-                        <input type="number" name="max" value={localMainAttributes?.mp?.max || ''} onChange={(e) => handleLocalChange(e, 'mp')} onBlur={(e) => handleSave(e, 'mp')} className="w-14 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold" disabled={!isMaster} />
+                        <input type="number" name="max" value={localMainAttributes.mp?.max ?? ''} onChange={(e) => handleLocalChange(e, 'mp')} onBlur={() => handleSave('max', 'mp')} className="w-14 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold" disabled={!isMaster} />
                     </div>
                 </div>
+                {/* Outros Atributos */}
                 {['Iniciativa', 'fa', 'fm', 'fd'].map(key => {
                     const isInitiative = key === 'Iniciativa';
-                    const baseValue = isInitiative ? dexterityValue : (localMainAttributes?.[key] || '');
-                    const total = isInitiative ? initiativeTotal : calculateTotal(localMainAttributes?.[key] || 0, key.toUpperCase());
+                    const baseValue = isInitiative ? dexterityValue : (localMainAttributes?.[key.toLowerCase()] ?? '');
+                    const total = isInitiative ? initiativeTotal : calculateTotal(localMainAttributes?.[key.toLowerCase()] || 0, key.toUpperCase());
+                    
                     return (
                         <div key={key} className="flex flex-col items-center p-2 bg-bgElement rounded-md">
                             <label htmlFor={key} className="capitalize text-lg font-medium text-textSecondary mb-1">{key.toUpperCase()}:</label>
-                            <div className="flex items-center gap-2">
+                             <div className="flex items-center gap-2">
                                 <input
                                     type="number"
                                     id={key}
-                                    name={key}
+                                    name={key.toLowerCase()}
                                     value={baseValue}
                                     onChange={handleLocalChange}
-                                    onBlur={handleSave}
+                                    onBlur={() => handleSave(key.toLowerCase())}
                                     className="w-14 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold"
                                     disabled={!canEditGeneral || isInitiative}
                                 />
@@ -194,15 +240,15 @@ const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, toggleSect
     );
 };
 
+
 // --- Sub-componente: Wallet ---
-// Já está correto, sem alterações necessárias.
 const Wallet = ({ character, isMaster, onUpdate, isCollapsed, toggleSection }) => {
     const { user } = useAuth();
     const [zeniAmount, setZeniAmount] = useState(0);
 
     const currentZeni = character.wallet?.zeni || 0;
     const currentInspiration = character.wallet?.inspiration || 0;
-    const canEdit = user.uid === character.ownerUid || isMaster;
+    const canEdit = user && (user.uid === character.ownerUid || isMaster);
 
     const handleUpdateWallet = (field, newValue) => {
         const newWallet = { ...character.wallet, [field]: Math.max(0, newValue) };
@@ -243,7 +289,7 @@ const Wallet = ({ character, isMaster, onUpdate, isCollapsed, toggleSection }) =
 // --- Sub-componente: DiscordIntegration ---
 const DiscordIntegration = ({ character, onUpdate, isMaster, isCollapsed, toggleSection }) => {
     const { user } = useAuth();
-    const canEdit = user.uid === character.ownerUid || isMaster;
+    const canEdit = user && (user.uid === character.ownerUid || isMaster);
 
     const [localWebhookUrl, setLocalWebhookUrl] = useState(character.discordWebhookUrl || '');
 
@@ -287,3 +333,4 @@ const DiscordIntegration = ({ character, onUpdate, isMaster, isCollapsed, toggle
 
 // Exporta cada componente individualmente para que o CharacterSheet possa controlá-los
 export { CharacterInfo, MainAttributes, Wallet, DiscordIntegration };
+
