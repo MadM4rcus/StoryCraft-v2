@@ -14,7 +14,7 @@ const SheetSkin = ({ title, isCollapsed, toggleSection, actions, children, isCom
         onClick={toggleSection}
       >
         {/* O Título da Seção */}
-        <h2 className={isComplexTitle ? '' : 'truncate'}>{title}</h2>
+        <h2 className={`flex-grow ${isComplexTitle ? '' : 'truncate'}`.trim()}>{title}</h2>
         
         <div className="flex items-center gap-4">
           {/* Espaço para botões de ação específicos da seção (Ex: botão "+") */}
