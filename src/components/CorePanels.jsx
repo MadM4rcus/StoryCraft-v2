@@ -1,32 +1,8 @@
-// src/components/CorePanels_corrigido.jsx
+// src/components/CorePanels.jsx
 
-import React, { useState, useEffect, useCallback, useMemo, createContext, useContext } from 'react';
-
-// --- Componentes de Exemplo para resolver os erros de importação ---
-
-// 1. Criando um contexto de autenticação de exemplo
-const AuthContext = createContext(null);
-
-// 2. Criando um hook 'useAuth' de exemplo
-// Ele fornecerá um usuário 'mock' para que o código funcione.
-const useAuth = () => {
-    return useContext(AuthContext) || { user: { uid: 'mockUserId' } }; // Retorna um usuário padrão se não houver provedor
-};
-
-// 3. Criando um componente 'SheetSkin' de exemplo
-// Ele renderiza um painel básico com um título e conteúdo.
-const SheetSkin = ({ title, children, isCollapsed, toggleSection }) => (
-    <div className="mb-4 border border-gray-700 rounded-lg bg-gray-800">
-        <div 
-            className="p-4 bg-gray-900 rounded-t-lg cursor-pointer flex justify-between items-center"
-            onClick={toggleSection}
-        >
-            <h2 className="text-xl font-bold text-white">{title}</h2>
-            <span className="text-white">{isCollapsed ? '+' : '-'}</span>
-        </div>
-        {!isCollapsed && <div className="p-4">{children}</div>}
-    </div>
-);
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useAuth } from '../hooks/useAuth';
+import SheetSkin from './SheetSkin';
 
 
 // --- O restante do seu código começa aqui ---
@@ -263,12 +239,12 @@ const Wallet = ({ character, isMaster, onUpdate, isCollapsed, toggleSection }) =
     const walletTitle = (
         <div className="flex justify-between items-center w-full">
             <span>Zeni: {currentZeni}</span>
-            <span className="text-textPrimary text-base mr-2">Inspiração: {currentInspiration}</span>
+            <span className="text-textPrimary text-base">Inspiração: {currentInspiration}</span>
         </div>
     );
 
     return (
-        <SheetSkin title={walletTitle} isCollapsed={isCollapsed} toggleSection={toggleSection}>
+        <SheetSkin title={walletTitle} isCollapsed={isCollapsed} toggleSection={toggleSection} isComplexTitle={true}>
             <div className="flex flex-col sm:flex-row justify-between items-center gap-6">
                 <div className="flex items-center gap-2">
                     <span className="hidden sm:inline font-semibold text-textSecondary">Zeni:</span>

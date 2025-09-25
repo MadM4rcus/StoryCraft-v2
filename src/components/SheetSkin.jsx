@@ -2,7 +2,7 @@
 
 import React from 'react';
 
-const SheetSkin = ({ title, isCollapsed, toggleSection, actions, children }) => {
+const SheetSkin = ({ title, isCollapsed, toggleSection, actions, children, isComplexTitle }) => {
   return (
     // A "CASCA" - toda a aparência da seção vive aqui.
     // Usamos as variáveis de cor do Tailwind que vêm do App.jsx.
@@ -14,7 +14,7 @@ const SheetSkin = ({ title, isCollapsed, toggleSection, actions, children }) => 
         onClick={toggleSection}
       >
         {/* O Título da Seção */}
-        <h2 className="truncate">{title}</h2>
+        <h2 className={isComplexTitle ? '' : 'truncate'}>{title}</h2>
         
         <div className="flex items-center gap-4">
           {/* Espaço para botões de ação específicos da seção (Ex: botão "+") */}
