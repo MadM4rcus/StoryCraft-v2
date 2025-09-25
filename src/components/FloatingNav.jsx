@@ -1,6 +1,7 @@
 // src/components/FloatingNav.jsx
 
 import React from 'react';
+import QuickRoll from './QuickRoll'; // Import the new component
 
 const NavButton = ({ href, title, children }) => (
   <a
@@ -12,7 +13,7 @@ const NavButton = ({ href, title, children }) => (
   </a>
 );
 
-const FloatingNav = () => {
+const FloatingNav = ({ character }) => {
   // Array de seções com a NOVA ORDEM
   const sections = [
     { href: '#info', title: 'Informações', icon: '👤' },
@@ -39,6 +40,7 @@ const FloatingNav = () => {
             {section.icon}
           </NavButton>
         ))}
+        <QuickRoll character={character} />
       </div>
     </div>
   );

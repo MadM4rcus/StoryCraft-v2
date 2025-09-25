@@ -360,11 +360,10 @@ const handleExecuteFormulaAction = async (action) => {
 
   return (
     <div className="w-full max-w-4xl mx-auto p-4">
-      <ModalManager modalState={modalState} closeModal={closeModal} />
-      <FloatingNav />
-      
-      <button onClick={onBack} className="mb-4 px-4 py-2 bg-bgSurface hover:opacity-80 text-textPrimary font-bold rounded-lg">
-        ← Voltar para a Lista
+            <ModalManager modalState={modalState} closeModal={closeModal} />
+            <FloatingNav character={character} />
+            
+            <button onClick={onBack} className="mb-4 px-4 py-2 bg-bgSurface hover:opacity-80 text-textPrimary font-bold rounded-lg">        ← Voltar para a Lista
       </button>
 
       {/* A ORDEM FINAL E CORRETA DA FICHA, TOTALMENTE SOB NOSSO CONTROLE */}
