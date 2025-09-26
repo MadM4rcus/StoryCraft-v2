@@ -6,7 +6,8 @@ import ActionButtons from './ActionButtons.jsx';
 
 // NOSSAS NOVAS IMPORTAÇÕES DETALHADAS DOS NOSSOS ARQUIVOS AGRUPADORES
 import { CharacterInfo, MainAttributes, Wallet, DiscordIntegration } from './CorePanels.jsx';
-import { InventoryList, EquippedItemsList, SkillsList, PerksList, SpecializationsList } from './ListSections.jsx';
+import { InventoryList, EquippedItemsList, SkillsList, PerksList } from './ListSections.jsx';
+import SpecializationsList from './Specializations.jsx';
 import { Story, Notes } from './ContentSections.jsx';
 
 // IMPORTAÇÕES DOS COMPONENTES COMPLEXOS QUE MANTIVEMOS SEPARADOS
