@@ -122,28 +122,28 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
   };
 
   const handleOpenActionModal = (type) => {
-    setModalState({ 
-        type: 'action', 
-        props: { 
-            type, 
-            title: type === 'heal' ? 'Curar / Restaurar' : 'Receber Dano / Perder', 
-            onConfirm: (amount, target) => handleConfirmAction(amount, target, type), 
-            onClose: closeModal 
-        } 
+    setModalState({
+        type: 'action',
+        props: {
+            type,
+            title: type === 'heal' ? 'Curar / Restaurar' : 'Receber Dano / Perder',
+            onConfirm: (amount, target) => handleConfirmAction(amount, target, type),
+            onClose: closeModal
+        }
     });
   };
 
   const handleOpenRollModal = (attributeId) => {
     const attribute = (character.attributes || []).find(attr => attr.id === attributeId);
-    if (attribute) { 
-        setModalState({ 
-            type: 'rollAttribute', 
-            props: { 
-                attributeName: attribute.name, 
+    if (attribute) {
+        setModalState({
+            type: 'rollAttribute',
+            props: {
+                attributeName: attribute.name,
                 onConfirm: (dice, bonus) => handleConfirmAttributeRoll(dice, bonus, attribute),
-                onClose: closeModal 
-            } 
-        }); 
+                onClose: closeModal
+            }
+      });
     }
   };
 
@@ -201,7 +201,7 @@ const handleExecuteFormulaAction = async (action) => {
                 totalResult += attrValue;
                 rollDetails.push(`${attrName}(${attrValue})`);
             } else if (comp.type === 'critDice') { // Novo tipo: Dado Crítico
-                const match = (comp.value || '').match(/(\d+)d(\d+)/i);
+                const match = String(comp.value || '').match(/(\d+)d(\d+)/i);
                 if (match) {
                     const numDice = parseInt(match[1], 10);
                     const numSides = parseInt(match[2], 10);
@@ -235,7 +235,7 @@ const handleExecuteFormulaAction = async (action) => {
                     rollDetails.push(`${num}`);
                 }
             } else { // dice (dado comum)
-                const match = (comp.value || '').match(/(\d+)d(\d+)/i);
+                const match = String(comp.value || '').match(/(\d+)d(\d+)/i);
                 if (match) {
                     const numDice = parseInt(match[1], 10);
                     const numSides = parseInt(match[2], 10);
@@ -364,7 +364,7 @@ const handleExecuteFormulaAction = async (action) => {
             <ModalManager modalState={modalState} closeModal={closeModal} />
             <FloatingNav character={character} />
             
-            <button onClick={onBack} className="mb-4 px-4 py-2 bg-bgSurface hover:opacity-80 text-textPrimary font-bold rounded-lg">        ← Voltar para a Lista
+            <button onClick={onBack} className="mb-4 px-4 py-2 bg-bgSurface hover:opacity-80 text-textPrimary font-bold rounded-lg">        ← Voltar para a Lista
       </button>
 
       {/* A ORDEM FINAL E CORRETA DA FICHA, TOTALMENTE SOB NOSSO CONTROLE */}
@@ -380,7 +380,7 @@ const handleExecuteFormulaAction = async (action) => {
       <div id="equipped"><EquippedItemsList character={character} onUpdate={updateCharacterField} isMaster={isMaster} onShowDiscord={handleShowOnDiscord} isCollapsed={character.collapsedStates?.equipped} toggleSection={() => toggleSection('equipped')} /></div>
       <div id="perks"><PerksList character={character} onUpdate={updateCharacterField} onShowDiscord={handleShowOnDiscord} isCollapsed={character.collapsedStates?.perks} toggleSection={() => toggleSection('perks')} /></div>
       <div id="skills"><SkillsList character={character} onUpdate={updateCharacterField} isMaster={isMaster} onShowDiscord={handleShowOnDiscord} isCollapsed={character.collapsedStates?.skills} toggleSection={() => toggleSection('skills')} /></div>
-      <div id="specializations"><SpecializationsList character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.specializations} toggleSection={() => toggleSection('specializations')} /></div>
+      <div id="specializations"><SpecializationsList character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.specializations} toggleSection={() => toggleSection('specializations')} allAttributes={allAttributes} onExecuteFormula={handleExecuteFormulaAction} /></div>
 
       {/* Seções de Conteúdo */}
       <div id="story"><Story character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.story} toggleSection={() => toggleSection('story')} /></div>

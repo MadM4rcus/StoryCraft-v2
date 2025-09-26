@@ -6,6 +6,10 @@ Bem-vindo ao repositório do StoryCraft V2! Este é um sistema de fichas de pers
 
 Next:
 
-quero adicionar ao controle flutuante um botão pra realizar uma rolagem rapida no discord. seria mais ou menos assim: clica no botão abre uma pequena janelinha ou expande alguma coisa sei lá. e aí aparecem opçoes variadas de dados, d2 d3 d4 d6 d8 d10 d12 d20 d50 d100
+i want to do rework the specializations ill make a similar interface as the actions. it will have its own roll button, the option to remove should be only visible when expanded with the delete word in it. there should be a colapse button, each added item will have the fields for the user to imput info. such as
 
-a ideia é ser super rapido. o player clica no dado e o resultado da rolagem aparece no discord. Já temos componentes para lidar com o envio de rolagens para o discord na pasta src
+title: this will be the name of the added item and when colapsed only the name + the sum of bonus + a roll button.
+
+when expanded. there should be mini buttons like the actions to add number bonus, dice bonus, and atributes as bonus.
+
+aswell as choose the main dice roll that should be done when the user chooses to roll.
