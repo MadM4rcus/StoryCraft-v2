@@ -2,14 +2,64 @@
 
 Bem-vindo ao repositório do StoryCraft V2! Este é um sistema de fichas de personagem de RPG dinâmico e personalizável, construído com React e Firebase.
 
+Npm run build
 
+firebase deploy
 
 Next:
+seguinte. 
 
-i want to do rework the specializations ill make a similar interface as the actions. it will have its own roll button, the option to remove should be only visible when expanded with the delete word in it. there should be a colapse button, each added item will have the fields for the user to imput info. such as
+vou fazer com que o app seja um reunidor de fichas de diversos sistemas. a idéia é pegar os componentes que são exclusivos de storycraft e separar dos outros componentes. 
 
-title: this will be the name of the added item and when colapsed only the name + the sum of bonus + a roll button.
-
-when expanded. there should be mini buttons like the actions to add number bonus, dice bonus, and atributes as bonus.
-
-aswell as choose the main dice roll that should be done when the user chooses to roll.
+📦StoryCraft-v2
+ ┣ 📂src
+ ┃ ┣ 📂components
+ ┃ ┃ ┣ 📂storycraft
+ ┃ ┃ ┃ ┣ 📜ActionButtons.jsx
+ ┃ ┃ ┃ ┣ 📜ActionsSection.jsx
+ ┃ ┃ ┃ ┣ 📜AttributesSection.jsx
+ ┃ ┃ ┃ ┣ 📜BuffsSection.jsx
+ ┃ ┃ ┃ ┣ 📜CharacterList.jsx
+ ┃ ┃ ┃ ┣ 📜CharacterSheet.jsx
+ ┃ ┃ ┃ ┣ 📜ContentSections.jsx
+ ┃ ┃ ┃ ┣ 📜CorePanels.jsx
+ ┃ ┃ ┃ ┣ 📜ListSections.jsx
+ ┃ ┃ ┃ ┗ 📜Specializations.jsx
+ ┃ ┃ ┣ 📜ActionButtons.jsx
+ ┃ ┃ ┣ 📜ActionsSection.jsx
+ ┃ ┃ ┣ 📜AttributesSection.jsx
+ ┃ ┃ ┣ 📜BuffsSection.jsx
+ ┃ ┃ ┣ 📜CharacterList.jsx
+ ┃ ┃ ┣ 📜CharacterSheet.jsx
+ ┃ ┃ ┣ 📜ContentSections.jsx
+ ┃ ┃ ┣ 📜CorePanels.jsx
+ ┃ ┃ ┣ 📜Dashboard.jsx
+ ┃ ┃ ┣ 📜FloatingNav.jsx
+ ┃ ┃ ┣ 📜ListSections.jsx
+ ┃ ┃ ┣ 📜Login.jsx
+ ┃ ┃ ┣ 📜ModalManager.jsx
+ ┃ ┃ ┣ 📜QuickRoll.jsx
+ ┃ ┃ ┣ 📜SheetSkin.jsx
+ ┃ ┃ ┣ 📜Specializations.jsx
+ ┃ ┃ ┗ 📜ThemeEditor.jsx
+ ┃ ┣ 📂context
+ ┃ ┃ ┗ 📜AuthContext.jsx
+ ┃ ┣ 📂hooks
+ ┃ ┃ ┣ 📜useAuth.js
+ ┃ ┃ ┗ 📜useCharacter.js
+ ┃ ┣ 📂services
+ ┃ ┃ ┣ 📜firebase.js
+ ┃ ┃ ┣ 📜firestoreService.js
+ ┃ ┃ ┗ 📜themeService.js
+ ┃ ┣ 📜App.jsx
+ ┃ ┣ 📜index.css
+ ┃ ┗ 📜main.jsx
+ ┣ 📜.firebaserc
+ ┣ 📜.gitignore
+ ┣ 📜firebase.json
+ ┣ 📜index.html
+ ┣ 📜package-lock.json
+ ┣ 📜package.json
+ ┣ 📜postcss.config.js
+ ┣ 📜README.md
+ ┗ 📜tailwind.config.js
