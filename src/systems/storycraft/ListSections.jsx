@@ -1,7 +1,7 @@
 // src/components/ListSections.jsx
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '@/hooks';
 import SheetSkin from './SheetSkin';
 
 // Helper de Textarea (usado por vários sub-componentes)

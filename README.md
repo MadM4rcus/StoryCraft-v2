@@ -9,57 +9,10 @@ firebase deploy
 Next:
 seguinte. 
 
-vou fazer com que o app seja um reunidor de fichas de diversos sistemas. a idéia é pegar os componentes que são exclusivos de storycraft e separar dos outros componentes. 
+continuando o trabalho, movemos varios arquivos de lugar, e criamos os index.js para servir de file barrel, centralizando os imports.
+vamos prosseguir com os ajustes dos arquivos que precisam ter seus imports atualizados pros index.
+aqui vai a mensagem do terminal.
 
-📦StoryCraft-v2
- ┣ 📂src
- ┃ ┣ 📂components
- ┃ ┃ ┣ 📂storycraft
- ┃ ┃ ┃ ┣ 📜ActionButtons.jsx
- ┃ ┃ ┃ ┣ 📜ActionsSection.jsx
- ┃ ┃ ┃ ┣ 📜AttributesSection.jsx
- ┃ ┃ ┃ ┣ 📜BuffsSection.jsx
- ┃ ┃ ┃ ┣ 📜CharacterList.jsx
- ┃ ┃ ┃ ┣ 📜CharacterSheet.jsx
- ┃ ┃ ┃ ┣ 📜ContentSections.jsx
- ┃ ┃ ┃ ┣ 📜CorePanels.jsx
- ┃ ┃ ┃ ┣ 📜ListSections.jsx
- ┃ ┃ ┃ ┗ 📜Specializations.jsx
- ┃ ┃ ┣ 📜ActionButtons.jsx
- ┃ ┃ ┣ 📜ActionsSection.jsx
- ┃ ┃ ┣ 📜AttributesSection.jsx
- ┃ ┃ ┣ 📜BuffsSection.jsx
- ┃ ┃ ┣ 📜CharacterList.jsx
- ┃ ┃ ┣ 📜CharacterSheet.jsx
- ┃ ┃ ┣ 📜ContentSections.jsx
- ┃ ┃ ┣ 📜CorePanels.jsx
- ┃ ┃ ┣ 📜Dashboard.jsx
- ┃ ┃ ┣ 📜FloatingNav.jsx
- ┃ ┃ ┣ 📜ListSections.jsx
- ┃ ┃ ┣ 📜Login.jsx
- ┃ ┃ ┣ 📜ModalManager.jsx
- ┃ ┃ ┣ 📜QuickRoll.jsx
- ┃ ┃ ┣ 📜SheetSkin.jsx
- ┃ ┃ ┣ 📜Specializations.jsx
- ┃ ┃ ┗ 📜ThemeEditor.jsx
- ┃ ┣ 📂context
- ┃ ┃ ┗ 📜AuthContext.jsx
- ┃ ┣ 📂hooks
- ┃ ┃ ┣ 📜useAuth.js
- ┃ ┃ ┗ 📜useCharacter.js
- ┃ ┣ 📂services
- ┃ ┃ ┣ 📜firebase.js
- ┃ ┃ ┣ 📜firestoreService.js
- ┃ ┃ ┗ 📜themeService.js
- ┃ ┣ 📜App.jsx
- ┃ ┣ 📜index.css
- ┃ ┗ 📜main.jsx
- ┣ 📜.firebaserc
- ┣ 📜.gitignore
- ┣ 📜firebase.json
- ┣ 📜index.html
- ┣ 📜package-lock.json
- ┣ 📜package.json
- ┣ 📜postcss.config.js
- ┣ 📜README.md
- ┗ 📜tailwind.config.js
+criando index.js como filebarrel para centralizar os imports para componentes genéricos que não precisam consultar a origem dos arquivos. 
+
+vou fazer com que o app seja um reunidor de fichas de diversos sistemas. a idéia é pegar os componentes que são exclusivos de storycraft e separar dos outros componentes. 

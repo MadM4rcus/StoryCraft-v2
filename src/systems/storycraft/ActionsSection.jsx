@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '@/hooks';
 import SheetSkin from './SheetSkin';
 
 const AutoResizingTextarea = ({ value, onChange, onBlur, placeholder, className, disabled }) => {

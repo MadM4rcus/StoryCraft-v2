@@ -1,19 +1,15 @@
 import React, { useState, useMemo } from 'react';
-import { useCharacter } from '../hooks/useCharacter.js';
-import ModalManager from './ModalManager.jsx';
-import FloatingNav from './FloatingNav.jsx';
-import ActionButtons from './ActionButtons.jsx';
-
-// NOSSAS NOVAS IMPORTAÇÕES DETALHADAS DOS NOSSOS ARQUIVOS AGRUPADORES
-import { CharacterInfo, MainAttributes, Wallet, DiscordIntegration } from './CorePanels.jsx';
-import { InventoryList, EquippedItemsList, SkillsList, PerksList } from './ListSections.jsx';
-import SpecializationsList from './Specializations.jsx';
-import { Story, Notes } from './ContentSections.jsx';
-
-// IMPORTAÇÕES DOS COMPONENTES COMPLEXOS QUE MANTIVEMOS SEPARADOS
-import ActionsSection from './ActionsSection.jsx';
-import BuffsSection from './BuffsSection.jsx';
-import AttributesSection from './AttributesSection.jsx';
+import { useCharacter } from '@/hooks';
+import { ModalManager } from '@/components';
+import FloatingNav from './FloatingNav';
+import ActionButtons from './ActionButtons';
+import { CharacterInfo, MainAttributes, Wallet, DiscordIntegration } from './CorePanels';
+import { InventoryList, EquippedItemsList, SkillsList, PerksList } from './ListSections';
+import SpecializationsList from './Specializations';
+import { Story, Notes } from './ContentSections';
+import ActionsSection from './ActionsSection';
+import BuffsSection from './BuffsSection';
+import AttributesSection from './AttributesSection';
 
 
 const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {

@@ -1,15 +1,11 @@
 // src/components/Dashboard.jsx
 
 import React, { useState, useEffect, useRef } from 'react';
-import CharacterList from './CharacterList.jsx';
-import CharacterSheet from './CharacterSheet.jsx';
-import ModalManager from './ModalManager.jsx'; // <--- USA O NOVO GERENCIADOR
-import ThemeEditor from './ThemeEditor.jsx';
-import { useAuth } from '../hooks/useAuth.js';
-import { getCharactersForUser, createNewCharacter, deleteCharacter } from '../services/firestoreService';
-import { getThemeById } from '../services/themeService';
+import { CharacterList, CharacterSheet } from './index';
+import { ModalManager, ThemeEditor } from '@/components';
+import { useAuth } from '@/hooks';
+import { getCharactersForUser, createNewCharacter, deleteCharacter, getThemeById, db } from '@/services';
 import { doc, setDoc, collection, onSnapshot } from 'firebase/firestore';
-import { db } from '../services/firebase.js';
 
 const appId = "1:727724875985:web:97411448885c68c289e5f0";
 

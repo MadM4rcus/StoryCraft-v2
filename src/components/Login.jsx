@@ -1,7 +1,7 @@
 // src/components/Login.jsx
 
 import React from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '@/hooks';
 
 const Login = () => {
   const { googleSignIn } = useAuth();

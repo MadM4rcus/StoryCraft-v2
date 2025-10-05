@@ -1,9 +1,9 @@
 // src/App.jsx
 
 import React, { useState, useEffect } from 'react';
-import { useAuth } from './hooks/useAuth';
-import Login from './components/Login';
-import Dashboard from './components/Dashboard';
+import { useAuth } from '@/hooks';
+import { Login } from '@/components';
+import { Dashboard } from '@systems/storycraft';
 
 function hexToRgb(hex) {
   if (!hex) return '55, 65, 81';

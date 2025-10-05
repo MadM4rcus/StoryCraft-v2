@@ -1,7 +1,7 @@
 // src/components/ContentSections.jsx
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '@/hooks';
 import SheetSkin from './SheetSkin';
 
 // Helper de Textarea (reutilizado)

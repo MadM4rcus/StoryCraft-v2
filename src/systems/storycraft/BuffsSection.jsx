@@ -1,7 +1,7 @@
 // src/components/BuffsSection.jsx
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '@/hooks';
 import SheetSkin from './SheetSkin';
 
 const BuffsSection = ({ character, isMaster, onUpdate, allAttributes, isCollapsed, toggleSection }) => {
