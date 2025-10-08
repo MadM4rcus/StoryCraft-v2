@@ -113,7 +113,7 @@ const SpecializationsList = ({
     
     const getAttributeValue = (attrName) => {
         if (!character) return 0;
-        if (['Iniciativa', 'FA', 'FM', 'FD'].includes(attrName)) {
+        if (character.mainAttributes && ['Iniciativa', 'FA', 'FM', 'FD'].includes(attrName)) {
             return character.mainAttributes[attrName.toLowerCase()] || 0;
         }
         const dynamicAttr = (character.attributes || []).find(a => a.name === attrName);
