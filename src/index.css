@@ -13,3 +13,28 @@ input[type=number]::-webkit-outer-spin-button {
 input[type=number] {
   -moz-appearance: textfield;
 }
+
+/* Adicione isso ao final de src/index.css */
+
+@keyframes scroll-left {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    /* Move o conteúdo 50% para a esquerda. 
+      Como o conteúdo será duplicado, isso cria um loop perfeito.
+    */
+    transform: translateX(-50%);
+  }
+}
+
+.animate-scroll-left {
+  /* A duração (10s) controla a velocidade. 
+    Ajuste este valor se quiser mais rápido ou mais devagar.
+  */
+  animation: scroll-left 10s linear infinite;
+  
+  /* Garante que o span animado não quebre linha */
+  display: inline-block;
+  white-space: nowrap;
+}

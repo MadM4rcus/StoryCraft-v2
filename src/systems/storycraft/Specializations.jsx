@@ -13,6 +13,53 @@ const AutoResizingTextarea = ({ value, onChange, onBlur, placeholder, className,
     return <textarea ref={textareaRef} value={value} onChange={onChange} onBlur={onBlur} placeholder={placeholder} className={`${className} resize-none overflow-hidden`} rows="1" disabled={disabled} />;
 };
 
+// --- NOVO COMPONENTE DE LETREIRO ---
+// Este componente detecta se seu conteúdo é maior que o espaço disponível
+// e aplica a animação de letreiro apenas se for.
+const MarqueeWhenOverflow = ({ children, className, onClick }) => {
+    const [isOverflowing, setIsOverflowing] = useState(false);
+    const containerRef = useRef(null);
+
+    // useLayoutEffect é usado para medições de DOM antes da pintura
+    React.useLayoutEffect(() => {
+        const checkOverflow = () => {
+            const el = containerRef.current;
+            if (el) {
+                // Compara o tamanho real do conteúdo (scrollWidth) 
+                // com o tamanho visível (clientWidth)
+                const hasOverflow = el.scrollWidth > el.clientWidth;
+                if (hasOverflow !== isOverflowing) {
+                    setIsOverflowing(hasOverflow);
+                }
+            }
+        };
+
+        // Verifica imediatamente
+        checkOverflow();
+
+        // Usa ResizeObserver para verificar de forma eficiente se o 
+        // tamanho do elemento mudar (ex: resize da janela)
+        const observer = new ResizeObserver(checkOverflow);
+        if (containerRef.current) {
+            observer.observe(containerRef.current);
+        }
+
+        // Limpa o observer ao desmontar
+        return () => {
+            observer.disconnect();
+        };
+    }, [children, isOverflowing]); // Re-executa se o texto (children) mudar
+
+    return (
+        <span ref={containerRef} className={`relative overflow-hidden whitespace-nowrap ${className}`} onClick={onClick}>
+            <span className={isOverflowing ? 'animate-scroll-left' : 'inline-block'}>
+                <span className={isOverflowing ? "inline-block pr-8" : "inline-block"}>{children}</span>
+                {isOverflowing && (<span className="inline-block pr-8">{children}</span>)}
+            </span>
+        </span>
+    );
+};
+
 const SpecializationsList = ({
     character,
     isMaster,
@@ -172,9 +219,12 @@ const SpecializationsList = ({
 
                     return isSpecCollapsed ? (
                         <div key={spec.id} className="p-3 bg-bgElement rounded-md shadow-sm border border-bgInput flex justify-between items-center">
-                            <span className="font-semibold text-lg cursor-pointer text-textPrimary flex-grow truncate" onClick={() => toggleItemCollapsed(spec.id)}>
+                            <MarqueeWhenOverflow 
+                                className="font-semibold text-lg cursor-pointer text-textPrimary flex-grow" 
+                                onClick={() => toggleItemCollapsed(spec.id)}
+                            >
                                 {spec.trained && '✅'} {spec.name || 'Perícia Sem Nome'} {totalBonus !== 0 && ` (${totalBonus > 0 ? '+' : ''}${totalBonus})`}
-                            </span>
+                            </MarqueeWhenOverflow>
                             <button onClick={rollAction} className="px-4 py-1 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText font-bold rounded-lg whitespace-nowrap ml-2 text-sm">Rolar</button>
                         </div>
                     ) : (
