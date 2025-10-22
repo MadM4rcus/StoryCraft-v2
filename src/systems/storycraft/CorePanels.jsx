@@ -169,20 +169,20 @@ const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, toggleSect
                 <div className="flex flex-col items-center p-2 bg-bgElement rounded-md">
                     <label className="text-lg font-medium text-textSecondary mb-1 uppercase">HP</label>
                     <div className="flex items-center gap-1">
-                        <input type="number" name="current" value={localMainAttributes.hp?.current ?? ''} onChange={(e) => handleLocalChange(e, 'hp')} onBlur={() => handleSave('current', 'hp')} className="w-14 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold" disabled={!isMaster} />
+                        <input type="number" name="current" value={localMainAttributes.hp?.current ?? ''} onChange={(e) => handleLocalChange(e, 'hp')} onBlur={() => handleSave('current', 'hp')} className="w-16 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold" disabled={!isMaster} />
                         <span className="text-textSecondary">/</span>
-                        <input type="number" name="max" value={localMainAttributes.hp?.max ?? ''} onChange={(e) => handleLocalChange(e, 'hp')} onBlur={() => handleSave('max', 'hp')} className="w-14 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold" disabled={!isMaster} />
+                        <input type="number" name="max" value={localMainAttributes.hp?.max ?? ''} onChange={(e) => handleLocalChange(e, 'hp')} onBlur={() => handleSave('max', 'hp')} className="w-16 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold" disabled={!isMaster} />
                         <span className="text-blue-400 font-bold text-xl ml-1">+</span>
-                        <input type="number" title="HP Temporário" name="temp" value={localMainAttributes.hp?.temp ?? ''} onChange={(e) => handleLocalChange(e, 'hp')} onBlur={() => handleSave('temp', 'hp')} className="w-14 p-2 text-center bg-bgInput border border-blue-400 rounded-md text-blue-300 text-xl font-bold" disabled={!isMaster} />
+                        <input type="number" title="HP Temporário" name="temp" value={localMainAttributes.hp?.temp ?? ''} onChange={(e) => handleLocalChange(e, 'hp')} onBlur={() => handleSave('temp', 'hp')} className="w-16 p-2 text-center bg-bgInput border border-blue-400 rounded-md text-blue-300 text-xl font-bold" disabled={!isMaster} />
                     </div>
                 </div>
                 {/* Bloco de MP */}
                  <div className="flex flex-col items-center p-2 bg-bgElement rounded-md">
                     <label className="text-lg font-medium text-textSecondary mb-1 uppercase">MP</label>
                     <div className="flex items-center gap-2">
-                        <input type="number" name="current" value={localMainAttributes.mp?.current ?? ''} onChange={(e) => handleLocalChange(e, 'mp')} onBlur={() => handleSave('current', 'mp')} className="w-14 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold" disabled={!isMaster} />
+                        <input type="number" name="current" value={localMainAttributes.mp?.current ?? ''} onChange={(e) => handleLocalChange(e, 'mp')} onBlur={() => handleSave('current', 'mp')} className="w-16 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold" disabled={!isMaster} />
                         <span className="text-textSecondary">/</span>
-                        <input type="number" name="max" value={localMainAttributes.mp?.max ?? ''} onChange={(e) => handleLocalChange(e, 'mp')} onBlur={() => handleSave('max', 'mp')} className="w-14 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold" disabled={!isMaster} />
+                        <input type="number" name="max" value={localMainAttributes.mp?.max ?? ''} onChange={(e) => handleLocalChange(e, 'mp')} onBlur={() => handleSave('max', 'mp')} className="w-16 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold" disabled={!isMaster} />
                     </div>
                 </div>
                 {/* Outros Atributos */}
@@ -309,4 +309,3 @@ const DiscordIntegration = ({ character, onUpdate, isMaster, isCollapsed, toggle
 
 // Exporta cada componente individualmente para que o CharacterSheet possa controlá-los
 export { CharacterInfo, MainAttributes, Wallet, DiscordIntegration };
-
