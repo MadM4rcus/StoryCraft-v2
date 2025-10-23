@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { useCharacter } from '@/hooks';
+import { useCharacter, useAuth } from '@/hooks';
+import { useRollFeed } from '@/context';
 import { ModalManager } from '@/components';
 import FloatingNav from './FloatingNav';
 import ActionButtons from './ActionButtons';
@@ -14,7 +15,9 @@ import AttributesSection from './AttributesSection';
 
 const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
   const { character, loading, updateCharacterField, toggleSection } = useCharacter(initialCharacter.id, initialCharacter.ownerUid);
-  
+  const { addRollToFeed } = useRollFeed();
+  const { user } = useAuth();
+
   const [modalState, setModalState] = useState({ type: null, props: {} });
   const closeModal = () => setModalState({ type: null, props: {} });
 
@@ -148,7 +151,8 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
     const tempValue = buffModifiers.attributes[attribute.name] || 0;
     const attributeTotal = (attribute.base || 0) + (attribute.perm || 0) + tempValue + (attribute.arma || 0);
     let diceResult = 0;
-    let diceDetails = '';
+    let rollResultsForFeed = [];
+
     const match = dice.match(/(\d+)d(\d+)/i);
     if (match) {
         const numDice = parseInt(match[1], 10); const numSides = parseInt(match[2], 10);
@@ -156,19 +160,36 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
         for (let d = 0; d < numDice; d++) {
             const roll = Math.floor(Math.random() * numSides) + 1;
             rolls.push(roll);
-            diceResult += roll;
         }
-        diceDetails = `${dice}(${rolls.join('+')})`;
+        diceResult = rolls.reduce((a, b) => a + b, 0);
+        rollResultsForFeed.push({ type: 'dice', value: diceResult, displayValue: `${dice}(${rolls.join('+')})` });
     } else {
         diceResult = parseInt(dice, 10) || 0;
-        diceDetails = `${diceResult}`;
+        rollResultsForFeed.push({ type: 'dice', value: diceResult, displayValue: `${diceResult}` });
     }
-    const finalTotal = diceResult + attributeTotal + bonus;
-    const details = [diceDetails, `${attribute.name}(${attributeTotal})`];
+
+    rollResultsForFeed.push({ type: 'attribute', value: attributeTotal, displayValue: `${attribute.name}(${attributeTotal})` });
     if (bonus !== 0) {
-        details.push(`Bónus(${bonus > 0 ? '+' : ''}${bonus})`);
+        rollResultsForFeed.push({ type: 'modifier', value: bonus, displayValue: `Bónus(${bonus > 0 ? '+' : ''}${bonus})` });
     }
-    handleShowOnDiscord(`Rolagem de ${attribute.name}`, `**Resultado Final: ${finalTotal}**`, [{ name: 'Detalhes', value: details.join(' + '), inline: false }]);
+
+    const finalTotal = diceResult + attributeTotal + bonus;
+    const detailsString = rollResultsForFeed.map(r => r.displayValue).join(' + ');
+    const discordDescription = `**Resultado Final: ${finalTotal}**`;
+
+    // Envia para o Discord
+    handleShowOnDiscord(`Rolagem de ${attribute.name}`, discordDescription, [{ name: 'Detalhes', value: detailsString, inline: false }]);
+    
+    // Envia para o Feed de Rolagens
+    addRollToFeed({
+      characterId: character.id,
+      characterName: character.name,
+      ownerUid: user.uid,
+      rollName: `Rolagem de ${attribute.name}`,
+      results: rollResultsForFeed,
+      discordText: discordDescription,
+    });
+
     closeModal();
   };
 
@@ -176,7 +197,7 @@ const handleExecuteFormulaAction = async (action) => {
     if (!action) return;
 
     let totalResult = 0;
-    let rollDetails = [];
+    let rollResultsForFeed = [];
     let criticals = [];
     const multiplier = action.multiplier || 1;
 
@@ -192,7 +213,7 @@ const handleExecuteFormulaAction = async (action) => {
                     if (dynamicAttr) { attrValue = (dynamicAttr.base || 0) + (dynamicAttr.perm || 0) + (dynamicAttr.arma || 0) + (buffModifiers.attributes[attrName] || 0); }
                 }
                 totalResult += attrValue;
-                rollDetails.push(`${attrName}(${attrValue})`);
+                rollResultsForFeed.push({ type: 'attribute', value: attrValue, displayValue: `${attrName}(${attrValue})` });
             } else if (comp.type === 'critDice') { // Novo tipo: Dado Crítico
                 const match = String(comp.value || '').match(/(\d+)d(\d+)/i);
                 if (match) {
@@ -220,11 +241,11 @@ const handleExecuteFormulaAction = async (action) => {
                         }
                     }
                     totalResult += diceRollResult;
-                    rollDetails.push(`${comp.value}(${rolls.join('+')})`);
+                    rollResultsForFeed.push({ type: 'dice', value: diceRollResult, displayValue: `${comp.value}(${rolls.join('+')})` });
                 } else {
                     const num = parseInt(comp.value, 10) || 0;
                     totalResult += num;
-                    rollDetails.push(`${num}`);
+                    rollResultsForFeed.push({ type: 'number', value: num, displayValue: `${num}` });
                 }
             } else { // dice (dado comum) ou number
                 const match = String(comp.value || '').match(/(\d+)d(\d+)/i);
@@ -233,19 +254,19 @@ const handleExecuteFormulaAction = async (action) => {
                     const numSides = parseInt(match[2], 10);
                     let rolls = [];
                     for (let d = 0; d < numDice; d++) {
-                        const roll = Math.floor(Math.random() * numSides) + 1;
-                        rolls.push(roll);
-                        totalResult += roll;
+                        rolls.push(Math.floor(Math.random() * numSides) + 1);
                     }
-                    rollDetails.push(`${comp.value}(${rolls.join('+')})`);
+                    const diceRollResult = rolls.reduce((a, b) => a + b, 0);
+                    totalResult += diceRollResult;
+                    rollResultsForFeed.push({ type: 'dice', value: diceRollResult, displayValue: `${comp.value}(${rolls.join('+')})` });
                 } else {
                     const num = parseInt(comp.value, 10) || 0;
                     totalResult += num;
                     
                     if (comp.label) {
-                        rollDetails.push(`${comp.label}(${num >= 0 ? '+' : ''}${num})`);
+                        rollResultsForFeed.push({ type: 'number', value: num, displayValue: `${comp.label}(${num >= 0 ? '+' : ''}${num})` });
                     } else {
-                        rollDetails.push(`${num}`);
+                        rollResultsForFeed.push({ type: 'number', value: num, displayValue: `${num}` });
                     }
                 }
             }
@@ -259,15 +280,15 @@ const handleExecuteFormulaAction = async (action) => {
             const numSides = parseInt(match[2], 10);
             let rolls = [];
             for (let d = 0; d < numDice; d++) {
-                const roll = Math.floor(Math.random() * numSides) + 1;
-                rolls.push(roll);
-                totalResult += roll;
+                rolls.push(Math.floor(Math.random() * numSides) + 1);
             }
-            rollDetails.push(`${diceBuff.name}(${rolls.join('+')})`);
+            const diceRollResult = rolls.reduce((a, b) => a + b, 0);
+            totalResult += diceRollResult;
+            rollResultsForFeed.push({ type: 'dice', value: diceRollResult, displayValue: `${diceBuff.name}(${rolls.join('+')})` });
         } else {
             const num = parseInt(diceBuff.value, 10) || 0;
             totalResult += num;
-            rollDetails.push(`${diceBuff.name}(${num})`);
+            rollResultsForFeed.push({ type: 'number', value: num, displayValue: `${diceBuff.name}(${num})` });
         }
     });
 
@@ -333,7 +354,9 @@ const handleExecuteFormulaAction = async (action) => {
         await updateCharacterField('mainAttributes', newMainAttributes);
     }
 
-    const discordFields = [{ name: 'Detalhes da Rolagem', value: rollDetails.join(' + ') || 'N/A', inline: false }];
+    const detailsString = rollResultsForFeed.map(r => r.displayValue).join(' + ');
+    const discordDescription = `${descriptionText}\n\n**Resultado Final: ${totalResult}**`;
+    const discordFields = [{ name: 'Detalhes da Rolagem', value: detailsString || 'N/A', inline: false }];
     if (criticals.length > 0) {
         discordFields.push({ name: 'Críticos', value: criticals.join('\n'), inline: false });
     }
@@ -341,7 +364,19 @@ const handleExecuteFormulaAction = async (action) => {
         discordFields.push({ name: 'Buffs Ativos', value: activeBuffs.map(b => b.name).join(', '), inline: false });
     }
     const footerText = costDetails.length > 0 ? `Custo Total: ${costDetails.join(' | ')}` : '';
-    handleShowOnDiscord(action.name, `${descriptionText}\n\n**Resultado Final: ${totalResult}**`, discordFields, footerText, imageUrl);
+    
+    // Envia para o Discord
+    handleShowOnDiscord(action.name, discordDescription, discordFields, footerText, imageUrl);
+
+    // Envia para o Feed de Rolagens
+    addRollToFeed({
+        characterId: character.id,
+        characterName: character.name,
+        ownerUid: user.uid,
+        rollName: action.name,
+        results: rollResultsForFeed,
+        discordText: descriptionText,
+    });
 };
 
   const handleReset = () => {

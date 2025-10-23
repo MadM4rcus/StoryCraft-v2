@@ -1,9 +1,4 @@
-import Login from './Login';
-import ModalManager from './ModalManager';
-import ThemeEditor from './ThemeEditor';
-
-export {
-  Login,
-  ModalManager,
-  ThemeEditor,
-};
+export { default as Login } from './Login';
+export { default as RollFeed } from './RollFeed';
+export { default as ModalManager } from './ModalManager';
+export { default as ThemeEditor } from './ThemeEditor';
