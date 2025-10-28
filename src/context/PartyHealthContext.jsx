@@ -1,7 +1,11 @@
-import React, { createContext, useState, useContext, useCallback, useEffect } from 'react';
-import { useAuth } from '@/hooks';
-import { db } from '@/services';
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
+// src/context/PartyHealthContext.jsx
+
+import React, { createContext, useState, useContext, useCallback, useEffect, useMemo } from 'react';
+// --- CORREÇÃO AQUI ---
+import { useAuth } from '@/hooks/useAuth'; // Importa direto do useAuth.js
+import { db } from '@/services/firebase'; // O 'db' vem do firebase.js
+// --- FIM DA CORREÇÃO ---
+import { collection, onSnapshot, query } from 'firebase/firestore';
 
 const PartyHealthContext = createContext();
 
@@ -13,10 +17,9 @@ export const PartyHealthProvider = ({ children }) => {
   const { user, isMaster } = useAuth();
   const [allCharacters, setAllCharacters] = useState([]);
   const [selectedCharIds, setSelectedCharIds] = useState([]);
-  const [partyHealthData, setPartyHealthData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Busca todas as fichas disponíveis para o mestre
+  // Este useEffect agora gerencia os listeners de forma correta
   useEffect(() => {
     if (!isMaster) {
       setAllCharacters([]);
@@ -24,77 +27,90 @@ export const PartyHealthProvider = ({ children }) => {
       return;
     }
 
-    // Esta query busca todas as fichas. Pode ser ajustada se necessário.
-    const allUnsubscribers = [];
-    const usersRef = collection(db, `artifacts2/${APP_ID}/users`);
-
-    const unsubscribeUsers = onSnapshot(usersRef, (usersSnapshot) => {
-      // Limpa listeners de sheets antigos antes de criar novos
-      allUnsubscribers.forEach(unsub => unsub());
-      allUnsubscribers.splice(0, allUnsubscribers.length); // Esvazia o array
-
-      const currentChars = [];
-      const newSheetsUnsubscribers = [];
-
-      usersSnapshot.docs.forEach(userDoc => {
-        const sheetsRef = collection(db, `artifacts2/${APP_ID}/users/${userDoc.id}/characterSheets`);
-        const unsubscribeSheets = onSnapshot(sheetsRef, (snapshot) => {
-          snapshot.docChanges().forEach(change => {
-            const charData = { id: change.doc.id, ownerUid: userDoc.id, ...change.doc.data() };
-            const index = currentChars.findIndex(c => c.id === charData.id);
-
-            if (change.type === "added" || change.type === "modified") {
-              if (index > -1) { currentChars[index] = charData; }
-              else { currentChars.push(charData); }
-            } else if (change.type === "removed") {
-              if (index > -1) { currentChars.splice(index, 1); }
-            }
-          });
-          setAllCharacters([...currentChars]); // Atualiza o estado com a lista consolidada
-        });
-        newSheetsUnsubscribers.push(unsubscribeSheets);
-      });
-      allUnsubscribers.push(...newSheetsUnsubscribers); // Adiciona os novos unsubscribers de sheets
+    // Checagem para garantir que os imports funcionaram
+    if (!user || !db) {
+      console.error("PartyHealthContext: 'user' ou 'db' (do firebase) não estão disponíveis. Verifique imports diretos.");
       setIsLoading(false);
-    });
-    allUnsubscribers.push(unsubscribeUsers); // Adiciona o unsubscriber de usuários
-    return () => allUnsubscribers.forEach(unsub => unsub());
-  }, [isMaster, user]);
-
-  // Ouve as atualizações das fichas selecionadas
-  useEffect(() => {
-    if (selectedCharIds.length === 0) {
-      setPartyHealthData([]);
       return;
     }
 
-    const unsubscribers = selectedCharIds.map(charId => {
-      const char = allCharacters.find(c => c.id === charId);
-      if (!char) return () => {};
+    setIsLoading(true);
 
-      const docRef = collection(db, `artifacts2/${APP_ID}/users/${char.ownerUid}/characterSheets`);
-      const q = query(docRef, where('__name__', '==', charId));
+    // Este Map vai guardar todos os personagens de forma consolidada.
+    const charMap = new Map();
+    
+    // Este array vai guardar todas as funções 'unsubscribe' dos sheets.
+    let sheetUnsubscribers = [];
 
-      return onSnapshot(q, (snapshot) => {
-        snapshot.docChanges().forEach((change) => {
-          if (change.type === "added" || change.type === "modified") {
-            const updatedChar = { id: change.doc.id, ownerUid: char.ownerUid, ...change.doc.data() };
-            setPartyHealthData(currentData => {
-              const index = currentData.findIndex(c => c.id === updatedChar.id);
-              if (index > -1) {
-                const newData = [...currentData];
-                newData[index] = updatedChar;
-                return newData;
-              }
-              return [...currentData, updatedChar];
-            });
+    const usersRef = collection(db, `artifacts2/${APP_ID}/users`);
+    
+    // 1. Ouve a coleção de usuários
+    const unsubscribeUsers = onSnapshot(usersRef, (usersSnapshot) => {
+      
+      // Limpa listeners de sheets antigos antes de criar novos
+      sheetUnsubscribers.forEach(unsub => unsub());
+      sheetUnsubscribers = [];
+      
+      if (usersSnapshot.empty) {
+        charMap.clear();
+        setAllCharacters([]);
+        setIsLoading(false);
+        return;
+      }
+
+      // Itera sobre cada documento de usuário
+      usersSnapshot.docs.forEach(userDoc => {
+        const userId = userDoc.id;
+        const sheetsRef = collection(db, `artifacts2/${APP_ID}/users/${userId}/characterSheets`);
+        
+        // 2. Ouve a coleção de sheets de CADA usuário
+        const unsubscribeSheets = onSnapshot(sheetsRef, (snapshot) => {
+          
+          let hasChanges = false; 
+          
+          snapshot.docChanges().forEach(change => {
+            const charData = { id: change.doc.id, ownerUid: userId, ...change.doc.data() };
+            
+            if (change.type === "added" || change.type === "modified") {
+              charMap.set(charData.id, charData); // Adiciona ou ATUALIZA no Map
+              hasChanges = true;
+            } else if (change.type === "removed") {
+              charMap.delete(charData.id); // Remove do Map
+              hasChanges = true;
+            }
+          });
+          
+          // 3. Se houveram mudanças, ATUALIZA O ESTADO UMA VEZ com a lista completa
+          if (hasChanges) {
+            setAllCharacters(Array.from(charMap.values()));
           }
+          setIsLoading(false);
+        }, (error) => {
+            console.error(`Erro ao ouvir fichas do usuário ${userId}:`, error);
+            setIsLoading(false);
         });
+        
+        // Guarda a função de unsubscribe
+        sheetUnsubscribers.push(unsubscribeSheets);
       });
+    }, (error) => {
+        console.error("Erro ao ouvir coleção de usuários:", error);
+        setIsLoading(false);
     });
 
-    return () => unsubscribers.forEach(unsub => unsub());
-  }, [selectedCharIds, allCharacters]);
+    // Função de limpeza (quando o componente desmonta)
+    return () => {
+      unsubscribeUsers();
+      sheetUnsubscribers.forEach(unsub => unsub());
+    };
+  }, [isMaster, user]); // Adicionado 'user' aqui
+
+  
+  // Deriva os dados dos selecionados
+  const partyHealthData = useMemo(() => {
+    return allCharacters.filter(char => selectedCharIds.includes(char.id));
+  }, [allCharacters, selectedCharIds]);
+  
 
   const toggleCharacterSelection = useCallback((charId) => {
     setSelectedCharIds(prev =>
@@ -103,7 +119,7 @@ export const PartyHealthProvider = ({ children }) => {
   }, []);
 
   const value = {
-    allCharacters,
+    allCharacters, 
     selectedCharIds,
     partyHealthData,
     isLoading,

@@ -1,6 +1,8 @@
+// src/components/PartyHealthMonitor.jsx
+
 import React, { useState } from 'react';
-import { useAuth } from '@/hooks';
-import { usePartyHealth } from '@/context';
+import { useAuth } from '@/hooks/useAuth'; // <-- CORREÇÃO AQUI
+import { usePartyHealth } from '@/context/PartyHealthContext'; // <-- CORREÇÃO AQUI
 
 const PartyHealthMonitor = ({ onCharacterClick }) => {
   const { isMaster } = useAuth();
@@ -19,6 +21,8 @@ const PartyHealthMonitor = ({ onCharacterClick }) => {
   };
 
   const renderCharacterHealth = (char) => {
+    // A lógica de busca do HP/MP em si estava correta.
+    // O problema era 'char.mainAttributes' que vinha undefined.
     const hp = char.mainAttributes?.hp || { current: '?', max: '?' };
     const mp = char.mainAttributes?.mp || { current: '?', max: '?' };
 
