@@ -54,7 +54,7 @@ const AttributesSection = ({ character, onUpdate, isCollapsed, toggleSection, bu
     return (
         <SheetSkin title="Atributos" isCollapsed={isCollapsed} toggleSection={toggleSection}>
             <>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {(localAttributes || []).map((attr) => {
                         const tempValue = buffModifiers[attr.name] || 0;
                         const totalValue = (parseInt(attr.base, 10) || 0) + (parseInt(attr.perm, 10) || 0) + tempValue + (parseInt(attr.arma, 10) || 0);
