@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks';
+import { RollFeedProvider, PartyHealthProvider } from '@/context';
 import { Login, RollFeed } from '@/components';
 import { Dashboard } from '@systems/storycraft';
 
@@ -68,10 +69,12 @@ function App() {
     // ALTERADO: Adicionadas classes para controlar a imagem de fundo
     <div className="bg-bgPage bg-theme bg-cover bg-center bg-fixed text-textPrimary min-h-screen">
       {user ? (
-        <>
-          <Dashboard activeTheme={activeTheme} setActiveTheme={setActiveTheme} setPreviewTheme={setPreviewTheme} />
-          <RollFeed />
-        </>
+        <RollFeedProvider>
+          <PartyHealthProvider>
+            <Dashboard activeTheme={activeTheme} setActiveTheme={setActiveTheme} setPreviewTheme={setPreviewTheme} />
+            <RollFeed />
+          </PartyHealthProvider>
+        </RollFeedProvider>
       ) : <Login />}
     </div>
   );
