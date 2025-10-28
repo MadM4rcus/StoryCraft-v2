@@ -61,11 +61,15 @@ const AttributesSection = ({ character, onUpdate, isCollapsed, toggleSection, bu
                         const isAttrCollapsed = attr.isCollapsed !== false;
 
                         return isAttrCollapsed ? (
-                            <div key={attr.id} className="p-3 bg-bgElement rounded-md shadow-sm border border-bgInput flex justify-between items-center">
-                                <span className="font-semibold text-lg text-textPrimary flex-grow cursor-pointer truncate" onClick={() => handleToggleCollapsed(attr.id)}>
-                                    {attr.name || 'Atributo Sem Nome'}
-                                    <span className="ml-2 font-bold text-btnHighlightBg">{totalValue >= 0 ? '+' : ''}{totalValue}</span>
-                                </span>
+                            <div key={attr.id} className="p-3 bg-bgElement rounded-md shadow-sm border border-bgInput flex justify-between items-center gap-2 overflow-hidden">
+                                <div className="flex-grow overflow-hidden relative group" onClick={() => handleToggleCollapsed(attr.id)}>
+                                    <span className="font-semibold text-lg text-textPrimary cursor-pointer whitespace-nowrap group-hover:animate-marquee">
+                                        {attr.name || 'Atributo Sem Nome'}
+                                    </span>
+                                </div>
+                                <div>
+                                    <span className="font-bold text-btnHighlightBg text-lg">{totalValue >= 0 ? '+' : ''}{totalValue}</span>
+                                </div>
                                 <button onClick={() => onOpenRollModal(attr.id)} className="px-4 py-1 bg-btnHighlightBg text-btnHighlightText font-bold rounded-lg whitespace-nowrap ml-4 text-sm shadow-md">
                                     Rolar
                                 </button>
