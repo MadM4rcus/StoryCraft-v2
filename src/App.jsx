@@ -48,7 +48,7 @@ const applyThemeStyles = (styles) => {
 };
 
 function App() {
-  const { user, loading } = useAuth();
+  const { user, loading, isMaster } = useAuth();
   const [activeTheme, setActiveTheme] = useState(null);
   const [previewTheme, setPreviewTheme] = useState(null);
 
@@ -70,10 +70,14 @@ function App() {
     <div className="bg-bgPage bg-theme bg-cover bg-center bg-fixed text-textPrimary min-h-screen">
       {user ? (
         <RollFeedProvider>
-          <PartyHealthProvider>
+          {isMaster ? (
+            <PartyHealthProvider>
+              <Dashboard activeTheme={activeTheme} setActiveTheme={setActiveTheme} setPreviewTheme={setPreviewTheme} />
+            </PartyHealthProvider>
+          ) : (
             <Dashboard activeTheme={activeTheme} setActiveTheme={setActiveTheme} setPreviewTheme={setPreviewTheme} />
-            <RollFeed />
-          </PartyHealthProvider>
+          )}
+          <RollFeed />
         </RollFeedProvider>
       ) : <Login />}
     </div>

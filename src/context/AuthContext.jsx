@@ -40,7 +40,10 @@ export const AuthProvider = ({ children }) => {
             console.error("Erro ao criar o documento do utilizador:", error);
           }
         } else {
-          setIsMaster(docSnap.data().isMaster === true);
+          const isUserMaster = docSnap.data().isMaster === true;
+          setIsMaster(isUserMaster);
+          // FERRAMENTA DE DIAGNÓSTICO
+          console.log('%c[DIAGNÓSTICO AUTH]', 'color: #00A8E8; font-weight: bold;', { isMaster: isUserMaster, userData: docSnap.data() });
         }
         setLoading(false);
       }, (error) => {

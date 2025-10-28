@@ -52,6 +52,8 @@ const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
 
   const fetchCharacters = async () => {
     if (user) {
+      // FERRAMENTA DE DIAGNÓSTICO
+      console.log('%c[DIAGNÓSTICO DASHBOARD]', 'color: #00A8E8; font-weight: bold;', `Buscando fichas. isMaster: ${isMaster}, viewingAll: ${viewingAll}`);
       const userCharacters = await getCharactersForUser(user.uid, isMaster && viewingAll);
       setCharacters(userCharacters);
     }
@@ -127,33 +129,35 @@ const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
     });
   };
 
-  if (selectedCharacter) {
-    return (
-      <>
-        {isMaster && <PartyHealthMonitor onCharacterClick={handleCharacterClickFromMonitor} />}
-        {isThemeEditorOpen && <ThemeEditor character={selectedCharacter} originalTheme={activeTheme} setPreviewTheme={setPreviewTheme} onClose={handleCloseEditor} />}
-        <button onClick={() => setIsThemeEditorOpen(true)} className="fixed top-4 right-4 z-[60] px-4 py-2 bg-btnHighlightBg text-btnHighlightText font-bold rounded-lg shadow-lg">Editor de Temas</button>
-        <CharacterSheet character={selectedCharacter} onBack={() => setSelectedCharacter(null)} isMaster={isMaster} />
-      </>
-    );
-  }
+  // Renderiza o monitor de vida se o usuário for mestre, independentemente de ter uma ficha selecionada ou não.
+  const masterTools = isMaster && <PartyHealthMonitor onCharacterClick={handleCharacterClickFromMonitor} />;
 
   return (
     <>
-      {isMaster && <PartyHealthMonitor onCharacterClick={handleCharacterClickFromMonitor} />}
+      {masterTools}
+      {/* Botão do Editor de Temas e o próprio editor, renderizados no topo */}
+      <button 
+        onClick={() => setIsThemeEditorOpen(true)} 
+        className="fixed top-4 right-4 z-[60] px-4 py-2 bg-btnHighlightBg text-btnHighlightText font-bold rounded-lg shadow-lg"
+      >
+        Editor de Temas
+      </button>
+      {isThemeEditorOpen && <ThemeEditor character={selectedCharacter} originalTheme={activeTheme} setPreviewTheme={setPreviewTheme} onClose={handleCloseEditor} />}
+
+      {selectedCharacter ? (
+        <CharacterSheet character={selectedCharacter} onBack={() => setSelectedCharacter(null)} isMaster={isMaster} />
+      ) : (
     <div className="w-full max-w-5xl mx-auto p-4 md:p-8">
       {/* RENDERIZA O NOVO GERENCIADOR DE MODAIS */}
       <ModalManager modalState={modalState} closeModal={closeModal} />
       
       <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".json" className="hidden" />
-      {isThemeEditorOpen && <ThemeEditor originalTheme={activeTheme} setPreviewTheme={setPreviewTheme} onClose={handleCloseEditor} />}
       <header className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-2xl font-bold text-textPrimary">Seu Painel</h1>
           <p className="text-textSecondary">Bem-vindo, {user.displayName}!</p>
         </div>
         <div className="flex items-center gap-4">
-          <button onClick={() => setIsThemeEditorOpen(true)} className="px-4 py-2 bg-btnHighlightBg text-btnHighlightText font-semibold rounded-lg">Editor de Temas</button>
           <button onClick={googleSignOut} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg">Sair</button>
         </div>
       </header>
@@ -161,6 +165,7 @@ const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
         <CharacterList user={user} onSelectCharacter={setSelectedCharacter} handleImportClick={handleImportClick} handleDeleteClick={handleDeleteClick} handleCreateClick={handleCreateClick} characters={characters} isMaster={isMaster} viewingAll={viewingAll} onToggleView={setViewingAll} />
       </main>
     </div>
+      )}
     </>
   );
 };
