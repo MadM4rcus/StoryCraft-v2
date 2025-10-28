@@ -89,7 +89,15 @@ const Notes = ({ character, isMaster, onUpdate, isCollapsed, toggleSection }) =>
 // Helper de Renderização (para não repetir o JSX dos blocos)
 const renderBlock = (block, canEdit, updateBlock, removeBlock) => (
     <div key={block.id} className="p-3 bg-bgElement rounded-md shadow-sm border border-bgInput relative">
-        {canEdit && <button onClick={() => removeBlock(block.id)} className="absolute top-2 right-2 w-6 h-6 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-full flex items-center justify-center z-10">X</button>}
+        {canEdit && (
+            <button 
+                onClick={() => removeBlock(block.id)} 
+                className="absolute top-2 right-2 p-1 rounded-md text-textSecondary hover:bg-red-600/50 hover:text-white z-10"
+                title="Remover Bloco"
+            >
+                <span role="img" aria-label="Remover" className="text-lg">🗑️</span>
+            </button>
+        )}
         {block.type === 'text' ? (
             <TextBlock block={block} canEdit={canEdit} updateBlock={updateBlock} />
         ) : ( 

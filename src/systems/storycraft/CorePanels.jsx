@@ -253,9 +253,9 @@ const Wallet = ({ character, isMaster, onUpdate, isCollapsed, toggleSection }) =
             <div className="flex flex-col sm:flex-row justify-between items-center gap-6">
                 <div className="flex items-center gap-2">
                     <span className="hidden sm:inline font-semibold text-textSecondary">Zeni:</span>
-                    <input type="number" value={zeniAmount === 0 ? '' : zeniAmount} onChange={(e) => setZeniAmount(parseInt(e.target.value, 10) || 0)} className="w-20 p-2 bg-bgInput border border-bgElement rounded-md text-textPrimary text-lg" placeholder="Valor" disabled={!canEdit} />
-                    <button onClick={handleAddZeni} className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg text-sm" disabled={!canEdit}>Adicionar</button>
-                    <button onClick={handleRemoveZeni} className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-sm" disabled={!canEdit}>Remover</button>
+                    <input type="number" value={zeniAmount === 0 ? '' : zeniAmount} onChange={(e) => setZeniAmount(parseInt(e.target.value, 10) || 0)} className="w-24 p-2 bg-bgInput border border-bgElement rounded-md text-textPrimary text-lg" placeholder="Valor" disabled={!canEdit} />
+                    <button onClick={handleAddZeni} className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg text-sm" disabled={!canEdit}>+</button>
+                    <button onClick={handleRemoveZeni} className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-sm" disabled={!canEdit}>-</button>
                 </div>
                 <div className="flex items-center gap-2">
                     <span className="hidden sm:inline font-semibold text-textSecondary">Inspiração:</span>

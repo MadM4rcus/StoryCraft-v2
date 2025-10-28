@@ -146,9 +146,11 @@ const ActionsSection = ({
                                             {action.name || 'Ação Sem Nome'}
                                         </span>
                                         <button onClick={() => onExecuteFormula(action)} className="px-5 py-2 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText font-bold rounded-lg whitespace-nowrap">Usar</button>
-                                        {canEdit && <button onClick={() => handleRemoveFormulaAction(action.id)} className="w-10 h-10 bg-red-600 text-white text-lg rounded-md flex items-center justify-center font-bold">X</button>}
+                                        {canEdit && (
+                                            <span className="text-textSecondary text-xs whitespace-nowrap cursor-pointer" onClick={() => toggleItemCollapsed(action.id)}>Recolher ▲</span>
+                                        )}
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-bgInput pt-3 mt-3">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-bgInput pt-3 mt-3 flex-grow">
                                         <div>
                                             <label className="text-sm font-medium text-textSecondary block mb-1">Nome da Ação:</label>
                                             <input
@@ -325,6 +327,15 @@ const ActionsSection = ({
                                             )}
                                         </div>
                                     </div>
+                                    {canEdit && (
+                                        <div className="flex justify-end mt-4 pt-4 border-t border-bgInput/50">
+                                            <button 
+                                                onClick={() => handleRemoveFormulaAction(action.id)} 
+                                                className="p-2 rounded-md text-textSecondary hover:bg-red-600/50 hover:text-white"
+                                                title="Remover Ação"
+                                            ><span role="img" aria-label="Remover" className="text-xl">🗑️</span></button>
+                                        </div>
+                                    )}
                                 </div>
                             );
                         })}

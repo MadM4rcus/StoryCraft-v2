@@ -128,7 +128,7 @@ const BuffsSection = ({ character, isMaster, onUpdate, allAttributes, isCollapse
                                     <span className="font-semibold text-lg cursor-pointer text-textPrimary flex-grow" onClick={() => toggleItemCollapsed(buff.id)}>
                                         {buff.name || 'Buff Sem Nome'}
                                     </span>
-                                    <div className="flex items-center gap-4 ml-4">
+                                    <div className="flex items-center gap-2 ml-4">
                                         <label className="flex items-center cursor-pointer">
                                             <div className="relative">
                                                 <input type="checkbox" checked={buff.isActive} onChange={() => handleToggleBuffActive(buff.id)} className="sr-only" disabled={!canEdit} />
@@ -136,7 +136,7 @@ const BuffsSection = ({ character, isMaster, onUpdate, allAttributes, isCollapse
                                                 <div className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform ${buff.isActive ? 'transform translate-x-6' : ''}`}></div>
                                             </div>
                                         </label>
-                                        {canEdit && <button onClick={() => handleRemoveBuff(buff.id)} className="w-8 h-8 bg-red-600 hover:bg-red-700 text-white text-lg font-bold rounded-full flex items-center justify-center flex-shrink-0">X</button>}
+                                        <span className="text-textSecondary text-xs whitespace-nowrap cursor-pointer" onClick={() => toggleItemCollapsed(buff.id)}>Recolher ▲</span>
                                     </div>
                                 </div>
 
@@ -219,7 +219,15 @@ const BuffsSection = ({ character, isMaster, onUpdate, allAttributes, isCollapse
                                                                 className="w-full p-2 bg-bgInput border border-bgElement rounded-md text-textPrimary text-center"
                                                                 disabled={!canEdit}
                                                             />
-                                                            {canEdit && <button onClick={() => handleRemoveBuffEffect(buff.id, effect.id)} className="w-7 h-7 bg-red-600 text-white text-xs rounded-full flex items-center justify-center font-bold flex-shrink-0">-</button>}
+                                                            {canEdit && (
+                                                                <button 
+                                                                    onClick={() => handleRemoveBuffEffect(buff.id, effect.id)} 
+                                                                    className="p-2 rounded-md text-textSecondary hover:bg-red-600/50 hover:text-white"
+                                                                    title="Remover Efeito"
+                                                                >
+                                                                    <span role="img" aria-label="Remover">🗑️</span>
+                                                                </button>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 ))}
@@ -233,6 +241,15 @@ const BuffsSection = ({ character, isMaster, onUpdate, allAttributes, isCollapse
                                             )}
                                         </div>
                                     </div>
+                                    {canEdit && (
+                                        <div className="flex justify-end mt-4 pt-4 border-t border-bgInput/50">
+                                            <button 
+                                                onClick={() => handleRemoveBuff(buff.id)} 
+                                                className="p-2 rounded-md text-textSecondary hover:bg-red-600/50 hover:text-white"
+                                                title="Remover Buff"
+                                            ><span role="img" aria-label="Remover" className="text-xl">🗑️</span></button>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         );

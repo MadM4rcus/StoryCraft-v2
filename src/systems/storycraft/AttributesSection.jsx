@@ -106,8 +106,14 @@ const AttributesSection = ({ character, onUpdate, isCollapsed, toggleSection, bu
                                         <input type="number" value={totalValue || ''} readOnly className="w-12 p-1 bg-bgPage border border-bgElement rounded-md text-textPrimary font-bold cursor-not-allowed text-center" />
                                     </div>
                                 </div>
-                                <div className="flex justify-start pt-2 mt-2 border-t border-bgInput/50" onClick={(e) => e.stopPropagation()}>
-                                    <button onClick={() => handleRemoveAttribute(attr.id)} className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-md">Remover</button>
+                                <div className="flex justify-end pt-2 mt-2 border-t border-bgInput/50" onClick={(e) => e.stopPropagation()}>
+                                    <button 
+                                        onClick={() => handleRemoveAttribute(attr.id)} 
+                                        className="p-2 rounded-md text-textSecondary hover:bg-red-600/50 hover:text-white"
+                                        title="Remover Atributo"
+                                    >
+                                        <span role="img" aria-label="Remover">🗑️</span>
+                                    </button>
                                 </div>
                             </div>
                         );

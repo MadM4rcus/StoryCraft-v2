@@ -60,20 +60,15 @@ const InventoryList = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
                     return isItemCollapsed ? (
                         <div key={item.id} className="p-3 bg-bgElement rounded-md shadow-sm border border-bgInput flex justify-between items-center">
                             <span className="font-semibold text-lg cursor-pointer text-textPrimary flex-grow truncate" onClick={() => toggleItemCollapsed(item.id)}>{item.name || 'Item Sem Nome'}</span>
-                            <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                                <button onClick={() => onShowDiscord(item.name, item.description)} title="Mostrar no Discord" className="px-3 py-1 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText text-sm font-bold rounded-md whitespace-nowrap">Mostrar</button>
-                                {canEdit && <button onClick={() => handleRemoveItem(item.id)} className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-md">X</button>}
-                            </div>
+                            <button onClick={() => onShowDiscord(item.name, item.description)} title="Mostrar no Discord" className="px-3 py-1 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText text-sm font-bold rounded-md whitespace-nowrap ml-2">Mostrar no Discord</button>
                         </div>
                     ) : (
                         <div key={item.id} className="col-span-1 sm:grid-cols-2 lg:col-span-3 flex flex-col p-3 bg-bgElement rounded-md shadow-sm border border-bgInput">
                             <div className="flex justify-between items-center mb-1">
-                                <span className="font-semibold text-lg w-full cursor-pointer text-textPrimary" onClick={() => toggleItemCollapsed(item.id)}>{item.name || 'Item Sem Nome'}</span>
-                                <div className="flex items-center gap-2 flex-shrink-0 ml-4">
-                                    <button onClick={() => onShowDiscord(item.name, item.description)} title="Mostrar no Discord" className="px-3 py-1 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText text-sm font-bold rounded-md whitespace-nowrap">Mostrar</button>
-                                    {canEdit && <button onClick={() => handleRemoveItem(item.id)} className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-md">Remover</button>}
-                                </div>
+                                <span className="font-semibold text-lg w-full cursor-pointer text-textPrimary" onClick={() => toggleItemCollapsed(item.id)}>{item.name || 'Item Sem Nome'}</span>                                
+                                <button onClick={() => onShowDiscord(item.name, item.description)} title="Mostrar no Discord" className="px-3 py-1 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText text-sm font-bold rounded-md whitespace-nowrap ml-4">Mostrar no Discord</button>
                             </div>
+                            <span className="text-textSecondary text-xs whitespace-nowrap cursor-pointer self-end" onClick={() => toggleItemCollapsed(item.id)}>Recolher ▲</span>
                             <input
                                 type="text"
                                 value={item.name}
@@ -92,6 +87,15 @@ const InventoryList = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
                                 className="text-sm text-textSecondary italic w-full p-1 bg-bgInput border border-bgElement rounded-md"
                                 disabled={!canEdit}
                             />
+                            {canEdit && (
+                                <div className="flex justify-end mt-2 pt-2 border-t border-bgInput/50">
+                                    <button 
+                                        onClick={() => handleRemoveItem(item.id)} 
+                                        className="p-2 rounded-md text-textSecondary hover:bg-red-600/50 hover:text-white"
+                                        title="Remover Item"
+                                    ><span role="img" aria-label="Remover" className="text-xl">🗑️</span></button>
+                                </div>
+                            )}
                         </div>
                     );
                 })}
@@ -137,26 +141,21 @@ const EquippedItemsList = ({ character, isMaster, onUpdate, onShowDiscord, isCol
                     return isItemCollapsed ? (
                         <div key={item.id} className="p-3 bg-bgElement rounded-md shadow-sm border border-bgInput flex justify-between items-center">
                             <span className="font-semibold text-lg cursor-pointer text-textPrimary flex-grow truncate" onClick={() => toggleItemCollapsed(item.id)}>{item.name || 'Item Sem Nome'}</span>
-                            <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                                <button onClick={() => onShowDiscord(item.name, item.description)} title="Mostrar no Discord" className="px-3 py-1 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText text-sm font-bold rounded-md whitespace-nowrap">Mostrar</button>
-                                {canEdit && <button onClick={() => handleRemoveItem(item.id)} className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-md">X</button>}
-                            </div>
+                            <button onClick={() => onShowDiscord(item.name, item.description)} title="Mostrar no Discord" className="px-3 py-1 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText text-sm font-bold rounded-md whitespace-nowrap ml-2">Mostrar no Discord</button>
                         </div>
                     ) : (
-                        <div key={item.id} className="col-span-1 sm:grid-cols-2 lg:col-span-3 flex flex-col p-3 bg-bgElement rounded-md shadow-sm">
+                        <div key={item.id} className="col-span-1 sm:grid-cols-2 lg:col-span-3 flex flex-col p-3 bg-bgElement rounded-md shadow-sm border border-bgInput">
                             <div className="flex justify-between items-center mb-1">
                                 <span className="font-semibold text-lg w-full cursor-pointer text-textPrimary" onClick={() => toggleItemCollapsed(item.id)}>{item.name || 'Item Sem Nome'}</span>
-                                <div className="flex items-center gap-2 flex-shrink-0 ml-4">
-                                    <button onClick={() => onShowDiscord(item.name, item.description)} className="px-3 py-1 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText text-sm font-bold rounded-md">Mostrar</button>
-                                    {canEdit && <button onClick={() => handleRemoveItem(item.id)} className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-md">Remover</button>}
-                                </div>
+                                <button onClick={() => onShowDiscord(item.name, item.description)} title="Mostrar no Discord" className="px-3 py-1 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText text-sm font-bold rounded-md whitespace-nowrap ml-4">Mostrar no Discord</button>
                             </div>
+                            <span className="text-textSecondary text-xs whitespace-nowrap cursor-pointer self-end" onClick={() => toggleItemCollapsed(item.id)}>Recolher ▲</span>
                             <input
                                 type="text"
                                 value={item.name}
                                 onChange={(e) => handleLocalChange(item.id, 'name', e.target.value)}
                                 onBlur={() => handleSave(item.id, 'name')}
-                                className="font-semibold text-lg w-full p-1 bg-bgInput border border-bgElement rounded-md mb-2 text-textPrimary"
+                                className="font-semibold text-lg w-full p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary mb-2"
                                 placeholder="Nome"
                                 disabled={!canEdit}
                             />
@@ -176,6 +175,15 @@ const EquippedItemsList = ({ character, isMaster, onUpdate, onShowDiscord, isCol
                                 className="w-full p-2 bg-bgInput border border-bgElement rounded-md text-sm text-textPrimary"
                                 disabled={!canEdit}
                             />
+                            {canEdit && (
+                                <div className="flex justify-end mt-2 pt-2 border-t border-bgInput/50">
+                                    <button 
+                                        onClick={() => handleRemoveItem(item.id)} 
+                                        className="p-2 rounded-md text-textSecondary hover:bg-red-600/50 hover:text-white"
+                                        title="Remover Item"
+                                    ><span role="img" aria-label="Remover" className="text-xl">🗑️</span></button>
+                                </div>
+                            )}
                         </div>
                     );
                 })}
@@ -220,19 +228,16 @@ const SkillsList = ({ character, isMaster, onUpdate, isCollapsed, toggleSection,
                     const isAbilityCollapsed = ability.isCollapsed !== false;
                     return isAbilityCollapsed ? (
                         <div key={ability.id} className="p-3 bg-bgElement rounded-md shadow-sm border border-bgInput flex justify-between items-center">
-                            <span className="font-semibold text-lg cursor-pointer text-textPrimary flex-grow truncate" onClick={() => toggleItemCollapsed(ability.id)}>{ability.title || 'Habilidade Sem Título'}</span>
-                            <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                                <button onClick={() => onShowDiscord(ability.title, ability.description)} className="px-3 py-1 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText text-sm font-bold rounded-md">Mostrar</button>
-                                {canEdit && <button onClick={() => handleRemoveAbility(ability.id)} className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-md">X</button>}
-                            </div>
+                            <span className="font-semibold text-lg cursor-pointer text-textPrimary flex-grow truncate" onClick={() => toggleItemCollapsed(ability.id)}>{ability.title || 'Habilidade Sem Título'}</span>                            
+                            <button onClick={() => onShowDiscord(ability.title, ability.description)} title="Mostrar no Discord" className="px-3 py-1 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText text-sm font-bold rounded-md whitespace-nowrap ml-2">Mostrar no Discord</button>
                         </div>
                     ) : (
                         <div key={ability.id} className="col-span-1 sm:grid-cols-2 lg:col-span-3 flex flex-col p-3 bg-bgElement rounded-md shadow-sm">
                             <div className="flex justify-between items-center mb-1">
                                 <span className="font-semibold text-lg w-full cursor-pointer text-textPrimary" onClick={() => toggleItemCollapsed(ability.id)}>{ability.title || 'Habilidade Sem Título'}</span>
                                 <div className="flex items-center gap-2 flex-shrink-0 ml-4">
-                                    <button onClick={() => onShowDiscord(ability.title, ability.description)} className="px-3 py-1 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText text-sm font-bold rounded-md">Mostrar</button>
-                                    {canEdit && <button onClick={() => handleRemoveAbility(ability.id)} className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-md">Remover</button>}
+                                    <button onClick={() => onShowDiscord(ability.title, ability.description)} title="Mostrar no Discord" className="px-3 py-1 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText text-sm font-bold rounded-md whitespace-nowrap">Mostrar no Discord</button>
+                                    <span className="text-textSecondary text-xs whitespace-nowrap cursor-pointer" onClick={() => toggleItemCollapsed(ability.id)}>Recolher ▲</span>
                                 </div>
                             </div>
                             <input
@@ -252,6 +257,15 @@ const SkillsList = ({ character, isMaster, onUpdate, isCollapsed, toggleSection,
                                 className="text-sm text-textSecondary italic w-full p-1 bg-bgInput border border-bgElement rounded-md"
                                 disabled={!canEdit}
                             />
+                            {canEdit && (
+                                <div className="flex justify-end mt-2 pt-2 border-t border-bgInput/50">
+                                    <button 
+                                        onClick={() => handleRemoveAbility(ability.id)} 
+                                        className="p-2 rounded-md text-textSecondary hover:bg-red-600/50 hover:text-white"
+                                        title="Remover Habilidade"
+                                    ><span role="img" aria-label="Remover" className="text-xl">🗑️</span></button>
+                                </div>
+                            )}
                         </div>
                     );
                 })}
@@ -316,10 +330,7 @@ const PerkItem = ({ perk, type, canEdit, onRemove, onChange, onOriginChange, onT
         <div className="flex flex-col p-3 bg-bgElement rounded-md shadow-sm">
             <div className="flex justify-between items-center mb-1">
                 <span className="font-semibold text-lg w-full cursor-pointer text-textPrimary" onClick={() => onToggleCollapse(type, perk.id)}>{localPerk.name || 'Sem Nome'} {perk.isCollapsed ? '...' : ''}</span>
-                <div className="flex items-center gap-2 flex-shrink-0 ml-4">
-                    <button onClick={() => onShowDiscord(localPerk.name, localPerk.description)} title="Mostrar no Discord" className="px-3 py-1 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText text-sm font-bold rounded-md">Mostrar</button>
-                    {canEdit && <button onClick={() => onRemove(type, perk.id)} className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-md">Remover</button>}
-                </div>
+                <button onClick={() => onShowDiscord(localPerk.name, localPerk.description)} title="Mostrar no Discord" className="px-3 py-1 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText text-sm font-bold rounded-md whitespace-nowrap ml-2">Mostrar no Discord</button>
             </div>
             {!perk.isCollapsed && (<>
                 <div className="flex items-center gap-2 mb-2">
@@ -367,6 +378,15 @@ const PerkItem = ({ perk, type, canEdit, onRemove, onChange, onOriginChange, onT
                         </label>
                     ))}
                 </div>
+                {canEdit && (
+                    <div className="flex justify-end mt-2 pt-2 border-t border-bgInput/50">
+                        <button 
+                            onClick={() => onRemove(type, perk.id)} 
+                            className="p-2 rounded-md text-textSecondary hover:bg-red-600/50 hover:text-white"
+                            title={`Remover ${type === 'advantages' ? 'Vantagem' : 'Desvantagem'}`}
+                        ><span role="img" aria-label="Remover" className="text-xl">🗑️</span></button>
+                    </div>
+                )}
             </>)}
         </div>
     );
