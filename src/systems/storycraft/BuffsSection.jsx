@@ -4,9 +4,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks';
 import SheetSkin from './SheetSkin';
 
-const BuffsSection = ({ character, isMaster, onUpdate, allAttributes, isCollapsed, toggleSection }) => {
+const BuffsSection = ({ character, isMaster, onUpdate, allAttributes, isCollapsed, toggleSection, isEditMode }) => {
     const { user } = useAuth();
-    if (!character || !user) return <div className="p-6 text-center text-textSecondary">A carregar buffs...</div>;
+    if (!character || !user) return <div className="p-6 text-center text-textSecondary">A carregar buffs...</div>;    
     const canEdit = user.uid === character.ownerUid || isMaster;
 
     // Estado local para a lista de buffs
@@ -22,7 +22,7 @@ const BuffsSection = ({ character, isMaster, onUpdate, allAttributes, isCollapse
             id: crypto.randomUUID(), name: 'Novo Buff', effects: [],
             isActive: false, isCollapsed: false, costValue: 0, costType: ''
         };
-        onUpdate('buffs', [...(character.buffs || []), newBuff]);
+        onUpdate('buffs', [...localBuffs, newBuff]);
     };
 
     const handleRemoveBuff = (id) => onUpdate('buffs', (character.buffs || []).filter(b => b.id !== id));
@@ -152,7 +152,7 @@ const BuffsSection = ({ character, isMaster, onUpdate, allAttributes, isCollapse
                                                 onBlur={() => handleSaveBuffChange(buff.id, 'name')}
                                                 className="w-full p-2 bg-bgInput border border-bgElement rounded-md text-textPrimary font-semibold mb-4"
                                                 disabled={!canEdit}
-                                            />
+                                            />                                            
                                             <label className="text-sm font-medium text-textSecondary block mb-1">Custo de Manutenção:</label>
                                             <div className="flex items-center gap-2">
                                                 <input
@@ -233,7 +233,7 @@ const BuffsSection = ({ character, isMaster, onUpdate, allAttributes, isCollapse
                                                 ))}
                                             </div>
 
-                                            {canEdit && (
+                                            {canEdit && isEditMode && (
                                                 <div className="flex gap-2 mt-2">
                                                     <button onClick={() => handleAddBuffEffect(buff.id, 'attribute')} className="px-2 py-1 text-xs bg-btnHighlightBg text-btnHighlightText rounded-md">+ Atributo</button>
                                                     <button onClick={() => handleAddBuffEffect(buff.id, 'dice')} className="px-2 py-1 text-xs bg-btnHighlightBg text-btnHighlightText rounded-md">+ Dado/Nº</button>
@@ -241,7 +241,7 @@ const BuffsSection = ({ character, isMaster, onUpdate, allAttributes, isCollapse
                                             )}
                                         </div>
                                     </div>
-                                    {canEdit && (
+                                    {canEdit && isEditMode && (
                                         <div className="flex justify-end mt-4 pt-4 border-t border-bgInput/50">
                                             <button 
                                                 onClick={() => handleRemoveBuff(buff.id)} 
@@ -256,7 +256,7 @@ const BuffsSection = ({ character, isMaster, onUpdate, allAttributes, isCollapse
                     })}
                 </div>
                 {(localBuffs || []).length === 0 && <p className="text-textSecondary italic">Nenhum buff criado.</p>}
-                {canEdit && (<div className="flex justify-center mt-4"><button onClick={handleAddBuff} className="w-10 h-10 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText text-2xl font-bold rounded-full shadow-lg flex items-center justify-center">+</button></div>)}
+                {canEdit && isEditMode && (<div className="flex justify-center mt-4"><button onClick={handleAddBuff} className="w-10 h-10 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText text-2xl font-bold rounded-full shadow-lg flex items-center justify-center">+</button></div>)}
             </>
         </SheetSkin>
     );

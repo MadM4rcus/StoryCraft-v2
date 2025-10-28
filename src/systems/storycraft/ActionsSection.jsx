@@ -14,10 +14,11 @@ const AutoResizingTextarea = ({ value, onChange, onBlur, placeholder, className,
 };
 
 const ActionsSection = ({
-    character, isMaster, isCollapsed, toggleSection, onOpenActionModal, allAttributes, onUpdate, onExecuteFormula
+    character, isMaster, isCollapsed, toggleSection, onOpenActionModal, allAttributes, onUpdate, onExecuteFormula, isEditMode
 }) => {
     const { user } = useAuth();
     if (!character || !user) return null;
+    // A permissão geral de edição ainda é verificada, mas agora combinada com o isEditMode
     const canEdit = user.uid === character.ownerUid || isMaster;
 
     const [localActions, setLocalActions] = useState(character.formulaActions || []);
@@ -146,11 +147,11 @@ const ActionsSection = ({
                                             {action.name || 'Ação Sem Nome'}
                                         </span>
                                         <button onClick={() => onExecuteFormula(action)} className="px-5 py-2 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText font-bold rounded-lg whitespace-nowrap">Usar</button>
-                                        {canEdit && (
+                                        {canEdit && isEditMode && (
                                             <span className="text-textSecondary text-xs whitespace-nowrap cursor-pointer" onClick={() => toggleItemCollapsed(action.id)}>Recolher ▲</span>
                                         )}
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-bgInput pt-3 mt-3 flex-grow">
+                                    {canEdit && isEditMode && <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-bgInput pt-3 mt-3 flex-grow">
                                         <div>
                                             <label className="text-sm font-medium text-textSecondary block mb-1">Nome da Ação:</label>
                                             <input
@@ -160,7 +161,7 @@ const ActionsSection = ({
                                                 onChange={(e) => handleLocalActionChange(action.id, 'name', e.target.value)}
                                                 onBlur={() => handleSaveActionChange(action.id, 'name')}
                                                 className="w-full p-2 bg-bgInput border border-bgElement rounded-md text-textPrimary font-semibold mb-3"
-                                                disabled={!canEdit}
+                                                disabled={!canEdit || !isEditMode}
                                             />
                                             <label className="text-sm font-medium text-textSecondary block mb-2">Componentes da Fórmula:</label>
                                             <div className="space-y-2 mb-3">
@@ -175,10 +176,10 @@ const ActionsSection = ({
                                                                     onChange={(e) => handleLocalComponentChange(action.id, comp.id, 'value', e.target.value)}
                                                                     onBlur={() => handleSaveComponentChange(action.id, comp.id, 'value')}
                                                                     className="flex-grow p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary"
-                                                                    disabled={!canEdit}
+                                                                    disabled={!canEdit || !isEditMode}
                                                                 />
                                                                 <div className="text-textSecondary flex-shrink-0">Dado/Nº</div>
-                                                                {canEdit && (<button onClick={() => handleRemoveActionComponent(action.id, comp.id)} className="w-6 h-6 bg-red-600 text-white text-xs rounded-full flex items-center justify-center font-bold flex-shrink-0">-</button>)}
+                                                                {canEdit && isEditMode && (<button onClick={() => handleRemoveActionComponent(action.id, comp.id)} className="w-6 h-6 bg-red-600 text-white text-xs rounded-full flex items-center justify-center font-bold flex-shrink-0">-</button>)}
                                                             </div>
                                                         ) : comp.type === 'attribute' ? (
                                                             <div className="flex items-center gap-2">
@@ -187,13 +188,13 @@ const ActionsSection = ({
                                                                     onChange={(e) => handleLocalComponentChange(action.id, comp.id, 'value', e.target.value)}
                                                                     onBlur={() => handleSaveComponentChange(action.id, comp.id, 'value')}
                                                                     className="flex-grow p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary"
-                                                                    disabled={!canEdit}
+                                                                    disabled={!canEdit || !isEditMode}
                                                                 >
                                                                     <option value="">Selecione Atributo</option>
                                                                     {allAttributes.map(attr => <option key={attr} value={attr}>{attr}</option>)}
                                                                 </select>
                                                                 <div className="text-textSecondary flex-shrink-0">Atributo</div>
-                                                                {canEdit && (<button onClick={() => handleRemoveActionComponent(action.id, comp.id)} className="w-6 h-6 bg-red-600 text-white text-xs rounded-full flex items-center justify-center font-bold flex-shrink-0">-</button>)}
+                                                                {canEdit && isEditMode && (<button onClick={() => handleRemoveActionComponent(action.id, comp.id)} className="w-6 h-6 bg-red-600 text-white text-xs rounded-full flex items-center justify-center font-bold flex-shrink-0">-</button>)}
                                                             </div>
                                                         ) : comp.type === 'critDice' ? (
                                                             <div className="flex flex-col gap-2">
@@ -205,10 +206,10 @@ const ActionsSection = ({
                                                                         onChange={(e) => handleLocalComponentChange(action.id, comp.id, 'value', e.target.value)}
                                                                         onBlur={() => handleSaveComponentChange(action.id, comp.id, 'value')}
                                                                         className="flex-grow p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary"
-                                                                        disabled={!canEdit}
+                                                                        disabled={!canEdit || !isEditMode}
                                                                     />
                                                                     <div className="text-textSecondary flex-shrink-0">Dado Crítico</div>
-                                                                    {canEdit && (<button onClick={() => handleRemoveActionComponent(action.id, comp.id)} className="w-6 h-6 bg-red-600 text-white text-xs rounded-full flex items-center justify-center font-bold flex-shrink-0">-</button>)}
+                                                                    {canEdit && isEditMode && (<button onClick={() => handleRemoveActionComponent(action.id, comp.id)} className="w-6 h-6 bg-red-600 text-white text-xs rounded-full flex items-center justify-center font-bold flex-shrink-0">-</button>)}
                                                                 </div>
                                                                 <div className="flex items-center gap-2 text-sm text-textSecondary">
                                                                     <span className="flex-shrink-0">Crit. ≥</span>
@@ -219,7 +220,7 @@ const ActionsSection = ({
                                                                         onChange={(e) => handleLocalComponentChange(action.id, comp.id, 'critValue', e.target.value)}
                                                                         onBlur={() => handleSaveComponentChange(action.id, comp.id, 'critValue')}
                                                                         className="w-12 p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary"
-                                                                        disabled={!canEdit}
+                                                                        disabled={!canEdit || !isEditMode}
                                                                     />
                                                                     <span className="flex-shrink-0">Bônus:</span>
                                                                     <select
@@ -227,7 +228,7 @@ const ActionsSection = ({
                                                                         onChange={(e) => handleLocalComponentChange(action.id, comp.id, 'critBonusAttribute', e.target.value)}
                                                                         onBlur={() => handleSaveComponentChange(action.id, comp.id, 'critBonusAttribute')}
                                                                         className="flex-grow p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary"
-                                                                        disabled={!canEdit}
+                                                                        disabled={!canEdit || !isEditMode}
                                                                     >
                                                                         <option value="">Nenhum</option>
                                                                         {allAttributes.map(attr => <option key={attr} value={attr}>{attr}</option>)}
@@ -240,7 +241,7 @@ const ActionsSection = ({
                                                                         onChange={(e) => handleLocalComponentChange(action.id, comp.id, 'critBonusMultiplier', e.target.value)}
                                                                         onBlur={() => handleSaveComponentChange(action.id, comp.id, 'critBonusMultiplier')}
                                                                         className="w-12 p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary"
-                                                                        disabled={!canEdit}
+                                                                        disabled={!canEdit || !isEditMode}
                                                                     />
                                                                 </div>
                                                             </div>
@@ -248,7 +249,7 @@ const ActionsSection = ({
                                                     </div>
                                                 ))}
                                             </div>
-                                            {canEdit && (
+                                            {canEdit && isEditMode && (
                                                 <div className="flex gap-2 flex-wrap">
                                                     <button onClick={() => handleAddActionComponent(action.id, 'dice')} className="px-2 py-1 text-xs bg-btnHighlightBg text-btnHighlightText rounded-md">+ Dado/Nº</button>
                                                     <button onClick={() => handleAddActionComponent(action.id, 'attribute')} className="px-2 py-1 text-xs bg-btnHighlightBg text-btnHighlightText rounded-md">+ Atributo</button>
@@ -265,7 +266,7 @@ const ActionsSection = ({
                                                 onBlur={() => handleSaveActionChange(action.id, 'multiplier')}
                                                 className="w-20 p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary mb-3"
                                                 placeholder="1"
-                                                disabled={!canEdit}
+                                                disabled={!canEdit || !isEditMode}
                                             />
                                             <label className="text-sm font-medium text-textSecondary block mb-2">Descrição da Ação:</label>
                                             <AutoResizingTextarea
@@ -274,7 +275,7 @@ const ActionsSection = ({
                                                 onChange={(e) => handleLocalActionChange(action.id, 'discordText', e.target.value)}
                                                 onBlur={() => handleSaveActionChange(action.id, 'discordText')}
                                                 className="w-full p-2 bg-bgInput border border-bgElement rounded-md text-textPrimary text-sm"
-                                                disabled={!canEdit}
+                                                disabled={!canEdit || !isEditMode}
                                             />
                                             <label className="text-sm font-medium text-textSecondary block mb-2 mt-3">Custo da Ação:</label>
                                             <div className="flex items-center gap-2">
@@ -285,14 +286,14 @@ const ActionsSection = ({
                                                     onChange={(e) => handleLocalActionChange(action.id, 'costValue', e.target.value)}
                                                     onBlur={() => handleSaveActionChange(action.id, 'costValue')}
                                                     className="w-20 p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary"
-                                                    disabled={!canEdit}
+                                                    disabled={!canEdit || !isEditMode}
                                                 />
                                                 <select
                                                     value={action.costType}
                                                     onChange={(e) => handleLocalActionChange(action.id, 'costType', e.target.value)}
                                                     onBlur={() => handleSaveActionChange(action.id, 'costType')}
                                                     className="p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary"
-                                                    disabled={!canEdit}
+                                                    disabled={!canEdit || !isEditMode}
                                                 >
                                                     <option value="">N/A</option>
                                                     <option value="HP">HP</option>
@@ -300,14 +301,14 @@ const ActionsSection = ({
                                                 </select>
                                             </div>
                                             {canEdit && (
-                                                <div className="flex gap-4 mt-4">
+                                                <div className="flex gap-4 mt-4" style={{ display: isEditMode ? 'flex' : 'none' }}>
                                                     <div className="flex items-center">
                                                         <input
                                                             type="checkbox"
                                                             id={`recover-hp-${action.id}`}
                                                             checked={action.recoverHP || false}
                                                             onChange={(e) => handleSaveActionChange(action.id, 'recoverHP', e.target.checked)}
-                                                            className="form-checkbox text-green-500 rounded-sm"
+                                                            className="form-checkbox text-green-500 rounded-sm"                                                            
                                                             disabled={!canEdit}
                                                         />
                                                         <label htmlFor={`recover-hp-${action.id}`} className="ml-2 text-sm text-textSecondary">Recuperar HP</label>
@@ -318,7 +319,7 @@ const ActionsSection = ({
                                                             id={`recover-mp-${action.id}`}
                                                             checked={action.recoverMP || false}
                                                             onChange={(e) => handleSaveActionChange(action.id, 'recoverMP', e.target.checked)}
-                                                            className="form-checkbox text-blue-500 rounded-sm"
+                                                            className="form-checkbox text-blue-500 rounded-sm"                                                            
                                                             disabled={!canEdit}
                                                         />
                                                         <label htmlFor={`recover-mp-${action.id}`} className="ml-2 text-sm text-textSecondary">Recuperar MP</label>
@@ -326,8 +327,8 @@ const ActionsSection = ({
                                                 </div>
                                             )}
                                         </div>
-                                    </div>
-                                    {canEdit && (
+                                    </div>}
+                                    {canEdit && isEditMode && (
                                         <div className="flex justify-end mt-4 pt-4 border-t border-bgInput/50">
                                             <button 
                                                 onClick={() => handleRemoveFormulaAction(action.id)} 
@@ -340,7 +341,7 @@ const ActionsSection = ({
                             );
                         })}
                     </div>
-                    {canEdit && (
+                    {canEdit && isEditMode && (
                         <div className="flex justify-center mt-4">
                             <button onClick={handleAddFormulaAction} className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg shadow-md">+ Adicionar Ação Rápida</button>
                         </div>

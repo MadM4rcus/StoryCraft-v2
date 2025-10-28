@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import SheetSkin from './SheetSkin';
 
-const AttributesSection = ({ character, onUpdate, isCollapsed, toggleSection, buffModifiers, onOpenRollModal }) => {
+const AttributesSection = ({ character, onUpdate, isCollapsed, toggleSection, buffModifiers, onOpenRollModal, isEditMode }) => {
 
     // Estado local para a lista de atributos
     const [localAttributes, setLocalAttributes] = useState(character.attributes || []);
@@ -110,7 +110,7 @@ const AttributesSection = ({ character, onUpdate, isCollapsed, toggleSection, bu
                                         <input type="number" value={totalValue || ''} readOnly className="w-12 p-1 bg-bgPage border border-bgElement rounded-md text-textPrimary font-bold cursor-not-allowed text-center" />
                                     </div>
                                 </div>
-                                <div className="flex justify-end pt-2 mt-2 border-t border-bgInput/50" onClick={(e) => e.stopPropagation()}>
+                                {isEditMode && <div className="flex justify-end pt-2 mt-2 border-t border-bgInput/50" onClick={(e) => e.stopPropagation()}>
                                     <button 
                                         onClick={() => handleRemoveAttribute(attr.id)} 
                                         className="p-2 rounded-md text-textSecondary hover:bg-red-600/50 hover:text-white"
@@ -118,14 +118,14 @@ const AttributesSection = ({ character, onUpdate, isCollapsed, toggleSection, bu
                                     >
                                         <span role="img" aria-label="Remover">🗑️</span>
                                     </button>
-                                </div>
+                                </div>}
                             </div>
                         );
                     })}
                 </div>
-                <div className="flex justify-center mt-4">
+                {isEditMode && <div className="flex justify-center mt-4">
                     <button onClick={handleAddAttribute} className="w-10 h-10 bg-green-600 hover:bg-green-700 text-white text-2xl font-bold rounded-full shadow-lg flex items-center justify-center">+</button>
-                </div>
+                </div>}
             </>
         </SheetSkin>
     );

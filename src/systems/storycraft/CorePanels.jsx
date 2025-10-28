@@ -9,8 +9,9 @@ import SheetSkin from './SheetSkin';
 
 
 // --- Sub-componente: CharacterInfo ---
-const CharacterInfo = ({ character, onUpdate, isMaster, isCollapsed, toggleSection }) => {
+const CharacterInfo = ({ character, onUpdate, isMaster, isCollapsed, toggleSection, isEditMode }) => {
     const { user } = useAuth();
+    const canEdit = user && (user.uid === character.ownerUid || isMaster);
     
     const [localFields, setLocalFields] = useState({
         name: character.name || '',
@@ -55,22 +56,24 @@ const CharacterInfo = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
     }, [localFields, character, onUpdate]);
 
     const handlePhotoClick = () => {
-        const newUrl = prompt("Insira a URL da imagem do personagem:", character.photoUrl || "");
-        if (newUrl !== null) {
-            onUpdate('photoUrl', newUrl);
+        if (canEdit && isEditMode) {
+            const newUrl = prompt("Insira a URL da imagem do personagem:", character.photoUrl || "");
+            if (newUrl !== null) {
+                onUpdate('photoUrl', newUrl);
+            }
         }
     };
 
     const fieldOrder = ['name', 'age', 'height', 'gender', 'race', 'class', 'alignment', 'level', 'xp'];
-
+    
     return (
         <SheetSkin title="Informações do Personagem" isCollapsed={isCollapsed} toggleSection={toggleSection}>
             <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
                 <div className="flex-shrink-0">
                     {character.photoUrl ? (
-                        <img src={character.photoUrl} alt="Foto" className="w-48 h-48 object-cover rounded-full border-2 border-btnHighlightBg cursor-pointer" onClick={handlePhotoClick} onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/192x192/1f2937/FFFFFF?text=Erro'; }} />
+                        <img src={character.photoUrl} alt="Foto" className={`w-48 h-48 object-cover rounded-full border-2 border-btnHighlightBg ${canEdit && isEditMode ? 'cursor-pointer' : ''}`} onClick={handlePhotoClick} onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/192x192/1f2937/FFFFFF?text=Erro'; }} />
                     ) : (
-                        <div className="w-48 h-48 bg-bgElement rounded-full border-2 border-btnHighlightBg flex items-center justify-center text-6xl text-textSecondary cursor-pointer" onClick={handlePhotoClick}>+</div>
+                        <div className={`w-48 h-48 bg-bgElement rounded-full border-2 border-btnHighlightBg flex items-center justify-center text-6xl text-textSecondary ${canEdit && isEditMode ? 'cursor-pointer' : ''}`} onClick={handlePhotoClick}>+</div>
                     )}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 flex-grow w-full">
@@ -84,7 +87,7 @@ const CharacterInfo = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
                                 onChange={handleLocalChange}
                                 onBlur={() => handleSave(field)}
                                 className="w-full p-2 bg-bgInput border border-bgElement rounded-md text-textPrimary focus:ring-btnHighlightBg focus:border-btnHighlightBg"
-                                disabled={!user || (user.uid !== character.ownerUid && !isMaster)}
+                                disabled={!canEdit || (!isEditMode && ['race', 'class', 'alignment'].includes(field))}
                             />
                         </div>
                     ))}
@@ -95,8 +98,9 @@ const CharacterInfo = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
 };
 
 // --- Sub-componente: MainAttributes ---
-const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, toggleSection, buffModifiers }) => {
+const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, toggleSection, buffModifiers, isEditMode }) => {
     const { user } = useAuth();
+    const canEdit = user && (user.uid === character.ownerUid || isMaster);
     const canEditGeneral = user && (user.uid === character.ownerUid || isMaster);
     
     const [localMainAttributes, setLocalMainAttributes] = useState(character.mainAttributes || { hp: {}, mp: {} });
@@ -174,20 +178,20 @@ const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, toggleSect
                 <div className="flex flex-col items-center p-2 bg-bgElement rounded-md">
                     <label className="text-lg font-medium text-textSecondary mb-1 uppercase">HP</label>
                     <div className="flex items-center gap-1">
-                        <input type="number" name="current" value={localMainAttributes.hp?.current ?? ''} onChange={(e) => handleLocalChange(e, 'hp')} onBlur={() => handleSave('current', 'hp')} className="w-16 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold" disabled={!isMaster} />
+                        <input type="number" name="current" value={localMainAttributes.hp?.current ?? ''} onChange={(e) => handleLocalChange(e, 'hp')} onBlur={() => handleSave('current', 'hp')} className="w-16 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold" disabled={!canEdit} />
                         <span className="text-textSecondary">/</span>
-                        <input type="number" name="max" value={localMainAttributes.hp?.max ?? ''} onChange={(e) => handleLocalChange(e, 'hp')} onBlur={() => handleSave('max', 'hp')} className="w-16 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold" disabled={!isMaster} />
+                        <input type="number" name="max" value={localMainAttributes.hp?.max ?? ''} onChange={(e) => handleLocalChange(e, 'hp')} onBlur={() => handleSave('max', 'hp')} className="w-16 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold" disabled={!canEdit || !isEditMode} />
                         <span className="text-blue-400 font-bold text-xl ml-1">+</span>
-                        <input type="number" title="HP Temporário" name="temp" value={localMainAttributes.hp?.temp ?? ''} onChange={(e) => handleLocalChange(e, 'hp')} onBlur={() => handleSave('temp', 'hp')} className="w-16 p-2 text-center bg-bgInput border border-blue-400 rounded-md text-blue-300 text-xl font-bold" disabled={!isMaster} />
+                        <input type="number" title="HP Temporário" name="temp" value={localMainAttributes.hp?.temp ?? ''} onChange={(e) => handleLocalChange(e, 'hp')} onBlur={() => handleSave('temp', 'hp')} className="w-16 p-2 text-center bg-bgInput border border-blue-400 rounded-md text-blue-300 text-xl font-bold" disabled={!canEdit} />
                     </div>
                 </div>
                 {/* Bloco de MP */}
                  <div className="flex flex-col items-center p-2 bg-bgElement rounded-md">
                     <label className="text-lg font-medium text-textSecondary mb-1 uppercase">MP</label>
                     <div className="flex items-center gap-2">
-                        <input type="number" name="current" value={localMainAttributes.mp?.current ?? ''} onChange={(e) => handleLocalChange(e, 'mp')} onBlur={() => handleSave('current', 'mp')} className="w-16 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold" disabled={!isMaster} />
+                        <input type="number" name="current" value={localMainAttributes.mp?.current ?? ''} onChange={(e) => handleLocalChange(e, 'mp')} onBlur={() => handleSave('current', 'mp')} className="w-16 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold" disabled={!canEdit} />
                         <span className="text-textSecondary">/</span>
-                        <input type="number" name="max" value={localMainAttributes.mp?.max ?? ''} onChange={(e) => handleLocalChange(e, 'mp')} onBlur={() => handleSave('max', 'mp')} className="w-16 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold" disabled={!isMaster} />
+                        <input type="number" name="max" value={localMainAttributes.mp?.max ?? ''} onChange={(e) => handleLocalChange(e, 'mp')} onBlur={() => handleSave('max', 'mp')} className="w-16 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold" disabled={!canEdit || !isEditMode} />
                     </div>
                 </div>
                 {/* Outros Atributos */}
@@ -208,7 +212,7 @@ const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, toggleSect
                                     onChange={handleLocalChange}
                                     onBlur={() => handleSave(key.toLowerCase())}
                                     className="w-14 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold"
-                                    disabled={!canEditGeneral || isInitiative}
+                                    disabled={!canEditGeneral || isInitiative || !isEditMode}
                                 />
                                 <span className="text-textSecondary">=</span>
                                 <span className="w-14 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold">{total}</span>
@@ -223,7 +227,7 @@ const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, toggleSect
 
 
 // --- Sub-componente: Wallet ---
-const Wallet = ({ character, isMaster, onUpdate, isCollapsed, toggleSection }) => {
+const Wallet = ({ character, isMaster, onUpdate, isCollapsed, toggleSection, isEditMode }) => {
     const { user } = useAuth();
     const [zeniAmount, setZeniAmount] = useState(0);
 
@@ -268,7 +272,7 @@ const Wallet = ({ character, isMaster, onUpdate, isCollapsed, toggleSection }) =
 };
 
 // --- Sub-componente: DiscordIntegration ---
-const DiscordIntegration = ({ character, onUpdate, isMaster, isCollapsed, toggleSection }) => {
+const DiscordIntegration = ({ character, onUpdate, isMaster, isCollapsed, toggleSection, isEditMode }) => {
     const { user } = useAuth();
     const canEdit = user && (user.uid === character.ownerUid || isMaster);
 
@@ -301,7 +305,7 @@ const DiscordIntegration = ({ character, onUpdate, isMaster, isCollapsed, toggle
                     onBlur={handleSave}
                     className="w-full p-2 bg-bgInput border border-bgElement rounded-md focus:ring-btnHighlightBg focus:border-btnHighlightBg text-textPrimary"
                     placeholder="Cole a URL do Webhook do seu canal do Discord aqui"
-                    disabled={!canEdit}
+                    disabled={!canEdit || !isEditMode}
                 />
                 <p className="text-xs text-textSecondary mt-2">
                     Com a URL do Webhook configurada, os comandos de rolagem serão enviados diretamente para o seu canal do Discord.

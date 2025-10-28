@@ -17,7 +17,7 @@ const AutoResizingTextarea = ({ value, onChange, placeholder, className, disable
 };
 
 // --- Sub-componente para a História ---
-const Story = ({ character, isMaster, onUpdate, isCollapsed, toggleSection }) => {
+const Story = ({ character, isMaster, onUpdate, isCollapsed, toggleSection, isEditMode }) => {
     const { user } = useAuth();
     const canEdit = user.uid === character.ownerUid || isMaster;
     
@@ -41,7 +41,7 @@ const Story = ({ character, isMaster, onUpdate, isCollapsed, toggleSection }) =>
             <div className="space-y-4 mb-4">
                 {(character.history || []).length === 0 ? <p className="text-textSecondary italic">Nenhum bloco de história adicionado.</p> : character.history.map((block) => renderBlock(block, canEdit, updateHistoryBlock, removeHistoryBlock))}
             </div>
-            {canEdit && (
+            {canEdit && isEditMode && (
                 <div className="flex flex-wrap gap-4 mt-4 justify-center">
                     <button onClick={() => addHistoryBlock('text')} className="px-6 py-2 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText font-bold rounded-lg">Adicionar Texto</button>
                     <button onClick={() => addHistoryBlock('image')} className="px-6 py-2 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText font-bold rounded-lg">Adicionar Imagem</button>
@@ -52,7 +52,7 @@ const Story = ({ character, isMaster, onUpdate, isCollapsed, toggleSection }) =>
 };
 
 // --- Sub-componente para as Anotações ---
-const Notes = ({ character, isMaster, onUpdate, isCollapsed, toggleSection }) => {
+const Notes = ({ character, isMaster, onUpdate, isCollapsed, toggleSection, isEditMode }) => {
     const { user } = useAuth();
     const canEdit = user.uid === character.ownerUid || isMaster;
     
@@ -76,7 +76,7 @@ const Notes = ({ character, isMaster, onUpdate, isCollapsed, toggleSection }) =>
             <div className="space-y-4 mb-4">
                 {(character.notes || []).length === 0 ? <p className="text-textSecondary italic">Nenhum bloco de anotação adicionado.</p> : character.notes.map((block) => renderBlock(block, canEdit, updateNoteBlock, removeNoteBlock))}
             </div>
-            {canEdit && (
+            {canEdit && isEditMode && (
                 <div className="flex flex-wrap gap-4 mt-4 justify-center">
                     <button onClick={() => addNoteBlock('text')} className="px-6 py-2 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText font-bold rounded-lg">Adicionar Texto</button>
                     <button onClick={() => addNoteBlock('image')} className="px-6 py-2 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText font-bold rounded-lg">Adicionar Imagem</button>

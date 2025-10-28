@@ -67,7 +67,8 @@ const SpecializationsList = ({
     toggleSection,
     allAttributes,
     onUpdate,
-    onExecuteFormula
+    onExecuteFormula,
+    isEditMode
 }) => {
     const { user } = useAuth();
     const canEdit = user.uid === character.ownerUid || isMaster;
@@ -232,21 +233,21 @@ const SpecializationsList = ({
                             <div className="flex justify-between items-center gap-2 mb-3">
                                 <span className="font-semibold text-lg cursor-pointer text-textPrimary flex-grow" onClick={() => toggleItemCollapsed(spec.id)}>{spec.name || 'Perícia Sem Nome'}</span>
                                 <button onClick={rollAction} className="px-5 py-2 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText font-bold rounded-lg whitespace-nowrap">Rolar</button>
-                                {canEdit && <button onClick={() => toggleItemCollapsed(spec.id)} className="w-10 h-10 bg-gray-600 text-white text-lg rounded-md flex items-center justify-center font-bold">↑</button>}
+                                {canEdit && isEditMode && <span className="text-textSecondary text-xs whitespace-nowrap cursor-pointer" onClick={() => toggleItemCollapsed(spec.id)}>Recolher ▲</span>}
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-bgInput pt-3 mt-3">
+                            {canEdit && isEditMode && <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-bgInput pt-3 mt-3">
                                 <div className="md:col-span-1">
                                     <label className="text-sm font-medium text-textSecondary block mb-1">Nome da Perícia:</label>
-                                    <input type="text" placeholder="Nome da Perícia" value={spec.name} onChange={(e) => handleLocalChange(spec.id, 'name', e.target.value)} onBlur={(e) => handleSave(spec.id, 'name', e.target.value)} className="w-full p-2 bg-bgInput border border-bgElement rounded-md text-textPrimary font-semibold mb-3" disabled={!canEdit} />
+                                    <input type="text" placeholder="Nome da Perícia" value={spec.name} onChange={(e) => handleLocalChange(spec.id, 'name', e.target.value)} onBlur={(e) => handleSave(spec.id, 'name', e.target.value)} className="w-full p-2 bg-bgInput border border-bgElement rounded-md text-textPrimary font-semibold mb-3" disabled={!canEdit || !isEditMode} />
                                     <label className="text-sm font-medium text-textSecondary block mb-1">Dado Principal:</label>
-                                    <input type="text" placeholder="1d20" value={spec.mainDice} onChange={(e) => handleLocalChange(spec.id, 'mainDice', e.target.value)} onBlur={(e) => handleSave(spec.id, 'mainDice', e.target.value)} className="w-full p-2 bg-bgInput border border-bgElement rounded-md text-textPrimary mb-3" disabled={!canEdit} />
+                                    <input type="text" placeholder="1d20" value={spec.mainDice} onChange={(e) => handleLocalChange(spec.id, 'mainDice', e.target.value)} onBlur={(e) => handleSave(spec.id, 'mainDice', e.target.value)} className="w-full p-2 bg-bgInput border border-bgElement rounded-md text-textPrimary mb-3" disabled={!canEdit || !isEditMode} />
                                     <div className="flex items-center mb-3">
-                                        <input type="checkbox" id={`trained-${spec.id}`} checked={spec.trained} onChange={(e) => handleSave(spec.id, 'trained', e.target.checked)} className="form-checkbox text-green-500 rounded-sm" disabled={!canEdit} />
+                                        <input type="checkbox" id={`trained-${spec.id}`} checked={spec.trained} onChange={(e) => handleSave(spec.id, 'trained', e.target.checked)} className="form-checkbox text-green-500 rounded-sm" disabled={!canEdit || !isEditMode} />
                                         <label htmlFor={`trained-${spec.id}`} className="ml-2 text-sm text-textSecondary">Treinado</label>
                                     </div>
                                     <label className="text-sm font-medium text-textSecondary block mb-2">Descrição:</label>
-                                    <AutoResizingTextarea placeholder="Descrição..." value={spec.description} onChange={(e) => handleLocalChange(spec.id, 'description', e.target.value)} onBlur={(e) => handleSave(spec.id, 'description', e.target.value)} className="w-full p-2 bg-bgInput border border-bgElement rounded-md text-textPrimary text-sm mb-3" disabled={!canEdit} />
-                                    {canEdit && <button onClick={() => handleRemoveSpecialization(spec.id)} className="w-full px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-md">Remover Perícia</button>}
+                                    <AutoResizingTextarea placeholder="Descrição..." value={spec.description} onChange={(e) => handleLocalChange(spec.id, 'description', e.target.value)} onBlur={(e) => handleSave(spec.id, 'description', e.target.value)} className="w-full p-2 bg-bgInput border border-bgElement rounded-md text-textPrimary text-sm mb-3" disabled={!canEdit || !isEditMode} />
+                                    {canEdit && isEditMode && <button onClick={() => handleRemoveSpecialization(spec.id)} className="w-full px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-md">Remover Perícia</button>}
                                 </div>
                                 <div className="md:col-span-2 space-y-4">
                                     <div>
@@ -254,38 +255,38 @@ const SpecializationsList = ({
                                         <div className="space-y-2">
                                             {(spec.components || []).map(comp => (
                                                 <div key={comp.id} className="flex items-center gap-2">
-                                                    {comp.type === 'attribute' && <select value={comp.value} onChange={(e) => handleLocalComponentChange(spec.id, comp.id, e.target.value)} onBlur={() => handleSaveComponent(spec.id, comp.id)} className="p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary w-full" disabled={!canEdit}><option disabled value="">Selecione Atributo</option>{allAttributes.map(attr => <option key={attr} value={attr}>{attr}</option>)}</select>}
-                                                    {comp.type === 'number' && <input type="number" value={comp.value} onChange={(e) => handleLocalComponentChange(spec.id, comp.id, e.target.value)} onBlur={() => handleSaveComponent(spec.id, comp.id)} className="w-full p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary" disabled={!canEdit} />}
-                                                    {canEdit && <button onClick={() => handleRemoveComponent(spec.id, comp.id)} className="w-6 h-6 bg-red-600 text-white text-xs rounded-full flex items-center justify-center font-bold flex-shrink-0">-</button>}
+                                                    {comp.type === 'attribute' && <select value={comp.value} onChange={(e) => handleLocalComponentChange(spec.id, comp.id, e.target.value)} onBlur={() => handleSaveComponent(spec.id, comp.id)} className="p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary w-full" disabled={!canEdit || !isEditMode}><option disabled value="">Selecione Atributo</option>{allAttributes.map(attr => <option key={attr} value={attr}>{attr}</option>)}</select>}
+                                                    {comp.type === 'number' && <input type="number" value={comp.value} onChange={(e) => handleLocalComponentChange(spec.id, comp.id, e.target.value)} onBlur={() => handleSaveComponent(spec.id, comp.id)} className="w-full p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary" disabled={!canEdit || !isEditMode} />}
+                                                    {canEdit && isEditMode && <button onClick={() => handleRemoveComponent(spec.id, comp.id)} className="w-6 h-6 bg-red-600 text-white text-xs rounded-full flex items-center justify-center font-bold flex-shrink-0">-</button>}
                                                 </div>
                                             ))}
                                         </div>
-                                        {canEdit && <div className="flex gap-2 mt-2"><button onClick={() => handleAddComponent(spec.id, 'attribute')} className="px-2 py-1 text-xs bg-green-600 text-white rounded-md">+ Atributo</button><button onClick={() => handleAddComponent(spec.id, 'number')} className="px-2 py-1 text-xs bg-green-600 text-white rounded-md">+ Número</button></div>}
+                                        {canEdit && isEditMode && <div className="flex gap-2 mt-2"><button onClick={() => handleAddComponent(spec.id, 'attribute')} className="px-2 py-1 text-xs bg-green-600 text-white rounded-md">+ Atributo</button><button onClick={() => handleAddComponent(spec.id, 'number')} className="px-2 py-1 text-xs bg-green-600 text-white rounded-md">+ Número</button></div>}
                                     </div>
                                     <div>
                                         <label className="text-sm font-medium text-textSecondary block mb-2">Bônus Condicionais:</label>
                                         <div className="space-y-2 mb-3">
                                             {(spec.bonusRules || []).map(rule => (<div key={rule.id} className="flex items-center gap-2 flex-wrap p-2 rounded-md border border-dashed border-textSecondary/30">
-                                                <input type="checkbox" checked={rule.enabled} onChange={(e) => handleLocalBonusRuleChange(spec.id, rule.id, 'enabled', e.target.checked)} onBlur={() => handleSaveBonusRuleChange(spec.id)} disabled={!canEdit} />
+                                                <input type="checkbox" checked={rule.enabled} onChange={(e) => handleLocalBonusRuleChange(spec.id, rule.id, 'enabled', e.target.checked)} onBlur={() => handleSaveBonusRuleChange(spec.id)} disabled={!canEdit || !isEditMode} />
                                                 <span>Se</span>
-                                                <select value={rule.condition} onChange={(e) => handleLocalBonusRuleChange(spec.id, rule.id, 'condition', e.target.value)} onBlur={() => handleSaveBonusRuleChange(spec.id)} className="p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary" disabled={!canEdit}><option value="none">Sempre</option><option value="trained">Treinado</option></select>
+                                                <select value={rule.condition} onChange={(e) => handleLocalBonusRuleChange(spec.id, rule.id, 'condition', e.target.value)} onBlur={() => handleSaveBonusRuleChange(spec.id)} className="p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary" disabled={!canEdit || !isEditMode}><option value="none">Sempre</option><option value="trained">Treinado</option></select>
                                                 <span>, a cada</span>
-                                                <input type="number" value={rule.each} onChange={(e) => handleLocalBonusRuleChange(spec.id, rule.id, 'each', e.target.value)} onBlur={() => handleSaveBonusRuleChange(spec.id)} className="w-16 p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary" disabled={!canEdit} />
-                                                <select value={rule.source} onChange={(e) => handleLocalBonusRuleChange(spec.id, rule.id, 'source', e.target.value)} onBlur={() => handleSaveBonusRuleChange(spec.id)} className="p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary" disabled={!canEdit}><option value="level">Nível</option>{allAttributes.map(attr => <option key={attr} value={`attribute_${attr}`}>{attr}</option>)}</select>
+                                                <input type="number" value={rule.each} onChange={(e) => handleLocalBonusRuleChange(spec.id, rule.id, 'each', e.target.value)} onBlur={() => handleSaveBonusRuleChange(spec.id)} className="w-16 p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary" disabled={!canEdit || !isEditMode} />
+                                                <select value={rule.source} onChange={(e) => handleLocalBonusRuleChange(spec.id, rule.id, 'source', e.target.value)} onBlur={() => handleSaveBonusRuleChange(spec.id)} className="p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary" disabled={!canEdit || !isEditMode}><option value="level">Nível</option>{allAttributes.map(attr => <option key={attr} value={`attribute_${attr}`}>{attr}</option>)}</select>
                                                 <span>, +</span>
-                                                <input type="number" value={rule.bonus} onChange={(e) => handleLocalBonusRuleChange(spec.id, rule.id, 'bonus', e.target.value)} onBlur={() => handleSaveBonusRuleChange(spec.id)} className="w-16 p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary" disabled={!canEdit} />
-                                                {canEdit && <button onClick={() => handleRemoveBonusRule(spec.id, rule.id)} className="w-6 h-6 bg-red-600 text-white text-xs rounded-full flex items-center justify-center font-bold flex-shrink-0">-</button>}
+                                                <input type="number" value={rule.bonus} onChange={(e) => handleLocalBonusRuleChange(spec.id, rule.id, 'bonus', e.target.value)} onBlur={() => handleSaveBonusRuleChange(spec.id)} className="w-16 p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary" disabled={!canEdit || !isEditMode} />
+                                                {canEdit && isEditMode && <button onClick={() => handleRemoveBonusRule(spec.id, rule.id)} className="w-6 h-6 bg-red-600 text-white text-xs rounded-full flex items-center justify-center font-bold flex-shrink-0">-</button>}
                                             </div>))}
                                         </div>
-                                        {canEdit && <button onClick={() => handleAddBonusRule(spec.id)} className="px-2 py-1 text-xs bg-blue-600 text-white rounded-md">+ Regra de Bônus</button>}
+                                        {canEdit && isEditMode && <button onClick={() => handleAddBonusRule(spec.id)} className="px-2 py-1 text-xs bg-blue-600 text-white rounded-md">+ Regra de Bônus</button>}
                                     </div>
                                 </div>
-                            </div>
+                            </div>}
                         </div>
                     )
                 })}
             </div>
-            {canEdit && <div className="flex justify-center mt-4"><button onClick={handleAddSpecialization} className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg shadow-md">+ Adicionar Perícia</button></div>}
+            {canEdit && isEditMode && <div className="flex justify-center mt-4"><button onClick={handleAddSpecialization} className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg shadow-md">+ Adicionar Perícia</button></div>}
         </SheetSkin>
     );
 };
