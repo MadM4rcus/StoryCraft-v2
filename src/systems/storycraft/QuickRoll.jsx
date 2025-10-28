@@ -2,11 +2,14 @@
 import React, { useState, useCallback } from 'react';
 
 const DICE_TYPES = [2, 3, 4, 6, 8, 10, 12, 20, 50, 100];
+import { useRollFeed } from '@/context/RollFeedContext';
 
 const QuickRoll = ({ character }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const { addRollToFeed } = useRollFeed();
 
   const sendToDiscord = useCallback(async (title, description) => {
+    const discordText = `${title}\n${description}`;
     if (character && character.discordWebhookUrl) {
       try {
         await fetch(character.discordWebhookUrl, {
@@ -15,7 +18,7 @@ const QuickRoll = ({ character }) => {
           body: JSON.stringify({
             embeds: [{
               title: title,
-              description: description,
+              description: description.replace(/\*/g, ''), // Remove markdown for Discord embed
               color: 7506394, // A nice purple color
             }]
           })
@@ -23,20 +26,30 @@ const QuickRoll = ({ character }) => {
       } catch (error) {
         console.error('Failed to send to Discord:', error);
         // Maybe show a modal here? For now, just log it.
+        return null; // Indicate failure
       }
+      return discordText; // Indicate success
     } else {
       // Fallback or alert if no webhook is configured
-      const command = `**${title}**\n${description}`;
       // This part needs a modal system to be in place.
       // For now, we can just alert the user.
-      alert(`Webhook do Discord não configurado. Copie o comando:\n\n${command}`);
+      alert(`Webhook do Discord não configurado. Copie o comando:\n\n${discordText}`);
+      return null; // Indicate no webhook was sent
     }
-  }, [character]);
+  }, [character, addRollToFeed]);
 
-  const handleRoll = (sides) => {
+  const handleRoll = async (sides) => {
     const result = Math.floor(Math.random() * sides) + 1;
-    sendToDiscord(`Rolagem de d${sides}`, `**Resultado: ${result}**`);
     setIsOpen(false); // Close panel after rolling
+
+    const discordMessage = await sendToDiscord(`Rolagem de d${sides}`, `**Resultado: ${result}**`);
+
+    addRollToFeed({
+      characterName: character?.name || 'Narrador',
+      rollName: `Rolagem Rápida de d${sides}`,
+      results: [{ value: result, displayValue: `d${sides} (${result})` }],
+      discordText: discordMessage,
+    });
   };
 
   return (

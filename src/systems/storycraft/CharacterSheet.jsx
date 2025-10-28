@@ -15,7 +15,7 @@ import AttributesSection from './AttributesSection';
 
 const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
   const { character, loading, updateCharacterField, toggleSection } = useCharacter(initialCharacter.id, initialCharacter.ownerUid);
-  const { addRollToFeed } = useRollFeed();
+  const { addRollToFeed, addMessageToFeed } = useRollFeed();
   const { user } = useAuth();
 
   const [modalState, setModalState] = useState({ type: null, props: {} });
@@ -48,6 +48,14 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
 
   const handleShowOnDiscord = async (title, description, fields = [], footerText = '', imageUrl = '') => {
     if (!character) return;
+
+    // Adiciona a mensagem ao feed do app
+    addMessageToFeed({
+      characterName: character.name || 'Narrador',
+      // Formata o texto para o feed do app.
+      text: `${title}\n${description || 'Nenhuma descrição.'}`
+    });
+
     const embed = {
       author: { name: character.name || 'Personagem', icon_url: character.photoUrl || '' },
       title: title || "Sem Título",
