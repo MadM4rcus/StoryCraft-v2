@@ -46,7 +46,18 @@ export const createNewCharacter = async (userId) => {
       name: characterName,
       ownerUid: userId,
       createdAt: serverTimestamp(),
-      level: 1,
+      level: 1, // Valor padrão
+      mainAttributes: { // Inicializa com valores padrão para HP e MP
+        hp: {
+          current: 100,
+          max: 100,
+          temp: 0,
+        },
+        mp: {
+          current: 50,
+          max: 50,
+        },
+      },
       // ... (resto dos dados iniciais)
     };
     const docRef = await addDoc(charactersRef, newCharData);

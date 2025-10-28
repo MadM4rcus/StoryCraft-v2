@@ -153,8 +153,13 @@ const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, toggleSect
             const finalDirectValue = parseInt(localDirectValue, 10) || 0;
 
             if (finalDirectValue !== (originalDirectValue || 0)) {
-                const newMainAttributes = { ...currentMainAttributes, [name]: finalDirectValue };
-                onUpdate('mainAttributes', newMainAttributes);
+                // CORREÇÃO DEFINITIVA: Mescla a alteração com os dados originais do personagem
+                // para garantir que os sub-objetos 'hp' e 'mp' nunca sejam perdidos,
+                // mesmo que o estado local 'localMainAttributes' esteja dessincronizado.
+                const updatedMainAttributes = { 
+                    ...currentMainAttributes, 
+                    [name]: finalDirectValue };
+                onUpdate('mainAttributes', updatedMainAttributes);
             }
         }
     }, [localMainAttributes, character, onUpdate]); // Adicionado 'character' como dependência

@@ -1,8 +1,8 @@
 // src/components/PartyHealthMonitor.jsx
 
 import React, { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth'; // <-- CORREÇÃO AQUI
-import { usePartyHealth } from '@/context/PartyHealthContext'; // <-- CORREÇÃO AQUI
+import { useAuth } from '@/hooks';
+import { usePartyHealth } from '@/context';
 
 const PartyHealthMonitor = ({ onCharacterClick }) => {
   const { isMaster } = useAuth();
@@ -21,9 +21,9 @@ const PartyHealthMonitor = ({ onCharacterClick }) => {
   };
 
   const renderCharacterHealth = (char) => {
-    // A lógica de busca do HP/MP em si estava correta.
-    // O problema era 'char.mainAttributes' que vinha undefined.
-    const hp = char.mainAttributes?.hp || { current: '?', max: '?' };
+    // O mainAttributes agora deve ser um objeto devido ao parsing no PartyHealthContext
+    // ou um objeto vazio se não existia.
+    const hp = char.mainAttributes?.hp || { current: '?', max: '?', temp: 0 };
     const mp = char.mainAttributes?.mp || { current: '?', max: '?' };
 
     return (
@@ -35,7 +35,7 @@ const PartyHealthMonitor = ({ onCharacterClick }) => {
       >
         <p className="font-bold text-textPrimary truncate">{char.name}</p>
         <div className="text-sm flex justify-between">
-          <span className="text-red-400">HP: {hp.current}/{hp.max}</span>
+          <span className="text-red-400">HP: {hp.current}/{hp.max} {hp.temp > 0 ? `(+${hp.temp})` : ''}</span>
           <span className="text-blue-400">MP: {mp.current}/{mp.max}</span>
         </div>
       </div>
