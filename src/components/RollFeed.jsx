@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useRollFeed } from '@/context';
+import { useAuth } from '@/hooks';
+import { ChatInput } from '@/components';
 
 const RollFeed = () => {
-  const { rolls } = useRollFeed(); // Pega as rolagens do contexto
+  const { feedItems } = useRollFeed();
   const [isCollapsed, setIsCollapsed] = useState(true);
 
   const formatTimestamp = (timestamp) => {
@@ -12,6 +14,20 @@ const RollFeed = () => {
       hour: '2-digit',
       minute: '2-digit',
     });
+  };
+
+  const renderChatMessage = (message) => {
+    return (
+      <div key={message.id} className="p-3 mb-2">
+        <div className="flex justify-between items-center text-xs text-textSecondary mb-1">
+          <span className="font-bold">{message.characterName}</span>
+          <span>{formatTimestamp(message.timestamp)}</span>
+        </div>
+        <p className="text-sm text-textPrimary break-words">
+          {message.text}
+        </p>
+      </div>
+    );
   };
 
   const renderRollResult = (roll) => {
@@ -31,6 +47,17 @@ const RollFeed = () => {
         {roll.discordText && <p className="text-xs italic text-textSecondary mt-1">"{roll.discordText}"</p>}
       </div>
     );
+  };
+
+  const renderFeedItem = (item) => {
+    switch (item.type) {
+      case 'roll':
+        return renderRollResult(item);
+      case 'message':
+        return renderChatMessage(item);
+      default:
+        return null;
+    }
   };
 
   if (isCollapsed) {
@@ -59,9 +86,10 @@ const RollFeed = () => {
         </button>
       </div>
       <div className="flex-grow p-3 overflow-y-auto">
-        {rolls.length === 0 && <p className="text-textSecondary italic">Nenhuma rolagem ainda...</p>}
-        {rolls.map(renderRollResult)}
+        {feedItems.length === 0 && <p className="text-textSecondary italic">Nenhuma rolagem ou mensagem ainda...</p>}
+        {feedItems.map(renderFeedItem)}
       </div>
+      <ChatInput />
     </div>
   );
 };

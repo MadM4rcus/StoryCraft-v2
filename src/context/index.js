@@ -1,2 +1,2 @@
-export * from './AuthContext';
 export * from './RollFeedContext';
+export * from './AuthContext';
