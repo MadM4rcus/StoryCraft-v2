@@ -18,79 +18,89 @@ export const PartyHealthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!isMaster) {
+    if (!user) {
       setAllCharacters([]);
       setIsLoading(false);
       return;
     }
- 
+
     setIsLoading(true);
     const charMap = new Map();
-    let sheetUnsubscribers = [];
- 
-    const usersRef = collection(db, `artifacts2/${APP_ID}/users`);
- 
-    const unsubscribeUsers = onSnapshot(usersRef, (usersSnapshot) => {
-      sheetUnsubscribers.forEach(unsub => unsub());
-      sheetUnsubscribers = [];
- 
-      if (usersSnapshot.empty) {
-        charMap.clear();
-        setAllCharacters([]);
-        setIsLoading(false);
-        return;
-      }
- 
-      usersSnapshot.docs.forEach(userDoc => {
-        const userId = userDoc.id;
-        const sheetsRef = collection(db, `artifacts2/${APP_ID}/users/${userId}/characterSheets`);
- 
-        const unsubscribeSheets = onSnapshot(sheetsRef, (snapshot) => {
-          let hasChanges = false;
- 
-          snapshot.docChanges().forEach(change => {
-            const rawCharData = change.doc.data();
-            let mainAttributes = rawCharData.mainAttributes;
-            // Tenta parsear mainAttributes se for uma string (para compatibilidade com dados antigos ou importados incorretamente)
-            if (typeof mainAttributes === 'string') {
-              try {
-                mainAttributes = JSON.parse(mainAttributes);
-              } catch (e) {
-                console.error(`Erro ao parsear mainAttributes para o personagem ${change.doc.id}:`, e);
-              }
-            }
-            const charData = { id: change.doc.id, ownerUid: userId, ...rawCharData, mainAttributes: mainAttributes };
- 
-            if (change.type === "added" || change.type === "modified") {
-              charMap.set(charData.id, charData);
-              hasChanges = true;
-            } else if (change.type === "removed") {
-              charMap.delete(charData.id);
-              hasChanges = true;
-            }
-          });
- 
-          if (hasChanges) {
-            setAllCharacters(Array.from(charMap.values()));
+
+    const processSnapshot = (snapshot, userId) => {
+      let hasChanges = false;
+      snapshot.docChanges().forEach(change => {
+        const rawCharData = change.doc.data();
+        let mainAttributes = rawCharData.mainAttributes;
+        if (typeof mainAttributes === 'string') {
+          try {
+            mainAttributes = JSON.parse(mainAttributes);
+          } catch (e) {
+            console.error(`Erro ao parsear mainAttributes para o personagem ${change.doc.id}:`, e);
           }
-          setIsLoading(false);
-        }, (error) => {
-          console.error(`Erro ao ouvir fichas do usuário ${userId}:`, error);
-          setIsLoading(false);
-        });
- 
-        sheetUnsubscribers.push(unsubscribeSheets);
+        }
+        const charData = { id: change.doc.id, ownerUid: userId, ...rawCharData, mainAttributes: mainAttributes };
+
+        if (change.type === "added" || change.type === "modified") {
+          charMap.set(charData.id, charData);
+          hasChanges = true;
+        } else if (change.type === "removed") {
+          charMap.delete(charData.id);
+          hasChanges = true;
+        }
       });
-    }, (error) => {
-      console.error("Erro ao ouvir coleção de usuários:", error);
+
+      if (hasChanges) {
+        const newChars = Array.from(charMap.values());
+        setAllCharacters(newChars);
+      }
       setIsLoading(false);
-    });
- 
-    return () => {
-      unsubscribeUsers();
-      sheetUnsubscribers.forEach(unsub => unsub());
     };
-  }, [isMaster]);
+
+    if (isMaster) {
+      // Lógica para o Mestre (ouve todos os usuários)
+      let sheetUnsubscribers = [];
+      const usersRef = collection(db, `artifacts2/${APP_ID}/users`);
+      const unsubscribeUsers = onSnapshot(usersRef, (usersSnapshot) => {
+        sheetUnsubscribers.forEach(unsub => unsub());
+        sheetUnsubscribers = [];
+
+        if (usersSnapshot.empty) {
+          charMap.clear();
+          setAllCharacters([]);
+          setIsLoading(false);
+          return;
+        }
+
+        usersSnapshot.docs.forEach(userDoc => {
+          const userId = userDoc.id;
+          const sheetsRef = collection(db, `artifacts2/${APP_ID}/users/${userId}/characterSheets`);
+          const unsubscribeSheets = onSnapshot(sheetsRef, (snapshot) => processSnapshot(snapshot, userId), (error) => {
+            console.error(`Erro ao ouvir fichas do usuário ${userId}:`, error);
+            setIsLoading(false);
+          });
+          sheetUnsubscribers.push(unsubscribeSheets);
+        });
+      }, (error) => {
+        console.error("Erro ao ouvir coleção de usuários:", error);
+        setIsLoading(false);
+      });
+
+      return () => {
+        unsubscribeUsers();
+        sheetUnsubscribers.forEach(unsub => unsub());
+      };
+    } else {
+      // Lógica para Jogadores (ouve apenas as próprias fichas)
+      const sheetsRef = collection(db, `artifacts2/${APP_ID}/users/${user.uid}/characterSheets`);
+      const unsubscribe = onSnapshot(sheetsRef, (snapshot) => processSnapshot(snapshot, user.uid), (error) => {
+        console.error(`Erro ao ouvir as próprias fichas:`, error);
+        setIsLoading(false);
+      });
+
+      return () => unsubscribe();
+    }
+  }, [user, isMaster]);
 
   
   // Deriva os dados dos selecionados

@@ -129,12 +129,12 @@ const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
     });
   };
 
-  // Renderiza o monitor de vida se o usuário for mestre, independentemente de ter uma ficha selecionada ou não.
-  const masterTools = isMaster && <PartyHealthMonitor onCharacterClick={handleCharacterClickFromMonitor} />;
+  // Renderiza o monitor de vida para todos os usuários.
+  const partyMonitor = <PartyHealthMonitor onCharacterClick={handleCharacterClickFromMonitor} />;
 
   return (
     <>
-      {masterTools}
+      {partyMonitor}
       {/* Botão do Editor de Temas e o próprio editor, renderizados no topo */}
       <button 
         onClick={() => setIsThemeEditorOpen(true)} 

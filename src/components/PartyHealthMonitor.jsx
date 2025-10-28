@@ -10,11 +10,7 @@ const PartyHealthMonitor = ({ onCharacterClick }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showSelector, setShowSelector] = useState(false);
 
-  if (!isMaster) {
-    return null;
-  }
-
-  const handleCharacterClick = (char) => {
+    const handleCharacterClick = (char) => {
     if (onCharacterClick) {
       onCharacterClick(char);
     }
