@@ -1,7 +1,7 @@
 // src/components/ThemeEditor.jsx
 
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useAuth, useSystem } from '@/hooks';
 import { getThemesForUser, saveTheme, deleteTheme, applyThemeToCharacter } from '../services/themeService';
 import ModalManager from './ModalManager'; // 1. IMPORTAÇÃO CORRIGIDA
 
@@ -31,10 +31,11 @@ const defaultTheme = {
 const fontOptions = ["'Roboto', sans-serif", "'Merriweather', serif", "'Lato', sans-serif", "'Noto Sans', sans-serif", "'Slabo 27px', serif"];
 
 const ThemeEditor = ({ character, setPreviewTheme, onClose }) => {
-  const { user } = useAuth();
+  const { user } = useAuth(); // Apenas o usuário do useAuth
+  // Importar e usar useSystem para obter o contexto do sistema
+  const { characterDataCollectionRoot } = useSystem(); 
   const [themes, setThemes] = useState([]);
   const [selectedTheme, setSelectedTheme] = useState(defaultTheme);
-  
   // 2. ESTADO DE MODAL ATUALIZADO
   const [modalState, setModalState] = useState({ type: null, props: {} });
   const closeModal = () => setModalState({ type: null, props: {} });
@@ -45,12 +46,12 @@ const ThemeEditor = ({ character, setPreviewTheme, onClose }) => {
       setSelectedTheme(prev => ({...defaultTheme, ownerUid: user.uid}));
     }
   }, [user]);
-  
-  useEffect(() => { setPreviewTheme(selectedTheme); }, [selectedTheme, setPreviewTheme]);
+
+  useEffect(() => { setPreviewTheme(selectedTheme); }, [selectedTheme, setPreviewTheme]); 
 
   const handleThemeSelection = (themeId) => {
     if (themeId === 'new') setSelectedTheme({...defaultTheme, ownerUid: user.uid});
-    else { const foundTheme = themes.find(t => t.id === themeId); if (foundTheme) setSelectedTheme(foundTheme); }
+    else { const foundTheme = themes.find(t => t.id === themeId); if (foundTheme) setSelectedTheme(foundTheme); } 
   };
 
   const handleStyleChange = (key, value) => setSelectedTheme(prev => ({ ...prev, styles: { ...prev.styles, [key]: value } }));
@@ -101,7 +102,7 @@ const ThemeEditor = ({ character, setPreviewTheme, onClose }) => {
       return;
     }
     await saveTheme(selectedTheme);
-    await applyThemeToCharacter(character.ownerUid, character.id, selectedTheme.id);
+    await applyThemeToCharacter(character.ownerUid, character.id, selectedTheme.id, characterDataCollectionRoot); // Passa characterDataCollectionRoot
     setModalState({ type: 'info', props: { message: `Tema "${selectedTheme.name}" aplicado!`, onConfirm: () => { closeModal(); onClose(); } }});
   };
 

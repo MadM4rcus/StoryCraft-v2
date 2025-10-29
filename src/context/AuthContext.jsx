@@ -3,7 +3,8 @@ import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } from
 import { auth, db } from "../services/firebase.js";
 import { doc, setDoc, getDoc, onSnapshot } from "firebase/firestore";
 
-const appId = "1:727724875985:web:97411448885c68c289e5f0";
+// Este identificador é fixo para a coleção onde o status de mestre é armazenado.
+const GLOBAL_APP_IDENTIFIER = '1:727724875985:web:97411448885c68c289e5f0';
 
 export const AuthContext = createContext();
 
@@ -25,8 +26,10 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     if (user) {
-      const userDocRef = doc(db, `artifacts2/${appId}/users/${user.uid}`);
-
+      // A informação de 'isMaster' é buscada do caminho original do StoryCraft V1,
+      // que é considerado o local central para essa flag.
+      const userDocRef = doc(db, `artifacts2/${GLOBAL_APP_IDENTIFIER}/users/${user.uid}`);
+      
       const unsubscribeFirestore = onSnapshot(userDocRef, async (docSnap) => {
         if (!docSnap.exists()) {
           try {
@@ -53,6 +56,8 @@ export const AuthProvider = ({ children }) => {
 
       return () => unsubscribeFirestore();
     }
+    // Se não houver usuário, resetamos o estado.
+    setIsMaster(false);
   }, [user]);
 
   const googleSignIn = () => {

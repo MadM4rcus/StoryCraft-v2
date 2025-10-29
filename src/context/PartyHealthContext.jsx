@@ -1,7 +1,7 @@
 // src/context/PartyHealthContext.jsx
 
 import React, { createContext, useState, useContext, useCallback, useEffect, useMemo } from 'react';
-import { useAuth } from '@/hooks';
+import { useAuth, useSystem } from '@/hooks'; // Import useSystem
 import { db } from '@/services';
 import { collection, onSnapshot, query } from 'firebase/firestore';
 
@@ -9,10 +9,9 @@ const PartyHealthContext = createContext();
 
 export const usePartyHealth = () => useContext(PartyHealthContext);
 
-const APP_ID = '1:727724875985:web:97411448885c68c289e5f0';
-
 export const PartyHealthProvider = ({ children }) => {
   const { user, isMaster } = useAuth();
+  const { characterDataCollectionRoot, GLOBAL_APP_IDENTIFIER } = useSystem(); // Use SystemContext
   const [allCharacters, setAllCharacters] = useState([]);
   const [selectedCharIds, setSelectedCharIds] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -60,7 +59,7 @@ export const PartyHealthProvider = ({ children }) => {
     if (isMaster) {
       // Lógica para o Mestre (ouve todos os usuários)
       let sheetUnsubscribers = [];
-      const usersRef = collection(db, `artifacts2/${APP_ID}/users`);
+      const usersRef = collection(db, `${characterDataCollectionRoot}/${GLOBAL_APP_IDENTIFIER}/users`);
       const unsubscribeUsers = onSnapshot(usersRef, (usersSnapshot) => {
         sheetUnsubscribers.forEach(unsub => unsub());
         sheetUnsubscribers = [];
@@ -74,7 +73,7 @@ export const PartyHealthProvider = ({ children }) => {
 
         usersSnapshot.docs.forEach(userDoc => {
           const userId = userDoc.id;
-          const sheetsRef = collection(db, `artifacts2/${APP_ID}/users/${userId}/characterSheets`);
+          const sheetsRef = collection(db, `${characterDataCollectionRoot}/${GLOBAL_APP_IDENTIFIER}/users/${userId}/characterSheets`);
           const unsubscribeSheets = onSnapshot(sheetsRef, (snapshot) => processSnapshot(snapshot, userId), (error) => {
             console.error(`Erro ao ouvir fichas do usuário ${userId}:`, error);
             setIsLoading(false);
@@ -92,15 +91,15 @@ export const PartyHealthProvider = ({ children }) => {
       };
     } else {
       // Lógica para Jogadores (ouve apenas as próprias fichas)
-      const sheetsRef = collection(db, `artifacts2/${APP_ID}/users/${user.uid}/characterSheets`);
+      const sheetsRef = collection(db, `${characterDataCollectionRoot}/${GLOBAL_APP_IDENTIFIER}/users/${user.uid}/characterSheets`);
       const unsubscribe = onSnapshot(sheetsRef, (snapshot) => processSnapshot(snapshot, user.uid), (error) => {
         console.error(`Erro ao ouvir as próprias fichas:`, error);
         setIsLoading(false);
       });
 
       return () => unsubscribe();
-    }
-  }, [user, isMaster]);
+    } // Adicionado characterDataCollectionRoot e GLOBAL_APP_IDENTIFIER às dependências
+  }, [user, isMaster, characterDataCollectionRoot, GLOBAL_APP_IDENTIFIER]);
 
   
   // Deriva os dados dos selecionados

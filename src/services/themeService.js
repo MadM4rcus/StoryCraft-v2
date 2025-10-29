@@ -4,7 +4,7 @@ import { db } from './firebase';
 // AQUI ESTÁ A CORREÇÃO: Adicionado 'getDoc' à lista de importação
 import { collection, query, where, getDocs, getDoc, addDoc, doc, setDoc, deleteDoc } from 'firebase/firestore';
 
-const appId = "1:727724875985:web:97411448885c68c289e5f0";
+const GLOBAL_APP_IDENTIFIER = "1:727724875985:web:97411448885c68c289e5f0"; // Renomeado para clareza
 
 /**
  * Busca todos os temas criados por um utilizador específico.
@@ -83,10 +83,10 @@ export const deleteTheme = async (themeId) => {
 /**
  * Aplica um tema a uma ficha de personagem específica.
  */
-export const applyThemeToCharacter = async (ownerUid, characterId, themeId) => {
+export const applyThemeToCharacter = async (ownerUid, characterId, themeId, characterDataCollectionRoot) => {
   if (!ownerUid || !characterId) return;
   try {
-    const charRef = doc(db, `artifacts2/${appId}/users/${ownerUid}/characterSheets/${characterId}`);
+    const charRef = doc(db, `${characterDataCollectionRoot}/${GLOBAL_APP_IDENTIFIER}/users/${ownerUid}/characterSheets/${characterId}`);
     await setDoc(charRef, { activeThemeId: themeId }, { merge: true });
   } catch (error) {
     console.error("Erro ao aplicar tema ao personagem:", error);

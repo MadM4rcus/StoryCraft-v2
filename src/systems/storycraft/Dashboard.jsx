@@ -1,13 +1,11 @@
-// src/components/Dashboard.jsx
+// src/systems/storycraft/Dashboard.jsx
 
 import React, { useState, useEffect, useRef } from 'react';
 import { CharacterList, CharacterSheet } from './index';
 import { ModalManager, ThemeEditor, PartyHealthMonitor } from '@/components';
-import { useAuth } from '@/hooks';
+import { useAuth, useSystem } from '@/hooks';
 import { getCharactersForUser, createNewCharacter, deleteCharacter, getThemeById, db } from '@/services';
 import { doc, setDoc, collection, onSnapshot } from 'firebase/firestore';
-
-const appId = "1:727724875985:web:97411448885c68c289e5f0";
 
 const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
   const { user, googleSignOut, isMaster } = useAuth();
@@ -17,14 +15,14 @@ const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
   const [viewingAll, setViewingAll] = useState(false);
   const [isThemeEditorOpen, setIsThemeEditorOpen] = useState(false);
 
-  // NOVO ESTADO UNIFICADO PARA MODAIS DO DASHBOARD
+  const { currentSystem, setCurrentSystem, characterDataCollectionRoot, GLOBAL_APP_IDENTIFIER } = useSystem();
   const [modalState, setModalState] = useState({ type: null, props: {} });
   const closeModal = () => setModalState({ type: null, props: {} });
 
   useEffect(() => {
     if (selectedCharacter?.id && selectedCharacter?.ownerUid) {
-        const charRef = doc(db, `artifacts2/${appId}/users/${selectedCharacter.ownerUid}/characterSheets/${selectedCharacter.id}`);
-        const unsubscribe = onSnapshot(charRef, async (docSnap) => {
+        // A linha abaixo estava com um `appId` hardcoded, a correção já usa o contexto.
+        const unsubscribe = onSnapshot(doc(db, `${characterDataCollectionRoot}/${GLOBAL_APP_IDENTIFIER}/users/${selectedCharacter.ownerUid}/characterSheets/${selectedCharacter.id}`), async (docSnap) => {
             if (docSnap.exists()) {
                 const characterData = docSnap.data();
                 if (characterData.activeThemeId) {
@@ -39,7 +37,7 @@ const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
     } else {
         setActiveTheme(null);
     }
-  }, [selectedCharacter, setActiveTheme]);
+  }, [selectedCharacter, setActiveTheme, characterDataCollectionRoot, GLOBAL_APP_IDENTIFIER, db, getThemeById]);
 
   const handleCloseEditor = () => {
     setIsThemeEditorOpen(false);
@@ -54,17 +52,16 @@ const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
     if (user) {
       // FERRAMENTA DE DIAGNÓSTICO
       console.log('%c[DIAGNÓSTICO DASHBOARD]', 'color: #00A8E8; font-weight: bold;', `Buscando fichas. isMaster: ${isMaster}, viewingAll: ${viewingAll}`);
-      const userCharacters = await getCharactersForUser(user.uid, isMaster && viewingAll);
+      const userCharacters = await getCharactersForUser(user.uid, isMaster && viewingAll, characterDataCollectionRoot, GLOBAL_APP_IDENTIFIER);
       setCharacters(userCharacters);
     }
   };
-
   useEffect(() => {
     fetchCharacters();
-  }, [user, viewingAll, isMaster]);
+  }, [user, viewingAll, isMaster, characterDataCollectionRoot, GLOBAL_APP_IDENTIFIER]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCreateClick = async () => {
-    const newChar = await createNewCharacter(user.uid);
+    const newChar = await createNewCharacter(user.uid, characterDataCollectionRoot, GLOBAL_APP_IDENTIFIER);
     if (newChar) {
       fetchCharacters();
     }
@@ -84,14 +81,13 @@ const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
         if (!importedData.name) {
           throw new Error("Ficheiro JSON inválido ou incompatível.");
         }
-        // ATUALIZADO PARA USAR O NOVO SISTEMA DE MODAL
         setModalState({
           type: 'confirm',
           props: {
-            message: `Deseja criar um novo personagem com os dados de "${importedData.name}"?`,
+            message: `Deseja criar um novo personagem para o sistema ${currentSystem.toUpperCase()} com os dados de "${importedData.name}"?`,
             onConfirm: async () => {
-              const newCharRef = doc(collection(db, `artifacts2/${appId}/users/${user.uid}/characterSheets`));
-              const finalData = { ...importedData, ownerUid: user.uid };
+              const newCharRef = doc(collection(db, `${characterDataCollectionRoot}/${GLOBAL_APP_IDENTIFIER}/users/${user.uid}/characterSheets`));
+              const finalData = { ...importedData, ownerUid: user.uid, system: currentSystem }; // Adiciona o sistema ao personagem importado
               delete finalData.id;
               await setDoc(newCharRef, finalData);
               fetchCharacters();
@@ -110,13 +106,12 @@ const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
 
   const handleDeleteClick = (charToDelete) => {
     const ownerId = charToDelete.ownerUid || user.uid;
-    // ATUALIZADO PARA USAR O NOVO SISTEMA DE MODAL
     setModalState({
       type: 'confirm',
       props: {
-        message: `Tem a certeza que deseja excluir permanentemente a ficha de "${charToDelete.name}"?`,
+        message: `Tem a certeza que deseja excluir permanentemente a ficha de "${charToDelete.name}" do sistema ${currentSystem.toUpperCase()}?`,
         onConfirm: async () => {
-          const success = await deleteCharacter(ownerId, charToDelete.id);
+          const success = await deleteCharacter(ownerId, charToDelete.id, characterDataCollectionRoot, GLOBAL_APP_IDENTIFIER);
           if (success) {
             setCharacters(prevChars => prevChars.filter(c => c.id !== charToDelete.id));
           } else {
@@ -129,13 +124,11 @@ const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
     });
   };
 
-  // Renderiza o monitor de vida para todos os usuários.
   const partyMonitor = <PartyHealthMonitor onCharacterClick={handleCharacterClickFromMonitor} />;
 
   return (
     <>
       {partyMonitor}
-      {/* Botão do Editor de Temas e o próprio editor, renderizados no topo */}
       <button 
         onClick={() => setIsThemeEditorOpen(true)} 
         className="fixed top-4 right-4 z-[60] px-4 py-2 bg-btnHighlightBg text-btnHighlightText font-bold rounded-lg shadow-lg"
@@ -148,16 +141,22 @@ const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
         <CharacterSheet character={selectedCharacter} onBack={() => setSelectedCharacter(null)} isMaster={isMaster} />
       ) : (
     <div className="w-full max-w-5xl mx-auto p-4 md:p-8">
-      {/* RENDERIZA O NOVO GERENCIADOR DE MODAIS */}
       <ModalManager modalState={modalState} closeModal={closeModal} />
       
       <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".json" className="hidden" />
       <header className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-textPrimary">Seu Painel</h1>
+          <h1 className="text-2xl font-bold text-textPrimary">Painel StoryCraft V1</h1>
           <p className="text-textSecondary">Bem-vindo, {user.displayName}!</p>
         </div>
         <div className="flex items-center gap-4">
+          {/* Botão para voltar à tela de seleção de sistema */}
+          <button 
+            onClick={() => setCurrentSystem(null)}
+            className="px-4 py-2 bg-bgElement hover:bg-opacity-80 text-textPrimary font-semibold rounded-lg shadow-lg"
+          >
+            Trocar Sistema
+          </button>
           <button onClick={googleSignOut} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg">Sair</button>
         </div>
       </header>

@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks';
-import { RollFeedProvider, PartyHealthProvider } from '@/context';
-import { Login, RollFeed } from '@/components';
-import { Dashboard } from '@systems/storycraft';
+import SystemRouter from './components/SystemRouter';
+import LoginScreen from './components/LoginScreen';
+import { RollFeed } from '@/components'; // RollFeed é um overlay global, pode ser renderizado aqui
 
 function hexToRgb(hex) {
   if (!hex) return '55, 65, 81';
@@ -68,14 +68,12 @@ function App() {
   return (
     // ALTERADO: Adicionadas classes para controlar a imagem de fundo
     <div className="bg-bgPage bg-theme bg-cover bg-center bg-fixed text-textPrimary min-h-screen">
-      {user ? (
-        <RollFeedProvider>
-          <PartyHealthProvider>
-            <Dashboard activeTheme={activeTheme} setActiveTheme={setActiveTheme} setPreviewTheme={setPreviewTheme} />
-          </PartyHealthProvider>
-          <RollFeed />
-        </RollFeedProvider>
-      ) : <Login />}
+      {user ? ( // Se o usuário estiver logado, mostra o roteador de sistema e o RollFeed
+        <>
+          <SystemRouter activeTheme={activeTheme} setActiveTheme={setActiveTheme} previewTheme={previewTheme} setPreviewTheme={setPreviewTheme} />
+          <RollFeed /> {/* RollFeed é um overlay global, pode ficar aqui */}
+        </>
+      ) : <LoginScreen />} {/* Se não estiver logado, mostra a tela de login */}
     </div>
   );
 }
