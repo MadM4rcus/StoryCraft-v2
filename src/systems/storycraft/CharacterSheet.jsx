@@ -205,6 +205,41 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
     closeModal();
   };
 
+  const handleSimpleAttributeRoll = (attributeName, attributeValue) => {
+    if (!character) return;
+
+    const dice = '1d20';
+    const bonus = attributeValue;
+
+    // Roll 1d20
+    const roll = Math.floor(Math.random() * 20) + 1;
+    const diceResult = roll;
+    
+    const rollResultsForFeed = [
+        { type: 'dice', value: diceResult, displayValue: `1d20(${roll})` },
+        { type: 'attribute', value: bonus, displayValue: `${attributeName}(${bonus > 0 ? '+' : ''}${bonus})` }
+    ];
+
+    const finalTotal = diceResult + bonus;
+    const detailsString = rollResultsForFeed.map(r => r.displayValue).join(' ');
+    const discordDescription = `**Resultado Final: ${finalTotal}**`;
+
+    // Envia para o Discord
+    handleShowOnDiscord(`Rolagem de ${attributeName}`, discordDescription, [{ name: 'Detalhes', value: detailsString, inline: false }]);
+    
+    // Envia para o Feed de Rolagens
+    addRollToFeed({
+      characterId: character.id,
+      characterName: character.name,
+      ownerUid: user.uid,
+      rollName: `Rolagem de ${attributeName}`,
+      results: rollResultsForFeed,
+      discordText: discordDescription,
+    });
+
+    closeModal();
+  };
+
 const handleExecuteFormulaAction = async (action) => {
     if (!action) return;
 
@@ -417,7 +452,7 @@ const handleExecuteFormulaAction = async (action) => {
           </div>
 
       <div id="info"><CharacterInfo character={character} onUpdate={updateCharacterField} isMaster={isMaster} isEditMode={isEditMode} isCollapsed={character.collapsedStates?.info} toggleSection={() => toggleSection('info')} /></div>
-      <div id="main-attributes"><MainAttributes character={character} onUpdate={updateCharacterField} isMaster={isMaster} isEditMode={isEditMode} buffModifiers={buffModifiers.attributes} isCollapsed={character.collapsedStates?.main} toggleSection={() => toggleSection('main')} /></div>      
+      <div id="main-attributes"><MainAttributes character={character} onUpdate={updateCharacterField} isMaster={isMaster} isEditMode={isEditMode} buffModifiers={buffModifiers.attributes} isCollapsed={character.collapsedStates?.main} toggleSection={() => toggleSection('main')} onAttributeRoll={handleSimpleAttributeRoll} /></div>      
       <div id="attributes"><AttributesSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} buffModifiers={buffModifiers.attributes} isCollapsed={character.collapsedStates?.attributes} toggleSection={() => toggleSection('attributes')} onOpenRollModal={handleOpenRollModal} isEditMode={isEditMode} /></div>
       <div id="actions"><ActionsSection character={character} isMaster={isMaster} isCollapsed={character.collapsedStates?.actions} toggleSection={() => toggleSection('actions')} onOpenActionModal={handleOpenActionModal} allAttributes={allAttributes} onUpdate={updateCharacterField} onExecuteFormula={handleExecuteFormulaAction} isEditMode={isEditMode} /></div>
       <div id="buffs"><BuffsSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} allAttributes={allAttributes} isCollapsed={character.collapsedStates?.buffs} toggleSection={() => toggleSection('buffs')} isEditMode={isEditMode} /></div>

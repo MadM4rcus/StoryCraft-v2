@@ -73,6 +73,28 @@ const CharacterInfo = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
         });
     }, [character]);
 
+    // Helper function to determine Power Scale based on character level
+    const getPowerScale = (level) => {
+        level = parseInt(level, 10);
+        if (isNaN(level) || level < 1) {
+            return { scale: 'N/A', category: 'Desconhecida' };
+        }
+
+        if (level >= 1 && level <= 10) return { scale: 0, category: 'Comum' };
+        if (level >= 11 && level <= 20) return { scale: 1, category: 'Lendário 1' };
+        if (level >= 21 && level <= 30) return { scale: 2, category: 'Lendário 2' };
+        if (level >= 31 && level <= 40) return { scale: 3, category: 'Lendário 3' };
+        if (level >= 41 && level <= 45) return { scale: 4, category: 'Colossal 1' };
+        if (level >= 46 && level <= 50) return { scale: 5, category: 'Colossal 2' };
+        if (level >= 51 && level <= 55) return { scale: 6, category: 'Colossal 3' };
+        if (level >= 56 && level <= 59) return { scale: 7, category: 'Titânico 1' };
+        if (level === 60) return { scale: 8, category: 'Divino' };
+
+        return { scale: 'N/A', category: 'Além do Divino' }; // For levels beyond 60 or other edge cases
+    };
+
+    const { scale, category } = useMemo(() => getPowerScale(character.level), [character.level]);
+
     const handleLocalChange = (e) => {
         const { name, value } = e.target;
         setLocalFields(prev => ({ ...prev, [name]: value }));
@@ -114,12 +136,18 @@ const CharacterInfo = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
                 />
             )}
             <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
-                <div className={`flex-shrink-0 rounded-full border-2 border-btnHighlightBg ${canEdit && isEditMode ? 'cursor-pointer' : ''}`} onClick={handlePhotoClick}>
-                    {character.photoUrl ? (
-                        <img src={character.photoUrl} alt="Foto" className="w-48 h-48 object-cover rounded-full" onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/192x192/1f2937/FFFFFF?text=Erro'; }} />
-                    ) : (
-                        <div className="w-48 h-48 bg-bgElement rounded-full flex items-center justify-center text-6xl text-textSecondary">+</div>
-                    )}
+                <div className="flex-shrink-0 flex flex-col items-center">
+                    <div className={`rounded-full border-2 border-btnHighlightBg ${canEdit && isEditMode ? 'cursor-pointer' : ''}`} onClick={handlePhotoClick}>
+                        {character.photoUrl ? (
+                            <img src={character.photoUrl} alt="Foto" className="w-48 h-48 object-cover rounded-full" onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/192x192/1f2937/FFFFFF?text=Erro'; }} />
+                        ) : (
+                            <div className="w-48 h-48 bg-bgElement rounded-full flex items-center justify-center text-6xl text-textSecondary">+</div>
+                        )}
+                    </div>
+                    <div className="text-center mt-2">
+                        <p className="text-sm font-medium text-textSecondary">Escala de Poder:</p>
+                        <p className="text-lg font-bold text-textPrimary">{category}</p>
+                    </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 flex-grow w-full">
                     {fieldOrder.map(field => (
@@ -143,7 +171,7 @@ const CharacterInfo = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
 };
 
 // --- Sub-componente: MainAttributes ---
-const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, toggleSection, buffModifiers, isEditMode }) => {
+const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, toggleSection, buffModifiers, isEditMode, onAttributeRoll }) => {
     const { user } = useAuth();
     const canEdit = user && (user.uid === character.ownerUid || isMaster);
     const canEditGeneral = user && (user.uid === character.ownerUid || isMaster);
@@ -154,18 +182,20 @@ const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, toggleSect
         setLocalMainAttributes(character.mainAttributes || { hp: {}, mp: {} });
     }, [character.mainAttributes]);
 
-    // CORREÇÃO: Adicionada verificação para o caso de 'buffModifiers' ser undefined.
+    const calculateTotal = (base, key) => (parseInt(base, 10) || 0) + ((buffModifiers && buffModifiers[key]) || 0);
+
     const dexterityValue = useMemo(() => {
-        const searchTerms = ['dex', 'des', 'agi'];
-        const dexterityAttr = (character.attributes || []).find(attr => {
-            if (!attr.name) return false;
-            return searchTerms.some(term => attr.name.toLowerCase().includes(term));
-        });
-        if (!dexterityAttr) return 0;
-        const tempValue = (buffModifiers && buffModifiers[dexterityAttr.name]) || 0;
-        return (dexterityAttr.base || 0) + (dexterityAttr.perm || 0) + tempValue + (dexterityAttr.arma || 0);
-    }, [character.attributes, buffModifiers]);
+        // Agora busca o atributo 'destreza' diretamente dos mainAttributes
+        return calculateTotal(localMainAttributes?.destreza, 'Destreza');
+    }, [localMainAttributes, buffModifiers]);
     const initiativeTotal = dexterityValue + ((buffModifiers && buffModifiers['Iniciativa']) || 0);
+
+    const constitutionValue = useMemo(() => {
+        // Agora busca o atributo 'constituicao' diretamente dos mainAttributes
+        return calculateTotal(localMainAttributes?.constituicao, 'Constituição');
+    }, [localMainAttributes, buffModifiers]);
+
+    const mdBaseValue = (parseInt(localMainAttributes?.fd, 10) || 0) + constitutionValue;
 
     const handleLocalChange = (e, attributeKey) => {
         const { name, value } = e.target;
@@ -213,58 +243,116 @@ const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, toggleSect
         }
     }, [localMainAttributes, character, onUpdate]); // Adicionado 'character' como dependência
 
-    // CORREÇÃO: Adicionada verificação para o caso de 'buffModifiers' ser undefined.
-    const calculateTotal = (base, key) => (parseInt(base, 10) || 0) + ((buffModifiers && buffModifiers[key]) || 0);
-
     return (
         <SheetSkin title="Atributos Principais" isCollapsed={isCollapsed} toggleSection={toggleSection}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {/* Bloco de HP */}
+            <div className="space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {/* Bloco de HP */}
                 <div className="flex flex-col items-center p-2 bg-bgElement rounded-md">
                     <label className="text-lg font-medium text-textSecondary mb-1 uppercase">HP</label>
                     <div className="flex items-center gap-1">
-                        <input type="number" name="current" value={localMainAttributes.hp?.current ?? ''} onChange={(e) => handleLocalChange(e, 'hp')} onBlur={() => handleSave('current', 'hp')} className="w-16 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold" disabled={!canEdit} />
+                        <input type="number" name="current" value={localMainAttributes.hp?.current ?? ''} onChange={(e) => handleLocalChange(e, 'hp')} onBlur={() => handleSave('current', 'hp')} className="w-16 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold cursor-not-allowed" disabled={true} />
                         <span className="text-textSecondary">/</span>
-                        <input type="number" name="max" value={localMainAttributes.hp?.max ?? ''} onChange={(e) => handleLocalChange(e, 'hp')} onBlur={() => handleSave('max', 'hp')} className="w-16 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold" disabled={!canEdit || !isEditMode} />
+                        <input type="number" name="max" value={localMainAttributes.hp?.max ?? ''} onChange={(e) => handleLocalChange(e, 'hp')} onBlur={() => handleSave('max', 'hp')} className="w-16 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold" disabled={!isMaster} />
                         <span className="text-blue-400 font-bold text-xl ml-1">+</span>
-                        <input type="number" title="HP Temporário" name="temp" value={localMainAttributes.hp?.temp ?? ''} onChange={(e) => handleLocalChange(e, 'hp')} onBlur={() => handleSave('temp', 'hp')} className="w-16 p-2 text-center bg-bgInput border border-blue-400 rounded-md text-blue-300 text-xl font-bold" disabled={!canEdit} />
+                        <input type="number" title="HP Temporário" name="temp" value={localMainAttributes.hp?.temp ?? ''} onChange={(e) => handleLocalChange(e, 'hp')} onBlur={() => handleSave('temp', 'hp')} className="w-16 p-2 text-center bg-bgInput border border-blue-400 rounded-md text-blue-300 text-xl font-bold cursor-not-allowed" disabled={true} />
                     </div>
                 </div>
                 {/* Bloco de MP */}
                  <div className="flex flex-col items-center p-2 bg-bgElement rounded-md">
                     <label className="text-lg font-medium text-textSecondary mb-1 uppercase">MP</label>
                     <div className="flex items-center gap-2">
-                        <input type="number" name="current" value={localMainAttributes.mp?.current ?? ''} onChange={(e) => handleLocalChange(e, 'mp')} onBlur={() => handleSave('current', 'mp')} className="w-16 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold" disabled={!canEdit} />
+                        <input type="number" name="current" value={localMainAttributes.mp?.current ?? ''} onChange={(e) => handleLocalChange(e, 'mp')} onBlur={() => handleSave('current', 'mp')} className="w-16 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold cursor-not-allowed" disabled={true} />
                         <span className="text-textSecondary">/</span>
-                        <input type="number" name="max" value={localMainAttributes.mp?.max ?? ''} onChange={(e) => handleLocalChange(e, 'mp')} onBlur={() => handleSave('max', 'mp')} className="w-16 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold" disabled={!canEdit || !isEditMode} />
+                        <input type="number" name="max" value={localMainAttributes.mp?.max ?? ''} onChange={(e) => handleLocalChange(e, 'mp')} onBlur={() => handleSave('max', 'mp')} className="w-16 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold" disabled={!isMaster} />
                     </div>
                 </div>
-                {/* Outros Atributos */}
-                {['Iniciativa', 'fa', 'fm', 'fd'].map(key => {
-                    const isInitiative = key === 'Iniciativa';
-                    const baseValue = isInitiative ? dexterityValue : (localMainAttributes?.[key.toLowerCase()] ?? '');
-                    const total = isInitiative ? initiativeTotal : calculateTotal(localMainAttributes?.[key.toLowerCase()] || 0, key.toUpperCase());
-                    
-                    return (
-                        <div key={key} className="flex flex-col items-center p-2 bg-bgElement rounded-md">
-                            <label htmlFor={key} className="capitalize text-lg font-medium text-textSecondary mb-1">{key.toUpperCase()}:</label>
-                             <div className="flex items-center gap-2">
-                                <input
-                                    type="number"
-                                    id={key}
-                                    name={key.toLowerCase()}
-                                    value={baseValue}
-                                    onChange={handleLocalChange}
-                                    onBlur={() => handleSave(key.toLowerCase())}
-                                    className="w-14 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold"
-                                    disabled={!canEditGeneral || isInitiative || !isEditMode}
-                                />
-                                <span className="text-textSecondary">=</span>
-                                <span className="w-14 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold">{total}</span>
-                            </div>
-                        </div>
-                    );
-                })}
+                </div>
+
+                <div>
+                    <h4 className="text-lg font-semibold text-textAccent mt-4 mb-2 border-b border-bgElement pb-1">Atributos Essenciais</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                        {['Força', 'Destreza', 'Constituição', 'Inteligencia', 'Sabedoria', 'Carisma'].map(key => {
+                            const lowerKey = key.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // forca, constituicao, etc.
+                            const baseValue = localMainAttributes?.[lowerKey] ?? '';
+                            const total = calculateTotal(baseValue, key);
+
+                            return (
+                                <div key={key} className="flex flex-col items-center p-2 bg-bgElement rounded-md">
+                                    <label 
+                                        htmlFor={key} 
+                                        className="capitalize text-lg font-medium text-textSecondary mb-1 cursor-pointer hover:text-btnHighlightBg"
+                                        onClick={() => onAttributeRoll(key, total)}
+                                    >
+                                        {key}
+                                    </label>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="number"
+                                            id={key}
+                                            name={lowerKey}
+                                            value={baseValue}
+                                            onChange={handleLocalChange}
+                                            onBlur={() => handleSave(lowerKey)}
+                                            className="w-14 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold"
+                                            disabled={!canEditGeneral}
+                                        />
+                                        <span className="text-textSecondary">=</span>
+                                        <span className="w-14 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold">{total}</span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                <div>
+                    <h4 className="text-lg font-semibold text-textAccent mt-4 mb-2 border-b border-bgElement pb-1">Atributos de Combate</h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {['Iniciativa', 'FA', 'FM', 'FD', 'Acerto', 'MD', 'ME'].map(key => {
+                            const lowerKey = key.toLowerCase();
+                            const isCalculated = ['Iniciativa', 'MD'].includes(key);
+                            let baseValue, total;
+
+                            if (key === 'Iniciativa') {
+                                baseValue = dexterityValue;
+                                total = initiativeTotal;
+                            } else if (key === 'MD') {
+                                baseValue = mdBaseValue;
+                                total = calculateTotal(baseValue, 'MD');
+                            } else {
+                                baseValue = localMainAttributes?.[lowerKey] ?? '';
+                                total = calculateTotal(localMainAttributes?.[lowerKey] || 0, key.toUpperCase());
+                            }
+                            
+                            return (
+                                <div key={key} className="flex flex-col items-center p-2 bg-bgElement rounded-md">
+                                    <label 
+                                        htmlFor={key} 
+                                        className="capitalize text-lg font-medium text-textSecondary mb-1 cursor-pointer hover:text-btnHighlightBg"
+                                        onClick={() => onAttributeRoll(key, total)}
+                                    >
+                                        {key.toUpperCase()}
+                                    </label>
+                                     <div className="flex items-center gap-2">
+                                        <input
+                                            type="number"
+                                            id={key}
+                                            name={lowerKey}
+                                            value={baseValue}
+                                            onChange={handleLocalChange}
+                                            onBlur={() => !isCalculated && handleSave(lowerKey)}
+                                            className={`w-14 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold ${isCalculated ? 'cursor-not-allowed' : ''}`}
+                                            disabled={!canEditGeneral || isCalculated}
+                                        />
+                                        <span className="text-textSecondary">=</span>
+                                        <span className="w-14 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold">{total}</span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
             </div>
         </SheetSkin>
     );
