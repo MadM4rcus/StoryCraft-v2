@@ -4,6 +4,39 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/hooks';
 import SheetSkin from './SheetSkin';
 
+// --- Novo Sub-componente: ImageUrlModal ---
+const ImageUrlModal = ({ initialValue, onConfirm, onCancel }) => {
+    const [url, setUrl] = useState(initialValue);
+
+    const handleConfirm = () => {
+        onConfirm(url);
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50">
+            <div className="bg-bgSurface p-6 rounded-lg shadow-xl w-full max-w-md">
+                <h3 className="text-xl font-bold text-textPrimary mb-4">URL da Imagem do Personagem</h3>
+                <p className="text-textSecondary mb-4">Cole a nova URL da imagem abaixo:</p>
+                <input
+                    type="text"
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
+                    className="w-full p-2 bg-bgInput border border-bgElement rounded-md text-textPrimary focus:ring-btnHighlightBg focus:border-btnHighlightBg"
+                    placeholder="https://exemplo.com/imagem.png"
+                    autoFocus
+                />
+                <div className="flex justify-end gap-4 mt-6">
+                    <button onClick={onCancel} className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg">
+                        Cancelar
+                    </button>
+                    <button onClick={handleConfirm} className="px-4 py-2 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText font-bold rounded-lg">
+                        Confirmar
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 // --- O restante do seu código começa aqui ---
 
@@ -12,6 +45,7 @@ import SheetSkin from './SheetSkin';
 const CharacterInfo = ({ character, onUpdate, isMaster, isCollapsed, toggleSection, isEditMode }) => {
     const { user } = useAuth();
     const canEdit = user && (user.uid === character.ownerUid || isMaster);
+    const [isModalOpen, setIsModalOpen] = useState(false);
     
     const [localFields, setLocalFields] = useState({
         name: character.name || '',
@@ -57,23 +91,34 @@ const CharacterInfo = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
 
     const handlePhotoClick = () => {
         if (canEdit && isEditMode) {
-            const newUrl = prompt("Insira a URL da imagem do personagem:", character.photoUrl || "");
-            if (newUrl !== null) {
-                onUpdate('photoUrl', newUrl);
-            }
+            setIsModalOpen(true);
         }
+    };
+
+    const handleConfirmModal = (newUrl) => {
+        if (newUrl !== null && newUrl !== character.photoUrl) {
+            onUpdate('photoUrl', newUrl);
+        }
+        setIsModalOpen(false);
     };
 
     const fieldOrder = ['name', 'age', 'height', 'gender', 'race', 'class', 'alignment', 'level', 'xp'];
     
     return (
         <SheetSkin title="Informações do Personagem" isCollapsed={isCollapsed} toggleSection={toggleSection}>
+            {isModalOpen && (
+                <ImageUrlModal
+                    initialValue={character.photoUrl || ""}
+                    onConfirm={handleConfirmModal}
+                    onCancel={() => setIsModalOpen(false)}
+                />
+            )}
             <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
-                <div className="flex-shrink-0">
+                <div className={`flex-shrink-0 rounded-full border-2 border-btnHighlightBg ${canEdit && isEditMode ? 'cursor-pointer' : ''}`} onClick={handlePhotoClick}>
                     {character.photoUrl ? (
-                        <img src={character.photoUrl} alt="Foto" className={`w-48 h-48 object-cover rounded-full border-2 border-btnHighlightBg ${canEdit && isEditMode ? 'cursor-pointer' : ''}`} onClick={handlePhotoClick} onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/192x192/1f2937/FFFFFF?text=Erro'; }} />
+                        <img src={character.photoUrl} alt="Foto" className="w-48 h-48 object-cover rounded-full" onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/192x192/1f2937/FFFFFF?text=Erro'; }} />
                     ) : (
-                        <div className={`w-48 h-48 bg-bgElement rounded-full border-2 border-btnHighlightBg flex items-center justify-center text-6xl text-textSecondary ${canEdit && isEditMode ? 'cursor-pointer' : ''}`} onClick={handlePhotoClick}>+</div>
+                        <div className="w-48 h-48 bg-bgElement rounded-full flex items-center justify-center text-6xl text-textSecondary">+</div>
                     )}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 flex-grow w-full">
