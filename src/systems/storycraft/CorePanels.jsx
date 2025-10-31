@@ -187,13 +187,12 @@ const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, toggleSect
     const dexterityValue = useMemo(() => {
         // Agora busca o atributo 'destreza' diretamente dos mainAttributes
         return calculateTotal(localMainAttributes?.destreza, 'Destreza');
-    }, [localMainAttributes, buffModifiers]);
-    const initiativeTotal = dexterityValue + ((buffModifiers && buffModifiers['Iniciativa']) || 0);
+    }, [localMainAttributes?.destreza, buffModifiers]);
 
     const constitutionValue = useMemo(() => {
         // Agora busca o atributo 'constituicao' diretamente dos mainAttributes
         return calculateTotal(localMainAttributes?.constituicao, 'Constituição');
-    }, [localMainAttributes, buffModifiers]);
+    }, [localMainAttributes?.constituicao, buffModifiers]);
 
     const mdBaseValue = (parseInt(localMainAttributes?.fd, 10) || 0) + constitutionValue;
 
@@ -310,13 +309,14 @@ const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, toggleSect
                     <h4 className="text-lg font-semibold text-textAccent mt-4 mb-2 border-b border-bgElement pb-1">Atributos de Combate</h4>
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                         {['Iniciativa', 'FA', 'FM', 'FD', 'Acerto', 'MD', 'ME'].map(key => {
-                            const lowerKey = key.toLowerCase();
-                            const isCalculated = ['Iniciativa', 'MD'].includes(key);
+                            const lowerKey = key.toLowerCase(); // iniciativa, fa, fm...
+                            const isCalculated = ['MD'].includes(key); // Apenas MD é puramente calculado agora
                             let baseValue, total;
 
                             if (key === 'Iniciativa') {
-                                baseValue = dexterityValue;
-                                total = initiativeTotal;
+                                baseValue = localMainAttributes?.[lowerKey] ?? '';
+                                const initiativeBonus = parseInt(baseValue, 10) || 0;
+                                total = initiativeBonus + dexterityValue + (buffModifiers['Iniciativa'] || 0);
                             } else if (key === 'MD') {
                                 baseValue = mdBaseValue;
                                 total = calculateTotal(baseValue, 'MD');
