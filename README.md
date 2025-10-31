@@ -83,3 +83,31 @@ perfeito.
 
 agora vamos fazer o seguinte: ja temos um componente de party hp manager certo? esse componente é responsavel por verificar o estado do hp e mp de certas fichas selecionadas. ele já funciona de forma esperada. 
 minha ideia agora era criar um componente parecido que seria como uma especie de evento, o mestre cria esse evento. e escolhe certas fichas (npcs)  e fichas de jogadores, os donos das fichas devem ser inclusos automaticamente nesse "evento" e aí poderão interagir entre sí. atacando, curando, etec. esses ataques devem passar por todos os calculos de escala bem como algumas outras regras que vou adicionar futuramente.
+
+----
+
+a forma como as pericias funcionam é adicionando pericias e editando as regras manualmente, em vez disso vamos ter as pericias pré definidas.
+
+são 30 pericias no total. vou explicar as regras como elas devem funcionar.
+
+Acrobacia (DES) Adestramento* (CAR) Armadilhas* (INT) Atletismo (FOR) Atuação* (CAR) Cavalgar (DES) Cirurgia* (INT) Conhecimento* (INT) Cura (SAB) Diplomacia (CAR) Disfarce* (CAR) Enganação (CAR) Furtividade (DES) Guerra* (INT) Intimidação (CAR) Intuição (SAB) Investigação (INT) Jogatina* (CAR) Ladinagem* (DES) Luta (FOR) Misticismo* (INT) Nobreza* (INT) Ofício (INT) Percepção (SAB) Pilotagem* (DES) Pontaria (DES) Prestidigitação (DES) Religião* (SAB) Sedução (CAR) Sobrevivência (SAB)
+
+as pericias com * devem continuar com essa * no nome.
+
+a pericia é uma rolagem de d20+o atributo q está entre parenteses. esses atributos podem ser encontrados no corepanels.jsx
+
+a cada 10 lvl todo personagem ganha 1 bonus de +1 em qualquer pericia.
+
+as pericias precisam ter um checkbox para marcar e indicar se ela foi treinada.
+
+ao treinar uma pericia. duas coisas acontecem. ganha-se diretamente +2 de bonus na rolagem, e a cada 5 lvls ganha +1 de bonus se a pericia for treinada.
+
+alguns buffs e vantagens podem conceder bonus de pericia também então precisamos de um campo para digitar esse bonus.
+
+então em resumo o calculo da pericia é: D20 + atributo + bonus por 10 lvl + bonus de treinamento (2 +1 a cada 5 lvl) + bonus variavel de vantagens.
+
+preciso que crie essa lógica. e que cada pericia tenha um icone de um dadinho para clicar e rolar. essa rolagem deve aparecer no discord e no feed de rolagem dentro do aplicativo, outros arquivos voce pode encontrar dentro da pasta SRC que está no seu contexto.
+
+edite o componente specializations.jsx para fazer as alteraçoes.
+
+Também quero desativar o componente attributessection.jsx para usar apenas os atributos descritos no corepanels.jsx
