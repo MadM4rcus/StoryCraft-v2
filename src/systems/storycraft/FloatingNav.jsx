@@ -18,7 +18,6 @@ const FloatingNav = ({ character }) => {
   const sections = [
     { href: '#info', title: 'Informações', icon: '👤' },
     { href: '#main-attributes', title: 'Atributos Principais', icon: '❤️' },
-    { href: '#attributes', title: 'Atributos', icon: '📊' },
     { href: '#actions', title: 'Ações', icon: '⚔️' },
     { href: '#buffs', title: 'Buffs', icon: '✨' },
     { href: '#wallet', title: 'Carteira', icon: '💰' },

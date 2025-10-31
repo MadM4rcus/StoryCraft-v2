@@ -10,7 +10,6 @@ import SpecializationsList from './Specializations';
 import { Story, Notes } from './ContentSections';
 import ActionsSection from './ActionsSection';
 import BuffsSection from './BuffsSection';
-import AttributesSection from './AttributesSection';
 
 
 const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
@@ -27,10 +26,15 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
 
   const allAttributes = useMemo(() => {
     if (!character) return [];
-    const mainAttrs = ['Iniciativa', 'FA', 'FM', 'FD'];
-    const dynamicAttrs = (character.attributes || []).map(attr => attr.name).filter(Boolean);
-    return [...mainAttrs, ...dynamicAttrs];
-  }, [character]);
+    // Com a desativação de AttributesSection, a lista de atributos disponíveis
+    // para Ações e Buffs agora vem diretamente dos Atributos Principais e de Combate.
+    const mainAttrs = [
+        'Iniciativa', 'FA', 'FM', 'FD', 'Acerto', 'MD', 'ME',
+        'Força', 'Destreza', 'Constituição', 'Inteligencia', 'Sabedoria', 'Carisma',
+    ];
+    // A lógica para atributos dinâmicos foi removida.
+    return mainAttrs;
+  }, [character]); // A dependência de character.attributes foi removida.
 
   const buffModifiers = useMemo(() => {
     const modifiers = { attributes: {}, dice: [] };
@@ -144,100 +148,20 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
     });
   };
 
-  const handleOpenRollModal = (attributeId) => {
-    const attribute = (character.attributes || []).find(attr => attr.id === attributeId);
-    if (attribute) {
-        setModalState({
-            type: 'rollAttribute',
-            props: {
-                attributeName: attribute.name,
-                onConfirm: (dice, bonus) => handleConfirmAttributeRoll(dice, bonus, attribute),
-                onClose: closeModal
-            }
-      });
-    }
-  };
-
-  const handleConfirmAttributeRoll = (dice, bonus, attribute) => {
-    if (!attribute) return;
-    const tempValue = buffModifiers.attributes[attribute.name] || 0;
-    const attributeTotal = (attribute.base || 0) + (attribute.perm || 0) + tempValue + (attribute.arma || 0);
-    let diceResult = 0;
-    let rollResultsForFeed = [];
-
-    const match = dice.match(/(\d+)d(\d+)/i);
-    if (match) {
-        const numDice = parseInt(match[1], 10); const numSides = parseInt(match[2], 10);
-        let rolls = [];
-        for (let d = 0; d < numDice; d++) {
-            const roll = Math.floor(Math.random() * numSides) + 1;
-            rolls.push(roll);
-        }
-        diceResult = rolls.reduce((a, b) => a + b, 0);
-        rollResultsForFeed.push({ type: 'dice', value: diceResult, displayValue: `${dice}(${rolls.join('+')})` });
-    } else {
-        diceResult = parseInt(dice, 10) || 0;
-        rollResultsForFeed.push({ type: 'dice', value: diceResult, displayValue: `${diceResult}` });
-    }
-
-    rollResultsForFeed.push({ type: 'attribute', value: attributeTotal, displayValue: `${attribute.name}(${attributeTotal})` });
-    if (bonus !== 0) {
-        rollResultsForFeed.push({ type: 'modifier', value: bonus, displayValue: `Bónus(${bonus > 0 ? '+' : ''}${bonus})` });
-    }
-
-    const finalTotal = diceResult + attributeTotal + bonus;
-    const detailsString = rollResultsForFeed.map(r => r.displayValue).join(' + ');
-    const discordDescription = `**Resultado Final: ${finalTotal}**`;
-
-    // Envia para o Discord
-    handleShowOnDiscord(`Rolagem de ${attribute.name}`, discordDescription, [{ name: 'Detalhes', value: detailsString, inline: false }]);
-    
-    // Envia para o Feed de Rolagens
-    addRollToFeed({
-      characterId: character.id,
-      characterName: character.name,
-      ownerUid: user.uid,
-      rollName: `Rolagem de ${attribute.name}`,
-      results: rollResultsForFeed,
-      discordText: discordDescription,
-    });
-
-    closeModal();
-  };
+  // As funções handleOpenRollModal e handleConfirmAttributeRoll foram removidas
+  // pois eram usadas exclusivamente pelo AttributesSection.
 
   const handleSimpleAttributeRoll = (attributeName, attributeValue) => {
     if (!character) return;
-
-    const dice = '1d20';
-    const bonus = attributeValue;
-
-    // Roll 1d20
-    const roll = Math.floor(Math.random() * 20) + 1;
-    const diceResult = roll;
-    
-    const rollResultsForFeed = [
-        { type: 'dice', value: diceResult, displayValue: `1d20(${roll})` },
-        { type: 'attribute', value: bonus, displayValue: `${attributeName}(${bonus > 0 ? '+' : ''}${bonus})` }
-    ];
-
-    const finalTotal = diceResult + bonus;
-    const detailsString = rollResultsForFeed.map(r => r.displayValue).join(' ');
-    const discordDescription = `**Resultado Final: ${finalTotal}**`;
-
-    // Envia para o Discord
-    handleShowOnDiscord(`Rolagem de ${attributeName}`, discordDescription, [{ name: 'Detalhes', value: detailsString, inline: false }]);
-    
-    // Envia para o Feed de Rolagens
-    addRollToFeed({
-      characterId: character.id,
-      characterName: character.name,
-      ownerUid: user.uid,
-      rollName: `Rolagem de ${attributeName}`,
-      results: rollResultsForFeed,
-      discordText: discordDescription,
-    });
-
-    closeModal();
+    const action = {
+        name: `Rolagem de ${attributeName}`,
+        components: [
+            { type: 'dice', value: '1d20' },
+            { type: 'number', value: attributeValue, label: 'Bônus' }
+        ],
+        discordText: `Rolagem de ${attributeName} (1d20${attributeValue >= 0 ? '+' : ''}${attributeValue})`
+    };
+    handleExecuteFormulaAction(action);
   };
 
 const handleExecuteFormulaAction = async (action) => {
@@ -247,21 +171,40 @@ const handleExecuteFormulaAction = async (action) => {
     let rollResultsForFeed = [];
     let criticals = [];
     const multiplier = action.multiplier || 1;
+    
+    const getAttributeValue = (attrName) => {
+        let attrValue = 0;
+        if (!attrName) return 0;
+        
+        const mainAttrKey = (attrName || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        
+        if (character.mainAttributes && character.mainAttributes.hasOwnProperty(mainAttrKey)) {
+            attrValue = (character.mainAttributes[mainAttrKey] || 0);
+        } else if (character.mainAttributes && character.mainAttributes.hasOwnProperty(mainAttrKey.toLowerCase())) {
+             attrValue = (character.mainAttributes[mainAttrKey.toLowerCase()] || 0);
+        }
+        
+        attrValue += (buffModifiers.attributes[attrName] || 0);
+        
+        return attrValue;
+    };
+
+    // Adiciona uma rolagem de 1d20 se nenhum dado for especificado, como em rolagens de atributo simples.
+    const hasDiceComponent = (action.components || []).some(c => c.type === 'dice' || c.type === 'critDice');
+    if (!hasDiceComponent) {
+        const roll = Math.floor(Math.random() * 20) + 1;
+        totalResult += roll;
+        rollResultsForFeed.push({ type: 'dice', value: roll, displayValue: `1d20(${roll})` });
+    }
 
     for (let i = 0; i < multiplier; i++) {
         for (const comp of (action.components || [])) {
             if (comp.type === 'attribute') {
                 const attrName = comp.value;
-                let attrValue = 0;
-                if (['Iniciativa', 'FA', 'FM', 'FD'].includes(attrName)) {
-                    attrValue = (character.mainAttributes[attrName.toLowerCase()] || 0) + (buffModifiers.attributes[attrName] || 0);
-                } else {
-                    const dynamicAttr = (character.attributes || []).find(a => a.name === attrName);
-                    if (dynamicAttr) { attrValue = (dynamicAttr.base || 0) + (dynamicAttr.perm || 0) + (dynamicAttr.arma || 0) + (buffModifiers.attributes[attrName] || 0); }
-                }
+                const attrValue = getAttributeValue(attrName);
                 totalResult += attrValue;
                 rollResultsForFeed.push({ type: 'attribute', value: attrValue, displayValue: `${attrName}(${attrValue})` });
-            } else if (comp.type === 'critDice') { // Novo tipo: Dado Crítico
+            } else if (comp.type === 'critDice') {
                 const match = String(comp.value || '').match(/(\d+)d(\d+)/i);
                 if (match) {
                     const numDice = parseInt(match[1], 10);
@@ -274,17 +217,10 @@ const handleExecuteFormulaAction = async (action) => {
                         diceRollResult += roll;
 
                         if (roll >= (comp.critValue || numSides)) {
-                            let bonusAttributeValue = 0;
-                            const bonusAttrName = comp.critBonusAttribute;
-                            if (['Iniciativa', 'FA', 'FM', 'FD'].includes(bonusAttrName)) {
-                                bonusAttributeValue = (character.mainAttributes[bonusAttrName.toLowerCase()] || 0) + (buffModifiers.attributes[bonusAttrName] || 0);
-                            } else {
-                                const bonusAttr = (character.attributes || []).find(a => a.name === bonusAttrName);
-                                if (bonusAttr) { bonusAttributeValue = (bonusAttr.base || 0) + (bonusAttr.perm || 0) + (bonusAttr.arma || 0) + (buffModifiers.attributes[bonusAttrName] || 0); }
-                            }
+                            const bonusAttributeValue = getAttributeValue(comp.critBonusAttribute);
                             const totalBonus = bonusAttributeValue * (comp.critBonusMultiplier || 1);
                             diceRollResult += totalBonus;
-                            criticals.push(`Crítico no ${roll}! Adiciona ${bonusAttrName} (${totalBonus})`);
+                            criticals.push(`Crítico no ${roll}! Adiciona ${comp.critBonusAttribute} (${totalBonus})`);
                         }
                     }
                     totalResult += diceRollResult;
@@ -294,7 +230,7 @@ const handleExecuteFormulaAction = async (action) => {
                     totalResult += num;
                     rollResultsForFeed.push({ type: 'number', value: num, displayValue: `${num}` });
                 }
-            } else { // dice (dado comum) ou number
+            } else if (comp.type === 'dice') {
                 const match = String(comp.value || '').match(/(\d+)d(\d+)/i);
                 if (match) {
                     const numDice = parseInt(match[1], 10);
@@ -307,15 +243,13 @@ const handleExecuteFormulaAction = async (action) => {
                     totalResult += diceRollResult;
                     rollResultsForFeed.push({ type: 'dice', value: diceRollResult, displayValue: `${comp.value}(${rolls.join('+')})` });
                 } else {
-                    const num = parseInt(comp.value, 10) || 0;
-                    totalResult += num;
-                    
-                    if (comp.label) {
-                        rollResultsForFeed.push({ type: 'number', value: num, displayValue: `${comp.label}(${num >= 0 ? '+' : ''}${num})` });
-                    } else {
-                        rollResultsForFeed.push({ type: 'number', value: num, displayValue: `${num}` });
-                    }
+                    // Ignora se não for um formato de dado válido
                 }
+            } else if (comp.type === 'number') {
+                const num = parseInt(comp.value, 10) || 0;
+                totalResult += num;
+                const label = comp.label ? `${comp.label}(${num >= 0 ? '+' : ''}${num})` : `${num}`;
+                rollResultsForFeed.push({ type: 'number', value: num, displayValue: label });
             }
         }
     }
@@ -427,7 +361,33 @@ const handleExecuteFormulaAction = async (action) => {
 };
 
   const handleReset = () => {
-    setModalState({ type: 'confirm', props: { message: `Tem a certeza que deseja resetar PERMANENTEMENTE a ficha de "${character.name}"?`, onConfirm: async () => { const fieldsToReset = { photoUrl: '', age: '', height: '', gender: '', race: '', class: '', alignment: '', level: 1, xp: 0, mainAttributes: { hp: { current: 10, max: 10, temp: 0 }, mp: { current: 10, max: 10 }, initiative: 0, fa: 0, fm: 0, fd: 0 }, attributes: [], inventory: [], wallet: { zeni: 0, inspiration: 0 }, advantages: [], disadvantages: [], abilities: [], specializations: [], equippedItems: [], history: [], notes: [], buffs: [], formulaActions: [], discordWebhookUrl: '', }; for (const [field, value] of Object.entries(fieldsToReset)) { await updateCharacterField(field, value); } closeModal(); }, onCancel: closeModal } });
+    setModalState({ type: 'confirm', props: { 
+        message: `Tem a certeza que deseja resetar PERMANENTEMENTE a ficha de "${character.name}"?`, 
+        onConfirm: async () => { 
+            const fieldsToReset = { 
+                photoUrl: '', age: '', height: '', gender: '', race: '', class: '', alignment: '', 
+                level: 1, xp: 0, 
+                mainAttributes: { 
+                    hp: { current: 10, max: 10, temp: 0 }, mp: { current: 10, max: 10 }, 
+                    fa: 0, fm: 0, fd: 0, acerto: 0, me: 0,
+                    forca: 0, destreza: 0, constituicao: 0, inteligencia: 0, sabedoria: 0, carisma: 0 
+                }, 
+                attributes: [], // Mantém limpo pois a seção está desativada
+                inventory: [], 
+                wallet: { zeni: 0, inspiration: 0 }, 
+                advantages: [], disadvantages: [], abilities: [],
+                equippedItems: [], history: [], notes: [], buffs: [], 
+                formulaActions: [], 
+                discordWebhookUrl: '', 
+                skillSystem: {} // Reseta o novo sistema de perícias
+            }; 
+            for (const [field, value] of Object.entries(fieldsToReset)) { 
+                await updateCharacterField(field, value); 
+            } 
+            closeModal(); 
+        }, 
+        onCancel: closeModal 
+    } });
   };
   
   const handleExportJson = () => { const { collapsedStates, ...exportData } = character; const jsonString = JSON.stringify(exportData, null, 2); const blob = new Blob([jsonString], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${character.name || 'ficha'}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href); };
@@ -453,7 +413,7 @@ const handleExecuteFormulaAction = async (action) => {
 
       <div id="info"><CharacterInfo character={character} onUpdate={updateCharacterField} isMaster={isMaster} isEditMode={isEditMode} isCollapsed={character.collapsedStates?.info} toggleSection={() => toggleSection('info')} /></div>
       <div id="main-attributes"><MainAttributes character={character} onUpdate={updateCharacterField} isMaster={isMaster} isEditMode={isEditMode} buffModifiers={buffModifiers.attributes} isCollapsed={character.collapsedStates?.main} toggleSection={() => toggleSection('main')} onAttributeRoll={handleSimpleAttributeRoll} /></div>      
-      <div id="attributes"><AttributesSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} buffModifiers={buffModifiers.attributes} isCollapsed={character.collapsedStates?.attributes} toggleSection={() => toggleSection('attributes')} onOpenRollModal={handleOpenRollModal} isEditMode={isEditMode} /></div>
+      
       <div id="actions"><ActionsSection character={character} isMaster={isMaster} isCollapsed={character.collapsedStates?.actions} toggleSection={() => toggleSection('actions')} onOpenActionModal={handleOpenActionModal} allAttributes={allAttributes} onUpdate={updateCharacterField} onExecuteFormula={handleExecuteFormulaAction} isEditMode={isEditMode} /></div>
       <div id="buffs"><BuffsSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} allAttributes={allAttributes} isCollapsed={character.collapsedStates?.buffs} toggleSection={() => toggleSection('buffs')} isEditMode={isEditMode} /></div>
       <div id="wallet"><Wallet character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.wallet} toggleSection={() => toggleSection('wallet')} isEditMode={isEditMode} /></div>
@@ -462,7 +422,11 @@ const handleExecuteFormulaAction = async (action) => {
       <div id="equipped"><EquippedItemsList character={character} onUpdate={updateCharacterField} isMaster={isMaster} onShowDiscord={handleShowOnDiscord} isCollapsed={character.collapsedStates?.equipped} toggleSection={() => toggleSection('equipped')} isEditMode={isEditMode} /></div>
       <div id="perks"><PerksList character={character} onUpdate={updateCharacterField} onShowDiscord={handleShowOnDiscord} isCollapsed={character.collapsedStates?.perks} toggleSection={() => toggleSection('perks')} isEditMode={isEditMode} /></div>
       <div id="skills"><SkillsList character={character} onUpdate={updateCharacterField} isMaster={isMaster} onShowDiscord={handleShowOnDiscord} isCollapsed={character.collapsedStates?.skills} toggleSection={() => toggleSection('skills')} isEditMode={isEditMode} /></div>
-      <div id="specializations"><SpecializationsList character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.specializations} toggleSection={() => toggleSection('specializations')} allAttributes={allAttributes} onExecuteFormula={handleExecuteFormulaAction} isEditMode={isEditMode} /></div>
+      
+      {/* SpecializationsList agora usa a nova lógica. A prop 'allAttributes' foi removida. */}
+      <div id="specializations"><SpecializationsList character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.specializations} toggleSection={() => toggleSection('specializations')} onExecuteFormula={handleExecuteFormulaAction} isEditMode={isEditMode} /></div>
+      {/* O antigo SpecializationsList foi renomeado e agora é a seção de Perícias. O ID foi corrigido para 'skills'. */}
+      <div id="skills"><SpecializationsList character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.skills} toggleSection={() => toggleSection('skills')} onExecuteFormula={handleExecuteFormulaAction} isEditMode={isEditMode} /></div>
 
       <div id="story"><Story character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.story} toggleSection={() => toggleSection('story')} isEditMode={isEditMode} /></div>
       <div id="notes"><Notes character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.notes} toggleSection={() => toggleSection('notes')} isEditMode={isEditMode} /></div>

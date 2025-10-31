@@ -1,6 +1,5 @@
 import ActionButtons from './ActionButtons';
 import ActionsSection from './ActionsSection';
-import AttributesSection from './AttributesSection';
 import BuffsSection from './BuffsSection';
 import CharacterList from './CharacterList';
 import CharacterSheet from './CharacterSheet';
@@ -17,7 +16,6 @@ import { InventoryList, EquippedItemsList, SkillsList, PerksList } from './ListS
 export {
   ActionButtons,
   ActionsSection,
-  AttributesSection,
   BuffsSection,
   CharacterList,
   CharacterSheet,
