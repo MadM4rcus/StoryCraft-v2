@@ -69,17 +69,21 @@ const SpecializationsList = ({
     // Inicializa o estado das perícias no personagem se não existir ou estiver incompleto
     useEffect(() => {
         // Verifica se 'skillSystem' não existe ou se falta alguma perícia da lista pré-definida
-        const needsInitialization = !character.skillSystem || PREDEFINED_SKILLS.some(skill => !character.skillSystem[skill.name]);
+        const needsInitialization = !character.skillSystem || PREDEFINED_SKILLS.some(skill => 
+            !character.skillSystem[skill.name] || 
+            !character.skillSystem[skill.name].hasOwnProperty('selectedAttr') // Garante que a propriedade do atributo exista
+        );
         
         if (needsInitialization && canEdit) {
-            console.log("Inicializando sistema de perícias...");
-            const initialSkillSystem = { ...character.skillSystem }; // Preserva dados existentes
+            console.log("Inicializando ou atualizando sistema de perícias...");
+            const newSkillSystem = { ...character.skillSystem }; // Preserva dados existentes
             PREDEFINED_SKILLS.forEach(skill => {
-                if (!initialSkillSystem[skill.name]) {
-                    initialSkillSystem[skill.name] = { trained: false, otherBonus: 0 };
+                const currentSkillData = newSkillSystem[skill.name] || {};
+                if (!currentSkillData.hasOwnProperty('selectedAttr')) {
+                    newSkillSystem[skill.name] = { trained: currentSkillData.trained || false, otherBonus: currentSkillData.otherBonus || 0, selectedAttr: skill.attr };
                 }
             });
-            onUpdate('skillSystem', initialSkillSystem);
+            onUpdate('skillSystem', newSkillSystem);
         }
         
         // Sincroniza o estado local com o do personagem
@@ -98,8 +102,9 @@ const SpecializationsList = ({
     const calculateTotalBonus = useCallback((skill, skillState) => {
         if (!skillState) return 0;
 
-        // 1. Bônus de Atributo (ex: 'destreza')
-        const attrKey = ATTR_MAP[skill.attr];
+        // 1. Bônus de Atributo (usa o atributo selecionado, ou o padrão se não houver)
+        const selectedAttr = skillState.selectedAttr || skill.attr;
+        const attrKey = ATTR_MAP[selectedAttr];
         const attrBonus = mainAttributes[attrKey] || 0;
         
         // 2. Bônus por Nível 10 (+1 a cada 10 níveis)
@@ -138,6 +143,24 @@ const SpecializationsList = ({
         onUpdate('skillSystem', newSkillSystem);
     };
 
+    /**
+     * Altera o atributo base de uma perícia e salva na ficha.
+     */
+    const handleAttributeChange = (skillName, newAttr) => {
+        if (!canEdit || !isEditMode) return;
+
+        const currentSkillSystem = character.skillSystem || {};
+        const currentSkillState = currentSkillSystem[skillName] || { trained: false, otherBonus: 0, selectedAttr: '' };
+
+        const newSkillSystem = {
+            ...currentSkillSystem,
+            [skillName]: {
+                ...currentSkillState,
+                selectedAttr: newAttr
+            }
+        };
+        onUpdate('skillSystem', newSkillSystem);
+    };
     /**
      * Atualiza o estado local do bônus "Outros" enquanto o usuário digita.
      */
@@ -218,6 +241,7 @@ const SpecializationsList = ({
                     
                     const totalBonus = calculateTotalBonus(skill, skillState);
                     const bonusString = `${totalBonus >= 0 ? '+' : ''}${totalBonus}`;
+                    const selectedAttr = skillState.selectedAttr || skill.attr;
 
                     return (
                         <div key={skill.name} className="p-3 bg-bgElement rounded-md shadow-sm border border-bgInput flex flex-col gap-2">
@@ -233,13 +257,29 @@ const SpecializationsList = ({
                                         disabled={!canEdit || !isEditMode}
                                     />
                                     <label
-                                        htmlFor={`trained-${skill.name}`}
                                         className="font-semibold text-lg text-textPrimary truncate"
-                                        title={`${skill.name} (${skill.attr})`}
+                                        title={`${skill.name}`}
                                     >
-                                        {skill.name} ({skill.attr})
+                                        {skill.name}
                                     </label>
                                 </div>
+                                {isEditMode ? (
+                                    <select 
+                                        value={selectedAttr}
+                                        onChange={(e) => handleAttributeChange(skill.name, e.target.value)}
+                                        className="bg-bgInput text-textPrimary text-sm font-bold rounded-md p-1 border-none focus:ring-2 focus:ring-btnHighlightBg"
+                                        disabled={!canEdit}
+                                    >
+                                        {Object.keys(ATTR_MAP).map(attr => (
+                                            <option key={attr} value={attr}>{attr}</option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    <span className="font-semibold text-textSecondary text-sm ml-1">
+                                        ({selectedAttr})
+                                    </span>
+                                )}
+
                                 <span className="font-bold text-lg text-btnHighlightBg whitespace-nowrap ml-2">
                                     {bonusString}
                                 </span>
@@ -276,4 +316,3 @@ const SpecializationsList = ({
 };
 
 export default SpecializationsList;
-
