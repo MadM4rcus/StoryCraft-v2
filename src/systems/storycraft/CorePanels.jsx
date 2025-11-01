@@ -317,8 +317,7 @@ D                                     onBlur={() => handleSave
                     <h4 className="text-lg font-semibold text-textAccent mt-4 mb-2 border-b border-bgElement pb-1">Atributos de Combate</h4>
                     
                     {/* --- NOVO LAYOUT "EMPILHADO" APLICADO AQUI TAMBÉM --- */}
-                    {/* Grid ajustado para grid-cols-3 sm:grid-cols-4 */}
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                         {['Iniciativa', 'FA', 'FM', 'Acerto', 'MD', 'ME'].map(key => {
                             const lowerKey = key.toLowerCase(); // iniciativa, fa, fm...
                             const isCalculated = false; 
