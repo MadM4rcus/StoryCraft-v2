@@ -190,14 +190,17 @@ const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, toggleSect
         return calculateTotal(localMainAttributes?.constituicao, 'Constituição');
     }, [localMainAttributes?.constituicao, buffModifiers]);
 
-    const mdBaseValue = (parseInt(localMainAttributes?.fd, 10) || 0) + constitutionValue;
+    const mdBaseValue = (parseInt(localMainAttributes?.fd, 10) || 0);
 
     const handleLocalChange = (e, attributeKey) => {
         const { name, value } = e.target;
         const parsedValue = value === '' ? '' : parseInt(value, 10);
-
+ 
         setLocalMainAttributes(prev => {
-            if (attributeKey) {
+            // Se attributeKey for 'fd', estamos editando o campo MD, que salva em 'fd'
+            if (attributeKey === 'fd') {
+                return { ...prev, fd: parsedValue };
+            } else if (attributeKey) { // Para 'hp', 'mp'
                 return { ...prev, [attributeKey]: { ...(prev[attributeKey] || {}), [name]: parsedValue } };
             }
             return { ...prev, [name]: parsedValue };
@@ -316,9 +319,9 @@ D                                     onBlur={() => handleSave
                     {/* --- NOVO LAYOUT "EMPILHADO" APLICADO AQUI TAMBÉM --- */}
                     {/* Grid ajustado para grid-cols-3 sm:grid-cols-4 */}
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
-                        {['Iniciativa', 'FA', 'FM', 'FD', 'Acerto', 'MD', 'ME'].map(key => {
+                        {['Iniciativa', 'FA', 'FM', 'Acerto', 'MD', 'ME'].map(key => {
                             const lowerKey = key.toLowerCase(); // iniciativa, fa, fm...
-                            const isCalculated = ['MD'].includes(key); 
+                            const isCalculated = false; 
                             let baseValue, total;
 
                             if (key === 'Iniciativa') {
@@ -326,8 +329,8 @@ D                                     onBlur={() => handleSave
                                 const initiativeBonus = parseInt(baseValue, 10) || 0;
                                 total = initiativeBonus + dexterityValue + (buffModifiers['Iniciativa'] || 0);
                             } else if (key === 'MD') {
-                                baseValue = mdBaseValue;
-                                total = calculateTotal(baseValue, 'MD');
+                                baseValue = localMainAttributes?.fd ?? '';
+                                total = (parseInt(baseValue, 10) || 0) + constitutionValue + (buffModifiers['MD'] || 0);
                             } else {
                                 baseValue = localMainAttributes?.[lowerKey] ?? '';
                                 total = calculateTotal(localMainAttributes?.[lowerKey] || 0, key.toUpperCase());
@@ -358,10 +361,10 @@ a                                         ria-label={`${key}
                                             id={key}
                                             name={lowerKey}
                                             value={baseValue}
-                                            onChange={handleLocalChange}
-                                            onBlur={() => handleSave(lowerKey)}
+                                            onChange={e => handleLocalChange(e, key === 'MD' ? 'fd' : undefined)}
+              _                             onBlur={() => handleSave(key === 'MD' ? 'fd' : lowerKey)}
                                             className="w-16 p-1 text-center bg-bgInput border border-bgElement rounded-md text-textSecondary text-lg"
-                  _                         disabled={!canEditGeneral}
+                                         disabled={!canEditGeneral}
                                             aria-label={`${key} Base`}
                                         />
                                     )}
