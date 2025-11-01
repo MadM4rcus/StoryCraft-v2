@@ -1,4 +1,3 @@
-import ActionButtons from './ActionButtons';
 import ActionsSection from './ActionsSection';
 import BuffsSection from './BuffsSection';
 import CharacterList from './CharacterList';
@@ -14,7 +13,6 @@ import { CharacterInfo, MainAttributes, Wallet, DiscordIntegration } from './Cor
 import { InventoryList, EquippedItemsList, SkillsList, PerksList } from './ListSections';
 
 export {
-  ActionButtons,
   ActionsSection,
   BuffsSection,
   CharacterList,

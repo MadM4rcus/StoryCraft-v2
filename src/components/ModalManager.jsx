@@ -1,8 +1,7 @@
 // src/components/ModalManager.jsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
-// --- Componente Interno para o Conteúdo do Modal de Alerta/Confirmação ---
 const InfoConfirmModalContent = ({ message, onConfirm, onCancel, type, showCopyButton, copyText }) => {
     const [copySuccess, setCopySuccess] = useState('');
     const handleCopy = () => {
@@ -12,7 +11,7 @@ const InfoConfirmModalContent = ({ message, onConfirm, onCancel, type, showCopyB
         }, () => {
             setCopySuccess('Falhou em copiar.');
         });
-    };
+    }
 
     const confirmButtonText = type === 'confirm' ? 'Confirmar' : 'OK';
     const confirmButtonClass = type === 'confirm' ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700';
@@ -35,10 +34,10 @@ const InfoConfirmModalContent = ({ message, onConfirm, onCancel, type, showCopyB
     );
 };
 
-// --- Componente Interno para o Conteúdo do Modal de Ação (Cura/Dano) ---
 const ActionModalContent = ({ title, onConfirm, onClose, type }) => {
     const [amount, setAmount] = useState('');
     const [target, setTarget] = useState('HP');
+
     const handleConfirm = () => { const numericAmount = parseInt(amount, 10); if (!isNaN(numericAmount) && numericAmount > 0) { onConfirm(numericAmount, target); } else { console.error('Valor inválido.'); } };
     const handleKeyDown = (e) => { if (e.key === 'Enter') handleConfirm(); };
 
@@ -56,10 +55,10 @@ const ActionModalContent = ({ title, onConfirm, onClose, type }) => {
     );
 };
 
-// --- Componente Interno para o Conteúdo do Modal de Rolagem de Atributo ---
 const RollAttributeModalContent = ({ attributeName, onConfirm, onClose }) => {
     const [dice, setDice] = useState('1d20');
     const [bonus, setBonus] = useState('');
+
     const handleConfirm = () => onConfirm(dice, parseInt(bonus, 10) || 0);
     const handleKeyDown = (e) => { if (e.key === 'Enter') handleConfirm(); };
 
@@ -73,7 +72,71 @@ const RollAttributeModalContent = ({ attributeName, onConfirm, onClose }) => {
     );
 };
 
-// --- O GERENCIADOR PRINCIPAL ---
+const DamageHealModalContent = ({ attributeName, onConfirm, onClose }) => {
+    const [amount, setAmount] = useState('');
+    const [actionType, setActionType] = useState('damage'); // 'damage' or 'heal'
+    const [isDirectDamage, setIsDirectDamage] = useState(false);
+
+    const handleConfirm = () => {
+        const numericAmount = parseInt(amount, 10);
+        if (!isNaN(numericAmount) && numericAmount > 0) {
+            onConfirm(numericAmount, attributeName, actionType, isDirectDamage);
+            onClose();
+        }
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            handleConfirm();
+        }
+    };
+
+    const title = actionType === 'heal' ? `Curar ${attributeName}` : `Causar Dano em ${attributeName}`;
+
+    return (
+        <>
+            <h3 className="text-xl font-bold text-textPrimary mb-4 text-center">{title}</h3>
+            
+            <div className="flex justify-center gap-4 mb-4">
+                <button 
+                    onClick={() => setActionType('damage')}
+                    className={`px-4 py-2 rounded-lg font-semibold ${actionType === 'damage' ? 'bg-red-600 text-white' : 'bg-bgElement text-textSecondary'}`}
+                >
+                    💥 Dano
+                </button>
+                <button 
+                    onClick={() => setActionType('heal')}
+                    className={`px-4 py-2 rounded-lg font-semibold ${actionType === 'heal' ? 'bg-green-600 text-white' : 'bg-bgElement text-textSecondary'}`}
+                >
+                    ❤️ Cura
+                </button>
+            </div>
+
+            <input
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="w-full p-2 bg-bgInput border border-bgElement rounded-md text-textPrimary text-center text-2xl mb-4"
+                placeholder="Valor"
+                autoFocus
+            />
+
+            {actionType === 'damage' && attributeName === 'HP' && (
+                <div className="flex items-center justify-center mb-4">
+                    <input type="checkbox" id="directDamage" checked={isDirectDamage} onChange={(e) => setIsDirectDamage(e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+                    <label htmlFor="directDamage" className="ml-2 block text-sm text-textSecondary">Dano Direto (ignora HP Bônus)</label>
+                </div>
+            )}
+
+            <div className="flex justify-end gap-4 mt-6">
+                <button onClick={onClose} className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg">Cancelar</button>
+                <button onClick={handleConfirm} className="px-4 py-2 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText font-bold rounded-lg" disabled={!amount}>Confirmar</button>
+            </div>
+        </>
+    );
+};
+
 const ModalManager = ({ modalState, closeModal }) => {
     if (!modalState.type) {
         return null; // Não renderiza nada se não houver modal para mostrar
@@ -89,6 +152,8 @@ const ModalManager = ({ modalState, closeModal }) => {
                 return <ActionModalContent {...props} />;
             case 'rollAttribute':
                 return <RollAttributeModalContent {...props} />;
+            case 'damageHeal':
+                return <DamageHealModalContent {...props} />;
             default:
                 return null;
         }

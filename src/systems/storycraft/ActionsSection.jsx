@@ -123,11 +123,6 @@ const ActionsSection = ({
     return (
         <SheetSkin title="Ações" isCollapsed={isCollapsed} toggleSection={toggleSection}>
             <>
-                <div className="flex flex-wrap gap-4 mb-6 pb-4 border-b border-bgElement">
-                    <button onClick={() => onOpenActionModal('heal')} className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg shadow-md">Curar</button>
-                    <button onClick={() => onOpenActionModal('damage')} className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg shadow-md">Receber Dano</button>
-                </div>
-
                 <div className="mb-6">
                     <h3 className="text-xl font-semibold text-textAccent/80 mb-3">Construtor de Ações Rápidas</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">

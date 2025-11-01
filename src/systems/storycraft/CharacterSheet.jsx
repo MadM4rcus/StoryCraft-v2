@@ -3,7 +3,6 @@ import { useCharacter, useAuth } from '@/hooks';
 import { useRollFeed } from '@/context';
 import { ModalManager } from '@/components';
 import FloatingNav from './FloatingNav';
-import ActionButtons from './ActionButtons';
 import { CharacterInfo, MainAttributes, Wallet, DiscordIntegration } from './CorePanels';
 import { InventoryList, EquippedItemsList, SkillsList, PerksList } from './ListSections';
 import SpecializationsList from './Specializations';
@@ -103,53 +102,56 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
     }
   };
   
-  const handleConfirmAction = (amount, target, actionType) => {
+  const handleConfirmAction = (amount, target, actionType, isDirectDamage = false) => {
     if (!character?.mainAttributes) return;
     let message = '';
     const charName = character.name || 'Personagem';
     const newMainAttributes = JSON.parse(JSON.stringify(character.mainAttributes));
+    const hp = newMainAttributes.hp;
+    const mp = newMainAttributes.mp;
     
     if (actionType === 'heal') {
         switch(target) {
-            case 'HP': newMainAttributes.hp.current = Math.min(newMainAttributes.hp.max, newMainAttributes.hp.current + amount); message = `${charName} recuperou ${amount} de HP.`; break;
-            case 'HP Bonus': newMainAttributes.hp.temp = (newMainAttributes.hp.temp || 0) + amount; message = `${charName} recebeu ${amount} de HP Bonus.`; break;
-            case 'MP': newMainAttributes.mp.current = Math.min(newMainAttributes.mp.max, newMainAttributes.mp.current + amount); message = `${charName} recuperou ${amount} de MP.`; break;
+            case 'HP': hp.current = Math.min(hp.max, hp.current + amount); message = `${charName} recuperou ${amount} de HP.`; break;
+            case 'HP Bonus': hp.temp = (hp.temp || 0) + amount; message = `${charName} recebeu ${amount} de HP Bônus.`; break;
+            case 'MP': mp.current = Math.min(mp.max, mp.current + amount); message = `${charName} recuperou ${amount} de MP.`; break;
         }
     } else { // damage
         switch(target) {
             case 'HP':
                 let remainingDamage = amount;
-                const damageToTemp = Math.min(remainingDamage, newMainAttributes.hp.temp || 0);
-                newMainAttributes.hp.temp -= damageToTemp;
-                remainingDamage -= damageToTemp;
-                if (remainingDamage > 0) { newMainAttributes.hp.current -= remainingDamage; }
-                message = `${charName} perdeu ${amount} de HP.`;
+                if (isDirectDamage) {
+                    hp.current -= remainingDamage;
+                    message = `${charName} sofreu ${amount} de dano direto no HP.`;
+                } else {
+                    const damageToTemp = Math.min(remainingDamage, hp.temp || 0);
+                    hp.temp -= damageToTemp;
+                    remainingDamage -= damageToTemp;
+                    if (remainingDamage > 0) { hp.current -= remainingDamage; }
+                    message = `${charName} sofreu ${amount} de dano.`;
+                }
+                break;
+            case 'HP Bonus':
+                hp.temp = Math.max(0, (hp.temp || 0) - amount);
+                message = `${charName} perdeu ${amount} de HP Bônus.`;
                 break;
             case 'MP':
-                newMainAttributes.mp.current = Math.max(0, newMainAttributes.mp.current - amount);
+                mp.current = Math.max(0, mp.current - amount);
                 message = `${charName} perdeu ${amount} de MP.`;
                 break;
         }
     }
+
+    hp.current = Math.max(0, hp.current);
+
     updateCharacterField('mainAttributes', newMainAttributes);
     handleShowOnDiscord(actionType === 'heal' ? '❤️ Cura / Restauração' : '💥 Dano Sofrido', message);
     closeModal();
   };
 
-  const handleOpenActionModal = (type) => {
-    setModalState({
-        type: 'action',
-        props: {
-            type,
-            title: type === 'heal' ? 'Curar / Restaurar' : 'Receber Dano / Perder',
-            onConfirm: (amount, target) => handleConfirmAction(amount, target, type),
-            onClose: closeModal
-        }
-    });
+  const handleAttributeModification = (attributeName) => {
+    setModalState({ type: 'damageHeal', props: { attributeName, onConfirm: handleConfirmAction, onClose: closeModal } });
   };
-
-  // As funções handleOpenRollModal e handleConfirmAttributeRoll foram removidas
-  // pois eram usadas exclusivamente pelo AttributesSection.
 
   const handleSimpleAttributeRoll = (attributeName, attributeValue) => {
     if (!character) return;
@@ -162,6 +164,14 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
         discordText: `Rolagem de ${attributeName} (1d20${attributeValue >= 0 ? '+' : ''}${attributeValue})`
     };
     handleExecuteFormulaAction(action);
+  };
+  
+  const handleAttributeClick = (attributeName, attributeValue) => {
+      if (['HP', 'HP Bonus', 'MP'].includes(attributeName)) {
+          handleAttributeModification(attributeName);
+      } else {
+          handleSimpleAttributeRoll(attributeName, attributeValue);
+      }
   };
 
 const handleExecuteFormulaAction = async (action) => {
@@ -412,9 +422,9 @@ const handleExecuteFormulaAction = async (action) => {
           </div>
 
       <div id="info"><CharacterInfo character={character} onUpdate={updateCharacterField} isMaster={isMaster} isEditMode={isEditMode} isCollapsed={character.collapsedStates?.info} toggleSection={() => toggleSection('info')} /></div>
-      <div id="main-attributes"><MainAttributes character={character} onUpdate={updateCharacterField} isMaster={isMaster} isEditMode={isEditMode} buffModifiers={buffModifiers.attributes} isCollapsed={character.collapsedStates?.main} toggleSection={() => toggleSection('main')} onAttributeRoll={handleSimpleAttributeRoll} /></div>      
+      <div id="main-attributes"><MainAttributes character={character} onUpdate={updateCharacterField} isMaster={isMaster} isEditMode={isEditMode} buffModifiers={buffModifiers.attributes} isCollapsed={character.collapsedStates?.main} toggleSection={() => toggleSection('main')} onAttributeRoll={handleAttributeClick} /></div>      
       
-      <div id="actions"><ActionsSection character={character} isMaster={isMaster} isCollapsed={character.collapsedStates?.actions} toggleSection={() => toggleSection('actions')} onOpenActionModal={handleOpenActionModal} allAttributes={allAttributes} onUpdate={updateCharacterField} onExecuteFormula={handleExecuteFormulaAction} isEditMode={isEditMode} /></div>
+      <div id="actions"><ActionsSection character={character} isMaster={isMaster} isCollapsed={character.collapsedStates?.actions} toggleSection={() => toggleSection('actions')} allAttributes={allAttributes} onUpdate={updateCharacterField} onExecuteFormula={handleExecuteFormulaAction} isEditMode={isEditMode} /></div>
       <div id="buffs"><BuffsSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} allAttributes={allAttributes} isCollapsed={character.collapsedStates?.buffs} toggleSection={() => toggleSection('buffs')} isEditMode={isEditMode} /></div>
       <div id="wallet"><Wallet character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.wallet} toggleSection={() => toggleSection('wallet')} isEditMode={isEditMode} /></div>
       
@@ -432,7 +442,22 @@ const handleExecuteFormulaAction = async (action) => {
       
       <div id="discord"><DiscordIntegration character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.discord} toggleSection={() => toggleSection('discord')} isEditMode={isEditMode} /></div>
       
-      <ActionButtons character={character} onExport={handleExportJson} onReset={handleReset} />
+      <div className="flex flex-wrap justify-center gap-4 mt-8 p-4 bg-bgSurface/80 backdrop-blur-sm rounded-xl border border-bgElement">
+          <button 
+              onClick={handleExportJson} 
+              className="px-6 py-3 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText font-bold rounded-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!character}
+          >
+              Exportar Ficha (JSON)
+          </button>
+          <button 
+              onClick={handleReset} 
+              className="px-8 py-3 bg-red-700 hover:bg-red-800 text-white font-bold rounded-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!character}
+          >
+              Resetar Ficha
+          </button>
+      </div>
     </div>
   );
 };

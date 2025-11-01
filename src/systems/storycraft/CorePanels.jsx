@@ -248,18 +248,18 @@ const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, toggleSect
                     <div className="flex flex-col items-center p-2 bg-bgElement rounded-md">
                         <label className="text-lg font-medium text-textSecondary mb-1 uppercase">HP</label>
                         <div className="flex items-center gap-1">
-                            <input type="number" name="current" value={localMainAttributes.hp?.current ?? ''} onChange={(e) => handleLocalChange(e, 'hp')} onBlur={() => handleSave('current', 'hp')} className="w-16 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold cursor-not-allowed" disabled={true} />
+                            <input type="number" readOnly name="current" value={localMainAttributes.hp?.current ?? ''} className="w-16 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold cursor-pointer hover:bg-bgElement/50" onClick={() => onAttributeRoll('HP', localMainAttributes.hp?.current)} title="Aplicar Dano/Cura no HP" />
                             <span className="text-textSecondary">/</span>
                             <input type="number" name="max" value={localMainAttributes.hp?.max ?? ''} onChange={(e) => handleLocalChange(e, 'hp')} onBlur={() => handleSave('max', 'hp')} className="w-16 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold" disabled={!isMaster} />
                             <span className="text-blue-400 font-bold text-xl ml-1">+</span>
-                            <input type="number" title="HP Temporário" name="temp" value={localMainAttributes.hp?.temp ?? ''} onChange={(e) => handleLocalChange(e, 'hp')} onBlur={() => handleSave('temp', 'hp')} className="w-16 p-2 text-center bg-bgInput border border-blue-400 rounded-md text-blue-300 text-xl font-bold cursor-not-allowed" disabled={true} />
+                            <input type="number" readOnly title="HP Temporário" name="temp" value={localMainAttributes.hp?.temp ?? ''} className="w-16 p-2 text-center bg-bgInput border border-blue-400 rounded-md text-blue-300 text-xl font-bold cursor-pointer hover:bg-bgElement/50" onClick={() => onAttributeRoll('HP Bonus', localMainAttributes.hp?.temp)} />
                         </div>
                     </div>
                     {/* Bloco de MP */}
                     <div className="flex flex-col items-center p-2 bg-bgElement rounded-md">
                         <label className="text-lg font-medium text-textSecondary mb-1 uppercase">MP</label>
                         <div className="flex items-center gap-2">
-                            <input type="number" name="current" value={localMainAttributes.mp?.current ?? ''} onChange={(e) => handleLocalChange(e, 'mp')} onBlur={() => handleSave('current', 'mp')} className="w-16 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold cursor-not-allowed" disabled={true} />
+                            <input type="number" readOnly name="current" value={localMainAttributes.mp?.current ?? ''} className="w-16 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold cursor-pointer hover:bg-bgElement/50" onClick={() => onAttributeRoll('MP', localMainAttributes.mp?.current)} title="Aplicar Dano/Cura no MP" />
                             <span className="text-textSecondary">/</span>
                             <input type="number" name="max" value={localMainAttributes.mp?.max ?? ''} onChange={(e) => handleLocalChange(e, 'mp')} onBlur={() => handleSave('max', 'mp')} className="w-16 p-2 text-center bg-bgInput border border-bgElement rounded-md text-textPrimary text-xl font-bold" disabled={!isMaster} />
                         </div>
@@ -291,7 +291,7 @@ const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, toggleSect
                                         name={lowerKey}
                                         value={baseValue}
                                         onChange={handleLocalChange}
-D                                     onBlur={() => handleSave(lowerKey)}
+                                        onBlur={() => handleSave(lowerKey)}
                                         className="w-16 p-1 text-center bg-bgInput border border-bgElement rounded-md text-textSecondary text-lg"
                                         disabled={!canEditGeneral}
                                         aria-label={`${key} Base`}
@@ -334,8 +334,7 @@ D                                     onBlur={() => handleSave
                                     <span 
                                         className="text-4xl font-bold text-textPrimary cursor-pointer hover:text-btnHighlightBg"
                                         onClick={() => onAttributeRoll(key, total)}
-                                        title={`Clique para rolar ${key} (Valor: ${total})`}
-                                  _ >
+                                        title={`Clique para rolar ${key} (Valor: ${total})`}>
                                         {total}
                                     </span>
 
@@ -354,7 +353,7 @@ a                                         ria-label={`${key}
                                             name={lowerKey}
                                             value={baseValue}
                                             onChange={e => handleLocalChange(e, key === 'MD' ? 'fd' : undefined)}
-              _                             onBlur={() => handleSave(key === 'MD' ? 'fd' : lowerKey)}
+                                            onBlur={() => handleSave(key === 'MD' ? 'fd' : lowerKey)}
                                             className="w-16 p-1 text-center bg-bgInput border border-bgElement rounded-md text-textSecondary text-lg"
                                          disabled={!canEditGeneral}
                                             aria-label={`${key} Base`}
@@ -363,9 +362,9 @@ a                                         ria-label={`${key}
 
                                     {/* Label (o título) */}
                                     <label 
-                    _                     htmlFor={key} 
+                                         htmlFor={key} 
                                         className="uppercase font-bold text-sm text-textSecondary mt-1"
-                                    >
+>
                                         {key}
                                     </label>
                                 </div>
