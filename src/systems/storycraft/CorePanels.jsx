@@ -266,12 +266,9 @@ const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, toggleSect
                     </div>
                 </div>
 
-                <div>
-                    <h4 className="text-lg font-semibold text-textAccent mt-4 mb-2 border-b border-bgElement pb-1">Atributos Essenciais</h4>
-                    
-                    {/* --- NOVO LAYOUT "EMPILHADO" PARA ATRIBUTOS --- */}
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                        {['Força', 'Destreza', 'Constituição', 'Inteligencia', 'Sabedoria', 'Carisma'].map(key => {
+                {/* --- NOVO LAYOUT "EMPILHADO" PARA ATRIBUTOS --- */}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                    {['Força', 'Destreza', 'Constituição', 'Inteligencia', 'Sabedoria', 'Carisma'].map(key => {
                             const lowerKey = key.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // forca, constituicao, etc.
                             const baseValue = localMainAttributes?.[lowerKey] ?? '';
                             const total = calculateTotal(baseValue, key);
@@ -311,14 +308,10 @@ D                                     onBlur={() => handleSave
                             );
                         })}
                     </div>
-                </div>
-
-                <div>
-                    <h4 className="text-lg font-semibold text-textAccent mt-4 mb-2 border-b border-bgElement pb-1">Atributos de Combate</h4>
-                    
-                    {/* --- NOVO LAYOUT "EMPILHADO" APLICADO AQUI TAMBÉM --- */}
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                        {['Iniciativa', 'FA', 'FM', 'Acerto', 'MD', 'ME'].map(key => {
+                
+                {/* --- NOVO LAYOUT "EMPILHADO" APLICADO AQUI TAMBÉM --- */}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                    {['Iniciativa', 'FA', 'FM', 'Acerto', 'MD', 'ME'].map(key => {
                             const lowerKey = key.toLowerCase(); // iniciativa, fa, fm...
                             const isCalculated = false; 
                             let baseValue, total;
@@ -379,7 +372,6 @@ a                                         ria-label={`${key}
                             );
                         })}
                     </div>
-                </div>
             </div>
         </SheetSkin>
     );
