@@ -300,7 +300,7 @@ D                                     onBlur={() => handleSave
                                     {/* O 'label' vem por último */}
                                     <label 
                                         htmlFor={key} 
-                                        className="capitalize text-sm font-medium text-textSecondary mt-1"
+                                        className="uppercase font-bold text-sm text-textSecondary mt-1"
                                     >
                                         {key}
                                     </label>
@@ -311,7 +311,7 @@ D                                     onBlur={() => handleSave
                 
                 {/* --- NOVO LAYOUT "EMPILHADO" APLICADO AQUI TAMBÉM --- */}
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                    {['Iniciativa', 'FA', 'FM', 'Acerto', 'MD', 'ME'].map(key => {
+                    {['Iniciativa', 'FA', 'FM', 'MD', 'Acerto', 'ME'].map(key => {
                             const lowerKey = key.toLowerCase(); // iniciativa, fa, fm...
                             const isCalculated = false; 
                             let baseValue, total;
@@ -364,9 +364,9 @@ a                                         ria-label={`${key}
                                     {/* Label (o título) */}
                                     <label 
                     _                     htmlFor={key} 
-                                        className="capitalize text-sm font-medium text-textSecondary mt-1"
+                                        className="uppercase font-bold text-sm text-textSecondary mt-1"
                                     >
-                                        {key.toUpperCase()}
+                                        {key}
                                     </label>
                                 </div>
                             );
