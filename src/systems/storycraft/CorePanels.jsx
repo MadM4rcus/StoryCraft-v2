@@ -238,7 +238,7 @@ const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, toggleSect
     }, [localMainAttributes, character, onUpdate]); 
 
     return (
-        <SheetSkin title="Atributos Principais" isCollapsed={isCollapsed} toggleSection={toggleSection}>
+        <SheetSkin title="Atributos" isCollapsed={isCollapsed} toggleSection={toggleSection}>
             <div className="space-y-6">
                 
                 {/* --- LAYOUT HP/MP CORRIGIDO --- */}
