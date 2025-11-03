@@ -79,13 +79,13 @@ const CharacterInfo = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
         }
 
         if (level >= 1 && level <= 10) return { scale: 0, category: 'Comum' };
-        if (level >= 11 && level <= 20) return { scale: 1, category: 'Lendário 1' };
-        if (level >= 21 && level <= 30) return { scale: 2, category: 'Lendário 2' };
-        if (level >= 31 && level <= 40) return { scale: 3, category: 'Lendário 3' };
-        if (level >= 41 && level <= 45) return { scale: 4, category: 'Colossal 1' };
-        if (level >= 46 && level <= 50) return { scale: 5, category: 'Colossal 2' };
-        if (level >= 51 && level <= 55) return { scale: 6, category: 'Colossal 3' };
-        if (level >= 56 && level <= 59) return { scale: 7, category: 'Titânico 1' };
+        if (level >= 11 && level <= 20) return { scale: 1, category: 'Lendário I' };
+        if (level >= 21 && level <= 30) return { scale: 2, category: 'Lendário II' };
+        if (level >= 31 && level <= 40) return { scale: 3, category: 'Lendário III' };
+        if (level >= 41 && level <= 45) return { scale: 4, category: 'Colossal I' };
+        if (level >= 46 && level <= 50) return { scale: 5, category: 'Colossal II' };
+        if (level >= 51 && level <= 55) return { scale: 6, category: 'Colossal III' };
+        if (level >= 56 && level <= 59) return { scale: 7, category: 'Titânico' };
         if (level === 60) return { scale: 8, category: 'Divino' };
 
         return { scale: 'N/A', category: 'Além do Divino' }; // For levels beyond 60 or other edge cases
