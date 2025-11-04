@@ -146,7 +146,9 @@ const AdjustableElement = ({
       onDragStart={onSelect}
       onDragStop={handleDragStop}
       onResizeStop={handleResizeStop}
+      resizeHandleClasses={{ bottom: 'resize-handle-bottom' }}
       onClick={onSelect}
+      lockAspectRatio
       className="z-10"
     >
       <img
@@ -204,14 +206,20 @@ const ClassicSheetAdjuster = ({ onBack }) => {
       newId = `${assetKey}_${count}`;
     }
 
+    const img = new Image();
+    img.src = asset.src;
+    img.onload = () => {
+      const aspectRatio = img.width / img.height;
+      const initialWidth = 100;
+      const initialHeight = initialWidth / aspectRatio;
+
     setElements((prev) => ({
       ...prev,
       [newId]: {
         assetKey: assetKey,
         top: 10,
         left: 10,
-        width: 100, // Tamanho padrão
-        height: 50, // Tamanho padrão
+        width: initialWidth, // Tamanho padrão
         // Padrões do Input
         inputTop: 5,
         inputLeft: 5,
@@ -220,6 +228,8 @@ const ClassicSheetAdjuster = ({ onBack }) => {
       },
     }));
     setSelectedElementId(newId);
+    }
+
   };
 
   // Atualiza um elemento no state
