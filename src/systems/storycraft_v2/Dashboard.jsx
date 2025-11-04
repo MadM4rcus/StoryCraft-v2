@@ -1,12 +1,10 @@
 // src/systems/storycraft_v2/Dashboard.jsx
+// --- VERSÃO MODIFICADA PARA CARREGAR A FERRAMENTA ---
 
 import React, { useState, useEffect, useRef } from 'react';
-// 1. IMPORTAÇÕES AJUSTADAS
-// Reutilizamos o CharacterList do V1, pois a aparência é a mesma
 import CharacterList from '@/systems/storycraft/CharacterList'; 
-// Importamos nossa *nova* ficha clássica V2
-import ClassicSheet from './ClassicSheet'; 
-// Componentes globais reutilizados
+// import ClassicSheet from './ClassicSheet'; // 1. Comentamos a ficha real
+import ClassicSheetAdjuster from './ClassicSheetAdjuster'; // 2. Importamos a nova ferramenta
 import { ModalManager, ThemeEditor, PartyHealthMonitor } from '@/components';
 import { useAuth, useSystem } from '@/hooks';
 import { getCharactersForUser, createNewCharacter, deleteCharacter, getThemeById, db } from '@/services';
@@ -19,7 +17,6 @@ const DashboardV2 = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
   const fileInputRef = useRef(null);
   const [viewingAll, setViewingAll] = useState(false);
   
-  // O ThemeEditor não será usado por este painel, mas mantemos a lógica para consistência da prop
   const [isThemeEditorOpen, setIsThemeEditorOpen] = useState(false);
   const handleCloseEditor = () => {
     setIsThemeEditorOpen(false);
@@ -30,23 +27,7 @@ const DashboardV2 = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
   const [modalState, setModalState] = useState({ type: null, props: {} });
   const closeModal = () => setModalState({ type: null, props: {} });
 
-  // NOTA: O V2 não usa temas dinâmicos (activeTheme), 
-  // então podemos remover o useEffect de 'onSnapshot' que buscava o tema.
-  // Deixei comentado caso queiramos reativar para algo no futuro.
-  /*
-  useEffect(() => {
-    if (selectedCharacter?.id && selectedCharacter?.ownerUid) {
-        const unsubscribe = onSnapshot(doc(db, `${characterDataCollectionRoot}/${GLOBAL_APP_IDENTIFIER}/users/${selectedCharacter.ownerUid}/characterSheets/${selectedCharacter.id}`), async (docSnap) => {
-            if (docSnap.exists()) {
-                // Lógica de tema V1 removida
-            }
-        });
-        return () => unsubscribe();
-    } else {
-        // Lógica de tema V1 removida
-    }
-  }, [selectedCharacter, setActiveTheme, characterDataCollectionRoot, GLOBAL_APP_IDENTIFIER, db, getThemeById]);
-  */
+  /* ... (o useEffect de tema comentado permanece o mesmo) ... */
 
   const handleCharacterClickFromMonitor = (character) => {
     setSelectedCharacter(character);
@@ -127,20 +108,25 @@ const DashboardV2 = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
     });
   };
 
-  // O PartyMonitor é global e funciona para ambos os sistemas
   const partyMonitor = <PartyHealthMonitor onCharacterClick={handleCharacterClickFromMonitor} />;
 
   return (
     <>
       {partyMonitor}
       
-      {/* O Editor de Temas V1 não é relevante para o V2, então o botão foi removido */}
-      {/* {isThemeEditorOpen && <ThemeEditor ... />} */}
-
       {selectedCharacter ? (
-        // 2. A MUDANÇA PRINCIPAL
-        // Em vez de <CharacterSheet...>, chamamos o <ClassicSheet...>
-        <ClassicSheet character={selectedCharacter} onBack={() => setSelectedCharacter(null)} isMaster={isMaster} />
+        // 3. A MUDANÇA PRINCIPAL
+        // Agora estamos carregando a FERRAMENTA em vez da Ficha
+        <ClassicSheetAdjuster 
+          onBack={() => setSelectedCharacter(null)} 
+        />
+        
+        /* <ClassicSheet 
+             character={selectedCharacter} 
+             onBack={() => setSelectedCharacter(null)} 
+             isMaster={isMaster} 
+           /> */
+
       ) : (
         <div className="w-full max-w-5xl mx-auto p-4 md:p-8">
           <ModalManager modalState={modalState} closeModal={closeModal} />
@@ -148,7 +134,6 @@ const DashboardV2 = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
           <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".json" className="hidden" />
           <header className="flex justify-between items-center mb-8">
             <div>
-              {/* 3. MUDANÇA DE TÍTULO */}
               <h1 className="text-2xl font-bold text-textPrimary">Painel StoryCraft V2 (Clássico)</h1>
               <p className="text-textSecondary">Bem-vindo, {user.displayName}!</p>
             </div>
@@ -163,7 +148,6 @@ const DashboardV2 = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
             </div>
           </header>
           <main>
-            {/* Reutilizamos o CharacterList do V1 */}
             <CharacterList user={user} onSelectCharacter={setSelectedCharacter} handleImportClick={handleImportClick} handleDeleteClick={handleDeleteClick} handleCreateClick={handleCreateClick} characters={characters} isMaster={isMaster} viewingAll={viewingAll} onToggleView={setViewingAll} />
           </main>
         </div>

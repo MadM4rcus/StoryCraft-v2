@@ -1,3 +1,9 @@
+/* src/index.css */
+
+/* 1. ADIÇÃO PARA O react-resizable */
+@import 'react-resizable/css/styles.css';
+
+/* 2. Seu código original do Tailwind */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -14,15 +20,14 @@ input[type=number] {
   -moz-appearance: textfield;
 }
 
-/* Adicione isso ao final de src/index.css */
-
+/* Seu keyframe de animação */
 @keyframes scroll-left {
   0% {
     transform: translateX(0);
   }
   100% {
     /* Move o conteúdo 50% para a esquerda. 
-      Como o conteúdo será duplicado, isso cria um loop perfeito.
+       Como o conteúdo será duplicado, isso cria um loop perfeito.
     */
     transform: translateX(-50%);
   }
@@ -30,7 +35,7 @@ input[type=number] {
 
 .animate-scroll-left {
   /* A duração (10s) controla a velocidade. 
-    Ajuste este valor se quiser mais rápido ou mais devagar.
+     Ajuste este valor se quiser mais rápido ou mais devagar.
   */
   animation: scroll-left 10s linear infinite;
   
