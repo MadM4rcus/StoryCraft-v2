@@ -196,20 +196,18 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
     const attrKey = ATTR_MAP[selectedAttr];
     const attrBonus = character.mainAttributes?.[attrKey] || 0;
 
-    // 2. Bônus por Nível 10
+    // 2. Bônus de Treinamento (se aplicável)
     const level = character.level || 0;
-    const level10Bonus = Math.floor(level / 10);
-
-    // 3. Bônus de Treinamento
     let trainingBonus = 0;
     if (skillState.trained) {
-        trainingBonus = 2 + Math.floor(level / 5);
+        // Bônus de 2 + 1 a cada 10 níveis
+        trainingBonus = 2 + Math.floor(level / 10);
     }
 
-    // 4. Bônus Variável (Outros)
+    // 3. Bônus Variável (Outros)
     const otherBonus = parseInt(skillState.otherBonus, 10) || 0;
 
-    return attrBonus + level10Bonus + trainingBonus + otherBonus;
+    return attrBonus + trainingBonus + otherBonus;
   }, []);
 
 const handleExecuteFormulaAction = async (action) => {

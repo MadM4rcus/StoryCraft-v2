@@ -106,21 +106,18 @@ const SpecializationsList = ({
         const selectedAttr = skillState.selectedAttr || skill.attr;
         const attrKey = ATTR_MAP[selectedAttr];
         const attrBonus = mainAttributes[attrKey] || 0;
-        
-        // 2. Bônus por Nível 10 (+1 a cada 10 níveis)
-        const level10Bonus = Math.floor(level / 10);
-        
-        // 3. Bônus de Treinamento (+2 base +1 a cada 5 níveis, se treinada)
+
+        // 2. Bônus de Treinamento (+2 base +1 a cada 10 níveis, se treinada)
         let trainingBonus = 0;
         if (skillState.trained) {
-            trainingBonus = 2 + Math.floor(level / 5);
+            trainingBonus = 2 + Math.floor(level / 10);
         }
         
-        // 4. Bônus Variável (Outros)
+        // 3. Bônus Variável (Outros)
         const otherBonus = parseInt(skillState.otherBonus, 10) || 0;
         
         // Retorna a soma total
-        return attrBonus + level10Bonus + trainingBonus + otherBonus;
+        return attrBonus + trainingBonus + otherBonus;
 
     }, [mainAttributes, level]);
 
