@@ -5,7 +5,7 @@ import { useAuth } from '../../hooks'; // Necessário para verificar permissão 
 
 // --- DADOS DAS PERÍCIAS ---
 // Lista fixa de 30 perícias com seus nomes e atributos base
-const PREDEFINED_SKILLS = [
+export const PREDEFINED_SKILLS = [
   { name: "Acrobacia", attr: "DES" },
   { name: "Adestramento*", attr: "CAR" },
   { name: "Armadilhas*", attr: "INT" },
@@ -39,7 +39,7 @@ const PREDEFINED_SKILLS = [
 ];
 
 // Mapeia a abreviação do atributo para a chave correspondente no objeto mainAttributes
-const ATTR_MAP = {
+export const ATTR_MAP = {
   "FOR": "forca",
   "DES": "destreza",
   "CON": "constituicao", // Não usado na lista de perícias, mas mantido por completude

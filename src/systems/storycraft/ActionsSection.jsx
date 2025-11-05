@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks';
+import { PREDEFINED_SKILLS } from './Specializations';
 import SheetSkin from './SheetSkin';
 
 const AutoResizingTextarea = ({ value, onChange, onBlur, placeholder, className, disabled }) => {
@@ -70,6 +71,8 @@ const ActionsSection = ({
             newComponent = { id: crypto.randomUUID(), type, value: '' };
         } else if (type === 'critDice') {
             newComponent = { id: crypto.randomUUID(), type, value: '1d6', critValue: 6, critBonusAttribute: '', critBonusMultiplier: 1 };
+        } else if (type === 'skillRoll') {
+            newComponent = { id: crypto.randomUUID(), type, skill: '', critMin: 19, critFormula: '' };
         }
 
         onUpdate('formulaActions', (character.formulaActions || []).map(a =>
@@ -79,7 +82,7 @@ const ActionsSection = ({
 
     const handleRemoveActionComponent = (actionId, componentId) => {
         onUpdate('formulaActions', (character.formulaActions || []).map(a =>
-            a.id === actionId ? { ...a, components: (a.components || []).filter(c => c.id !== componentId) } : a
+            a.id === actionId ? { ...a, components: (a.components || []).filter(c => c && c.id !== componentId) } : a
         ));
     };
 
@@ -160,7 +163,7 @@ const ActionsSection = ({
                                             />
                                             <label className="text-sm font-medium text-textSecondary block mb-2">Componentes da Fórmula:</label>
                                             <div className="space-y-2 mb-3">
-                                                {(action.components || []).map(comp => (
+                                                {(action.components || []).filter(Boolean).map(comp => (
                                                     <div key={comp.id} className="flex flex-col gap-2 p-2 rounded-md border border-dashed border-textSecondary/30">
                                                         {comp.type === 'dice' ? (
                                                             <div className="flex items-center gap-2">
@@ -240,6 +243,49 @@ const ActionsSection = ({
                                                                     />
                                                                 </div>
                                                             </div>
+                                                        ) : comp.type === 'skillRoll' ? (
+                                                            // --- INÍCIO DO NOVO BLOCO ---
+                                                            <div className="flex flex-col gap-2">
+                                                                <div className="flex items-center gap-2">
+                                                                    <select
+                                                                        value={comp.skill}
+                                                                        onChange={(e) => handleLocalComponentChange(action.id, comp.id, 'skill', e.target.value)}
+                                                                        onBlur={() => handleSaveComponentChange(action.id, comp.id, 'skill')}
+                                                                        className="flex-grow p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary"
+                                                                        disabled={!canEdit || !isEditMode}
+                                                                    >
+                                                                        <option value="">Selecione Perícia</option>
+                                                                        {PREDEFINED_SKILLS.map(skill => (
+                                                                            <option key={skill.name} value={skill.name}>{skill.name}</option>
+                                                                        ))}
+                                                                    </select>
+                                                                    <div className="text-textSecondary flex-shrink-0">Perícia</div>
+                                                                    {canEdit && isEditMode && (<button onClick={() => handleRemoveActionComponent(action.id, comp.id)} className="w-6 h-6 bg-red-600 text-white text-xs rounded-full flex items-center justify-center font-bold flex-shrink-0">-</button>)}
+                                                                </div>
+                                                                <div className="flex items-center gap-2 text-sm text-textSecondary">
+                                                                    <span className="flex-shrink-0">Crit. ≥</span>
+                                                                    <input
+                                                                        type="number"
+                                                                        placeholder="19"
+                                                                        value={comp.critMin || ''}
+                                                                        onChange={(e) => handleLocalComponentChange(action.id, comp.id, 'critMin', e.target.value)}
+                                                                        onBlur={() => handleSaveComponentChange(action.id, comp.id, 'critMin')}
+                                                                        className="w-12 p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary"
+                                                                        disabled={!canEdit || !isEditMode}
+                                                                    />
+                                                                    <span className="flex-shrink-0">Fórmula Crítico:</span>
+                                                                    <input
+                                                                        type="text"
+                                                                        placeholder="Ex: 1d6"
+                                                                        value={comp.critFormula || ''}
+                                                                        onChange={(e) => handleLocalComponentChange(action.id, comp.id, 'critFormula', e.target.value)}
+                                                                        onBlur={() => handleSaveComponentChange(action.id, comp.id, 'critFormula')}
+                                                                        className="flex-grow p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary"
+                                                                        disabled={!canEdit || !isEditMode}
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                            // --- FIM DO NOVO BLOCO ---
                                                         ) : null}
                                                     </div>
                                                 ))}
@@ -249,6 +295,7 @@ const ActionsSection = ({
                                                     <button onClick={() => handleAddActionComponent(action.id, 'dice')} className="px-2 py-1 text-xs bg-btnHighlightBg text-btnHighlightText rounded-md">+ Dado/Nº</button>
                                                     <button onClick={() => handleAddActionComponent(action.id, 'attribute')} className="px-2 py-1 text-xs bg-btnHighlightBg text-btnHighlightText rounded-md">+ Atributo</button>
                                                     <button onClick={() => handleAddActionComponent(action.id, 'critDice')} className="px-2 py-1 text-xs bg-purple-600 text-white rounded-md">+ Dado Crítico</button>
+                                                    <button onClick={() => handleAddActionComponent(action.id, 'skillRoll')} className="px-2 py-1 text-xs bg-purple-600 text-white rounded-md">+ Rolagem de Perícia</button>
                                                 </div>
                                             )}
                                         </div>

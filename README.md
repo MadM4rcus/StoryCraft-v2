@@ -7,11 +7,6 @@ Npm run build
 firebase deploy
 
 Next:
-seguinte. 
-
-vou fazer com que o app seja um reunidor de fichas de diversos sistemas. a idéia é pegar os componentes que são exclusivos de storycraft e separar dos outros componentes. 
-
-
 
 Contexto: Você deve entender e aplicar as regras do sistema "Escalas de Poder" do RPG StoryCraft, com base na documentação de regras a seguir.
 1. Visão Geral das Escalas de Poder
@@ -77,37 +72,28 @@ Colossal (Escala 4-6): Dragões ancestrais, gigantes, demônios supremos e entid
 Titânico (Escala 7): Entidades que ultrapassam o físico e o espiritual, como deuses caídos, avatares elementais e arquidemônios, capazes de moldar a realidade.
 Divino (Escala 8): O ápice. Deuses supremos e forças cósmicas que transcendem a criação. Eles não apenas controlam as forças primordiais, eles são essas forças. Sua vontade define a realidade.
 
+----------------------
 
+quero dar uma refatorada nas açoes rápidas. vou te explicar oq quero fazer. num faça nada, apenas entenda como funciona tudo, se quiser ver mais algum arquivo me peça q eu mando.
 
-perfeito.
+eu quero alterar a forma que as açoes calculam dano.
 
-agora vamos fazer o seguinte: ja temos um componente de party hp manager certo? esse componente é responsavel por verificar o estado do hp e mp de certas fichas selecionadas. ele já funciona de forma esperada. 
-minha ideia agora era criar um componente parecido que seria como uma especie de evento, o mestre cria esse evento. e escolhe certas fichas (npcs)  e fichas de jogadores, os donos das fichas devem ser inclusos automaticamente nesse "evento" e aí poderão interagir entre sí. atacando, curando, etec. esses ataques devem passar por todos os calculos de escala bem como algumas outras regras que vou adicionar futuramente.
+antigamente tinha-mos o dado critico. que era um d6 que podia critar e se critasse eu definiria os critérios para tal. agora usamos outro método.
 
-----
+parecido com o tormenta 20, onde o usuario rola uma perícia e é a rolagem da perícia contra a Margem de evasão do alvo.
 
-a forma como as pericias funcionam é adicionando pericias e editando as regras manualmente, em vez disso vamos ter as pericias pré definidas.
+a rolagem de pericia não causa dano, mas ela pode critar. quero que permaneça a lógica onde o usuario define o valor minimo para poder critar pois ainda tem vantagens que reduzem o valor do critico no dado.
 
-são 30 pericias no total. vou explicar as regras como elas devem funcionar.
+e quero que eu possa escrever a formula do que deve acontecer ao critar. por exemplo: adicionar 1d8 ao dano, ou adicionar o valor fixo 8, ou adicionar o valor de algum atributo meu. ou multiplicar a rolagem toda. ou multiplicar o numero apenas dos dados.  a interface deve continuar sendo flexivel como sempre foi, mas agora estamos trabalhando um pouco diferente.
 
-Acrobacia (DES) Adestramento* (CAR) Armadilhas* (INT) Atletismo (FOR) Atuação* (CAR) Cavalgar (DES) Cirurgia* (INT) Conhecimento* (INT) Cura (SAB) Diplomacia (CAR) Disfarce* (CAR) Enganação (CAR) Furtividade (DES) Guerra* (INT) Intimidação (CAR) Intuição (SAB) Investigação (INT) Jogatina* (CAR) Ladinagem* (DES) Luta (FOR) Misticismo* (INT) Nobreza* (INT) Ofício (INT) Percepção (SAB) Pilotagem* (DES) Pontaria (DES) Prestidigitação (DES) Religião* (SAB) Sedução (CAR) Sobrevivência (SAB)
+nesse momento eu preciso apenas que a rolagem saia de forma automatica, no chat.
 
-as pericias com * devem continuar com essa * no nome.
+1 click na ação vai rolar automaticamente a pericia e rolar o dano.
 
-a pericia é uma rolagem de d20+o atributo q está entre parenteses. esses atributos podem ser encontrados no corepanels.jsx
+sobre essa rolagem de pericia. como pode ver já temos uma lista de 30 perícias, essas pericias ja tem seus bonus. e formulas e calculos.
 
-a cada 10 lvl todo personagem ganha 1 bonus de +1 em qualquer pericia.
+então minha ideia de interface para essa rolagem de acerto seria algo tipo:
 
-as pericias precisam ter um checkbox para marcar e indicar se ela foi treinada.
+eu seleciono a pericia que deve ser rolada, eu digito o valor minimo para ser considerado crítico (19, 18, 17 etec...) se O DADO da pericia atingir esse valor então será considerado um critico, e aí deve se aplicar os bonus que eu definir. os bonus da pericia não contam para o crítico, mas contam para o total do acerto.
 
-ao treinar uma pericia. duas coisas acontecem. ganha-se diretamente +2 de bonus na rolagem, e a cada 5 lvls ganha +1 de bonus se a pericia for treinada.
-
-alguns buffs e vantagens podem conceder bonus de pericia também então precisamos de um campo para digitar esse bonus.
-
-então em resumo o calculo da pericia é: D20 + atributo + bonus por 10 lvl + bonus de treinamento (2 +1 a cada 5 lvl) + bonus variavel de vantagens.
-
-preciso que crie essa lógica. e que cada pericia tenha um icone de um dadinho para clicar e rolar. essa rolagem deve aparecer no discord e no feed de rolagem dentro do aplicativo, outros arquivos voce pode encontrar dentro da pasta SRC que está no seu contexto.
-
-edite o componente specializations.jsx para fazer as alteraçoes.
-
-Também quero desativar o componente attributessection.jsx para usar apenas os atributos descritos no corepanels.jsx
+capixe?

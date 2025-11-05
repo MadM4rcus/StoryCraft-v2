@@ -18,20 +18,32 @@ const RollFeed = () => {
 
   const renderChatMessage = (message) => {
     return (
-      <div key={message.id} className="p-3 mb-2">
+      <div key={message.id} className="p-3 bg-bgElement rounded-md border border-bgInput mb-2">
         <div className="flex justify-between items-center text-xs text-textSecondary mb-1">
           <span className="font-bold">{message.characterName}</span>
           <span>{formatTimestamp(message.timestamp)}</span>
         </div>
-        <p className="text-sm text-textPrimary break-words">
-          {message.text}
+        
+        {/* Se tiver um TÍTULO (como Vantagens), mostra-o */}
+        {message.title && (
+          <h4 className="font-semibold text-textAccent text-lg mb-1">
+            {message.title}
+          </h4>
+        )}
+        
+        {/* Mostra a DESCRIÇÃO (se for Vantagem/Item) 
+          OU o TEXTO (se for uma mensagem de chat)
+        */}
+        <p className="text-sm text-textPrimary break-words whitespace-pre-wrap">
+          {message.description || message.text}
         </p>
       </div>
     );
   };
 
   const renderRollResult = (roll) => {
-    const total = roll.results.reduce((acc, r) => acc + r.value, 0);
+    // O total agora vem diretamente do 'roll', em vez de ser calculado aqui
+    const total = roll.totalResult; 
     const formula = roll.results.map(r => r.displayValue).join(' + ');
 
     return (
@@ -40,14 +52,67 @@ const RollFeed = () => {
           <span>{roll.characterName}</span>
           <span>{formatTimestamp(roll.timestamp)}</span>
         </div>
-        <p className="font-semibold text-textPrimary">{roll.rollName}</p>
-        <p className="text-sm text-textSecondary break-all">
-          {formula} = <span className="font-bold text-lg text-textAccent">{total}</span>
-        </p>
-        {roll.discordText && <p className="text-xs italic text-textSecondary mt-1">"{roll.discordText}"</p>}
+        
+        {/* Nome da Ação */}
+        <p className="font-semibold text-lg text-textPrimary">{roll.rollName}</p>
+        
+        {/* --- NOVO: Bloco de Acerto (Layout 2.0) --- */}
+        {roll.acertoResult && (
+          <div className="mt-2 pt-2 border-t border-bgInput/50">
+            {/* Linha 1: Acerto: 19 (Misticismo) */}
+            <p className="font-semibold text-textPrimary/90">
+              Acerto: 
+              <span className="font-bold text-lg text-textAccent ml-2">
+                {roll.acertoResult.total}
+              </span>
+              <span className="text-sm text-textSecondary ml-2">
+                ({roll.acertoResult.skillName})
+              </span>
+            </p>
+            {/* Linha 2: 1d20(16) + 3 CRITICO */}
+            <p className="text-sm text-textSecondary mt-1">
+              1d20(<span className={roll.acertoResult.isCrit ? 'text-red-400 font-bold' : ''}>{roll.acertoResult.roll}</span>) + {roll.acertoResult.bonus}
+              {roll.acertoResult.isCrit && <span className="text-red-400 font-bold ml-2">🎯 CRÍTICO!</span>}
+            </p>
+          </div>
+        )}
+        
+        {/* Bloco de Dano/Resultado (Layout 2.0) */}
+        {(formula || !roll.acertoResult || (roll.criticals && roll.criticals.length > 0)) && (
+          <div className="mt-2 pt-2 border-t border-bgInput/50">
+            
+            {/* Linha 1: Dano: 668 */}
+            <p className="font-semibold text-textPrimary/90">
+              {roll.acertoResult ? 'Dano/Resultado:' : 'Resultado:'}
+              <span className="font-bold text-3xl text-textAccent ml-2">
+                {total}
+              </span>
+            </p>
+            
+            {/* Linha 2: <dados da magia normalmente> */}
+            {formula && (
+                <p className="text-sm text-textSecondary break-words mt-2">
+                  {formula}
+                </p>
+            )}
+            
+            {/* Linha 3: <dados da função de critico> (Vem do array 'criticals') */}
+            {roll.criticals && roll.criticals.length > 0 && (
+                <p className="text-sm text-red-400 font-semibold whitespace-pre-wrap mt-1">
+                  {/* Filtra a msg "Acerto Crítico..." para não repetir aqui */}
+                  {roll.criticals.filter(c => !c.startsWith('Acerto Crítico')).join('\n')}
+                </p>
+            )}
+          </div>
+        )}
+
+        {/* O Bloco de Críticos antigo foi removido pois foi fundido com o Dano/Resultado */}
+        
+        {roll.discordText && <p className="text-xs italic text-textSecondary mt-2">"{roll.discordText}"</p>}
       </div>
     );
   };
+
 
   const renderFeedItem = (item) => {
     switch (item.type) {

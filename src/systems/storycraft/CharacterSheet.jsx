@@ -1,11 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useCharacter, useAuth } from '@/hooks';
 import { useRollFeed } from '@/context';
 import { ModalManager } from '@/components';
 import FloatingNav from './FloatingNav';
-import { CharacterInfo, MainAttributes, Wallet, DiscordIntegration } from './CorePanels';
+import { CharacterInfo, MainAttributes, Wallet, DiscordIntegration} from './CorePanels';
 import { InventoryList, EquippedItemsList, SkillsList, PerksList } from './ListSections';
-import SpecializationsList from './Specializations';
+import SpecializationsList, { PREDEFINED_SKILLS, ATTR_MAP } from './Specializations';
 import { Story, Notes } from './ContentSections';
 import ActionsSection from './ActionsSection';
 import BuffsSection from './BuffsSection';
@@ -53,15 +53,26 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
     return modifiers;
   }, [character?.buffs]);
 
-  const handleShowOnDiscord = async (title, description, fields = [], footerText = '', imageUrl = '') => {
+  const handleShowOnDiscord = async (
+      title, 
+      description, 
+      fields = [], 
+      footerText = '', 
+      imageUrl = '',
+      isRollAction = false // <-- 1. ADICIONE ESTE NOVO PARÂMETRO
+  ) => {
     if (!character) return;
 
-    // Adiciona a mensagem ao feed do app
-    addMessageToFeed({
-      characterName: character.name || 'Narrador',
-      // Formata o texto para o feed do app.
-      text: `${title}\n${description || 'Nenhuma descrição.'}`
-    });
+    // Adiciona a mensagem ao feed do app, APENAS SE NÃO FOR UMA ROLAGEM
+    if (!isRollAction) { // <-- 2. ADICIONE ESTE 'IF'
+      addMessageToFeed({
+        characterName: character.name || 'Narrador',
+        // 3. MUDE DE 'text' PARA DADOS ESTRUTURADOS
+        title: title,
+        description: description || 'Nenhuma descrição.'
+        // text: `${title}\n${description || 'Nenhuma descrição.'}` // <-- Linha antiga removida
+      });
+    }
 
     const embed = {
       author: { name: character.name || 'Personagem', icon_url: character.photoUrl || '' },
@@ -174,10 +185,38 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
       }
   };
 
+  // --- Lógica de Cálculo de Bônus de Perícia (movida para cá para ser reutilizável) ---
+  const calculateTotalBonus = useCallback((skillName, character) => {
+    const skill = PREDEFINED_SKILLS.find(s => s.name === skillName);
+    const skillState = character.skillSystem?.[skillName];
+    if (!skill || !skillState) return 0;
+
+    // 1. Bônus de Atributo
+    const selectedAttr = skillState.selectedAttr || skill.attr;
+    const attrKey = ATTR_MAP[selectedAttr];
+    const attrBonus = character.mainAttributes?.[attrKey] || 0;
+
+    // 2. Bônus por Nível 10
+    const level = character.level || 0;
+    const level10Bonus = Math.floor(level / 10);
+
+    // 3. Bônus de Treinamento
+    let trainingBonus = 0;
+    if (skillState.trained) {
+        trainingBonus = 2 + Math.floor(level / 5);
+    }
+
+    // 4. Bônus Variável (Outros)
+    const otherBonus = parseInt(skillState.otherBonus, 10) || 0;
+
+    return attrBonus + level10Bonus + trainingBonus + otherBonus;
+  }, []);
+
 const handleExecuteFormulaAction = async (action) => {
     if (!action) return;
 
     let totalResult = 0;
+    let acertoResult = null;
     let rollResultsForFeed = [];
     let criticals = [];
     const multiplier = action.multiplier || 1;
@@ -199,15 +238,70 @@ const handleExecuteFormulaAction = async (action) => {
         return attrValue;
     };
 
-    // Adiciona uma rolagem de 1d20 se nenhum dado for especificado, como em rolagens de atributo simples.
-    const hasDiceComponent = (action.components || []).some(c => c.type === 'dice' || c.type === 'critDice');
-    if (!hasDiceComponent) {
-        const roll = Math.floor(Math.random() * 20) + 1;
-        totalResult += roll;
-        rollResultsForFeed.push({ type: 'dice', value: roll, displayValue: `1d20(${roll})` });
+    const skillRollComp = action.components?.find(c => c.type === 'skillRoll');
+
+    // --- Nova Lógica de Acerto ---
+    if (skillRollComp && skillRollComp.skill) {
+        const d20Roll = Math.floor(Math.random() * 20) + 1;
+        const skillBonus = calculateTotalBonus(skillRollComp.skill, character);
+        const totalAcerto = d20Roll + skillBonus;
+        const critMin = parseInt(skillRollComp.critMin, 10) || 19;
+        const isCrit = d20Roll >= critMin;
+
+        acertoResult = {
+            roll: d20Roll,
+            bonus: skillBonus,
+            total: totalAcerto,
+            isCrit: isCrit,
+            skillName: skillRollComp.skill,
+        };
+
+        if (isCrit) {
+            criticals.push(`Acerto Crítico no d20 (${d20Roll})!`);
+            
+            // --- INÍCIO DA NOVA LÓGICA DO DANO CRÍTICO ---
+            const critFormula = skillRollComp.critFormula || '';
+            // Tenta extrair dados do formato "XdY" (ex: 10d100)
+            const match = critFormula.match(/(\d+)d(\d+)/i);
+            
+            if (match) {
+                const numDice = parseInt(match[1], 10);
+                const numSides = parseInt(match[2], 10);
+                let rolls = [];
+                let critRollResult = 0;
+                for (let d = 0; d < numDice; d++) {
+                    const roll = Math.floor(Math.random() * numSides) + 1;
+                    rolls.push(roll);
+                    critRollResult += roll;
+                }
+                totalResult += critRollResult; // Adiciona ao resultado total
+                
+                // Formata a exibição para o feed e Discord
+                const critDisplay = `Crítico(${critFormula}: ${rolls.join('+')}) = ${critRollResult}`;
+                criticals.push(critDisplay); // Adiciona aos detalhes do Discord
+            
+            } else if (!isNaN(parseInt(critFormula, 10)) && critFormula.trim() !== '') { 
+                 // Se for apenas um número (ex: "50")
+                 const num = parseInt(critFormula, 10);
+                 totalResult += num;
+                 const critDisplay = `Crítico(Bônus: ${num})`;
+                 rollResultsForFeed.push({ type: 'number', value: num, displayValue: critDisplay });
+                 criticals.push(critDisplay);
+            }
+            // --- FIM DA NOVA LÓGICA DO DANO CRÍTICO ---
+        }
+    } else {
+        // Lógica antiga para rolagens sem acerto (ex: rolagens de atributo)
+        const hasDiceComponent = (action.components || []).some(c => c.type === 'dice' || c.type === 'critDice');
+        if (!hasDiceComponent) {
+            const roll = Math.floor(Math.random() * 20) + 1;
+            totalResult += roll;
+            rollResultsForFeed.push({ type: 'dice', value: roll, displayValue: `1d20(${roll})` });
+        }
     }
 
-    for (let i = 0; i < multiplier; i++) {
+    // --- Lógica de Dano / Resultado Principal ---
+    for (let i = 0; i < (multiplier || 1); i++) {
         for (const comp of (action.components || [])) {
             if (comp.type === 'attribute') {
                 const attrName = comp.value;
@@ -252,7 +346,7 @@ const handleExecuteFormulaAction = async (action) => {
                     const diceRollResult = rolls.reduce((a, b) => a + b, 0);
                     totalResult += diceRollResult;
                     rollResultsForFeed.push({ type: 'dice', value: diceRollResult, displayValue: `${comp.value}(${rolls.join('+')})` });
-                } else {
+                } else if (!isNaN(parseInt(comp.value, 10))) { // Permite números fixos
                     // Ignora se não for um formato de dado válido
                 }
             } else if (comp.type === 'number') {
@@ -260,6 +354,8 @@ const handleExecuteFormulaAction = async (action) => {
                 totalResult += num;
                 const label = comp.label ? `${comp.label}(${num >= 0 ? '+' : ''}${num})` : `${num}`;
                 rollResultsForFeed.push({ type: 'number', value: num, displayValue: label });
+            } else if (comp.type === 'skillRoll') {
+                // O componente skillRoll já foi processado, então o ignoramos aqui.
             }
         }
     }
@@ -345,8 +441,15 @@ const handleExecuteFormulaAction = async (action) => {
         await updateCharacterField('mainAttributes', newMainAttributes);
     }
 
-    const detailsString = rollResultsForFeed.map(r => r.displayValue).join(' + ');
-    const discordDescription = `${descriptionText}\n\n**Resultado Final: ${totalResult}**`;
+    let detailsString = rollResultsForFeed.map(r => r.displayValue).join(' + ');
+    let discordDescription;
+
+    if (acertoResult) {
+        const acertoString = `**Acerto (${acertoResult.skillName}):** ${acertoResult.total} (d20:${acertoResult.roll} + Bônus:${acertoResult.bonus})`;
+        discordDescription = `${descriptionText}\n${acertoString}\n\n**Dano/Resultado: ${totalResult}**`;
+    } else {
+        discordDescription = `${descriptionText}\n\n**Resultado Final: ${totalResult}**`;
+    }
     const discordFields = [{ name: 'Detalhes da Rolagem', value: detailsString || 'N/A', inline: false }];
     if (criticals.length > 0) {
         discordFields.push({ name: 'Críticos', value: criticals.join('\n'), inline: false });
@@ -357,7 +460,14 @@ const handleExecuteFormulaAction = async (action) => {
     const footerText = costDetails.length > 0 ? `Custo Total: ${costDetails.join(' | ')}` : '';
     
     // Envia para o Discord
-    handleShowOnDiscord(action.name, discordDescription, discordFields, footerText, imageUrl);
+    handleShowOnDiscord(
+        action.name, 
+        discordDescription, 
+        discordFields, 
+        footerText, 
+        imageUrl,
+        true // <-- 1. ADICIONE 'true' AQUI PARA SINALIZAR QUE É UMA ROLAGEM
+    );
 
     // Envia para o Feed de Rolagens
     addRollToFeed({
@@ -366,6 +476,9 @@ const handleExecuteFormulaAction = async (action) => {
         ownerUid: user.uid,
         rollName: action.name,
         results: rollResultsForFeed,
+        totalResult: totalResult,     // O resultado numérico final
+        acertoResult: acertoResult,   // O objeto de acerto (ou null)
+        criticals: criticals,         // O array de strings de críticos
         discordText: descriptionText,
     });
 };
