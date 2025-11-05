@@ -1,238 +1,126 @@
 // src/systems/storycraft_v2/ClassicSheetAdjuster.jsx
 import React, { useState, useRef, useMemo } from 'react';
-import { Rnd } from 'react-rnd'; // A mágica acontece aqui
-import bgImage from '../../package/sheet/background castle paper.png';
+import { Rnd } from 'react-rnd'; 
 
-// --- 1. IMPORTAR TODOS OS SEUS ASSETS ---
-// (Eu listei todos os que você mencionou)
-import imgAnotacoes from '../../package/sheet/anotacoes.png';
-import imgBioEInfo from '../../package/sheet/bio e info.png';
-import imgBonus from '../../package/sheet/bonus.png';
-import imgBorder from '../../package/sheet/border.png';
-import imgCar from '../../package/sheet/car.png';
-import imgClasse from '../../package/sheet/classe.png';
-import imgCons from '../../package/sheet/cons.png';
-import imgD20 from '../../package/sheet/d20.png';
-import imgDes from '../../package/sheet/des.png';
-import imgDeslocamento from '../../package/sheet/deslocamento.png';
-import imgEquipamentos from '../../package/sheet/equipamentos.png';
-import imgEscala from '../../package/sheet/escala.png';
-import imgExperiencia from '../../package/sheet/experiencia.png';
-import imgFor from '../../package/sheet/for.png';
-import imgFortitude from '../../package/sheet/fortitude.png';
-import imgHabilidades from '../../package/sheet/habilidades.png';
-import imgHpEMp from '../../package/sheet/hp e mp.png';
-import imgIniciativa from '../../package/sheet/iniciativa.png';
-import imgInspiracao from '../../package/sheet/inspiração.png';
-import imgInt from '../../package/sheet/int.png';
-import imgInvetario from '../../package/sheet/invetário.png';
-import imgMargemEvasao from '../../package/sheet/margem de evasão.png';
-import imgMitigacaoDano from '../../package/sheet/mitigação de dano.png';
-import imgMod from '../../package/sheet/mod.png';
-import imgNivel from '../../package/sheet/nivel.png';
-import imgNomePersonagem from '../../package/sheet/nome do personagem.png';
-import imgNvl from '../../package/sheet/nvl.png';
-import imgQuadradoPequeno from '../../package/sheet/quadrado pequeno.png';
-import imgRaca from '../../package/sheet/raca.png';
-import imgReflexos from '../../package/sheet/reflexos.png';
-import imgSab from '../../package/sheet/sab.png';
-import imgSlotMedio from '../../package/sheet/slot medio.png';
-import imgTamanho from '../../package/sheet/tamanho.png';
-import imgTendencia from '../../package/sheet/tendencia.png';
-import imgTotal from '../../package/sheet/total.png';
-import imgVantagemDesvantagem from '../../package/sheet/vantagem e desvantagem.png';
-import imgVontade from '../../package/sheet/vontade.png';
+import bgImage from '../../package/storycraft-bg-classic.png'; 
 
-// --- 2. MAPEAMENTO DE ASSETS ---
-// Isso facilita adicionar novos elementos na UI
-const ASSET_MANIFEST = {
-  nome_personagem: { src: imgNomePersonagem, type: 'input' },
-  classe: { src: imgClasse, type: 'input' },
-  raca: { src: imgRaca, type: 'input' },
-  nivel: { src: imgNivel, type: 'input' },
-  escala: { src: imgEscala, type: 'input' },
-  deslocamento: { src: imgDeslocamento, type: 'input' },
-  tamanho: { src: imgTamanho, type: 'input' },
-  tendencia: { src: imgTendencia, type: 'input' },
-  anotacoes: { src: imgAnotacoes, type: 'textarea' },
-  bio_e_info: { src: imgBioEInfo, type: 'textarea' },
-  equipamentos: { src: imgEquipamentos, type: 'textarea' },
-  vantagem_desvantagem: { src: imgVantagemDesvantagem, type: 'textarea' },
-  invetario: { src: imgInvetario, type: 'textarea' },
-  experiencia: { src: imgExperiencia, type: 'input' },
-  inspiracao: { src: imgInspiracao, type: 'input' },
-  hp_e_mp: { src: imgHpEMp, type: 'static' }, // 'static' para imagens puras
-  habilidades: { src: imgHabilidades, type: 'static' },
-  d20: { src: imgD20, type: 'static' },
-  border: { src: imgBorder, type: 'static' },
-  // Atributos
-  for: { src: imgFor, type: 'input' },
-  des: { src: imgDes, type: 'input' },
-  cons: { src: imgCons, type: 'input' },
-  sab: { src: imgSab, type: 'input' },
-  int: { src: imgInt, type: 'input' },
-  car: { src: imgCar, type: 'input' },
-  // Saves
-  fortitude: { src: imgFortitude, type: 'static' },
-  reflexos: { src: imgReflexos, type: 'static' },
-  vontade: { src: imgVontade, type: 'static' },
-  // Outros
-  iniciativa: { src: imgIniciativa, type: 'static' },
-  margem_evasao: { src: imgMargemEvasao, type: 'static' },
-  mitigacao_dano: { src: imgMitigacaoDano, type: 'static' },
-  // Componentes de tabela (saves, etc)
-  bonus: { src: imgBonus, type: 'static' },
-  mod: { src: imgMod, type: 'static' },
-  nvl: { src: imgNvl, type: 'static' },
-  total: { src: imgTotal, type: 'static' },
-  quadrado_pequeno: { src: imgQuadradoPequeno, type: 'input' },
-  slot_medio: { src: imgSlotMedio, type: 'input' },
+// --- 1. MANIFEST DE TIPOS DE ELEMENTO ---
+const ELEMENT_TYPES = {
+  input: {
+    name: 'Campo de Input (Texto)',
+    color: 'rgba(3, 169, 244, 0.4)', // Azul
+    borderColor: '#03a9f4',
+  },
+  textarea: {
+    name: 'Área de Texto (Grande)',
+    color: 'rgba(76, 175, 80, 0.4)', // Verde
+    borderColor: '#4caf50',
+  },
+  rollable: {
+    name: 'Área Clicável (Roll)',
+    color: 'rgba(244, 67, 54, 0.4)', // Vermelho
+    borderColor: '#f44336',
+  },
+  label: {
+    name: 'Texto Calculado (Label)',
+    color: 'rgba(255, 152, 0, 0.4)', // Laranja
+    borderColor: '#ff9800',
+  },
+  // --- ADICIONADO DE VOLTA O TIPO 'image' ---
+  image: {
+    name: 'Zona de Imagem (Foto)',
+    color: 'rgba(156, 39, 176, 0.4)', // Roxo
+    borderColor: '#9c27b0',
+  },
 };
 
-// Proporção da imagem de fundo
-const STAGE_RATIO = 827 / 1170;
+const STAGE_WIDTH = 827;
+const STAGE_HEIGHT = 1170;
 
-// --- 3. O COMPONENTE DE ELEMENTO AJUSTÁVEL ---
-// Cada item na tela será um desses
+// --- COMPONENTE DE ELEMENTO AJUSTÁVEL (Sem alterações) ---
 const AdjustableElement = ({
   id,
   data,
-  asset,
   onUpdate,
   onSelect,
   isSelected,
 }) => {
-  const { top, left, width, height, inputTop, inputLeft, inputWidth, inputHeight } = data;
+  const { type, top, left, width, height } = data;
+  const config = ELEMENT_TYPES[type] || ELEMENT_TYPES.input;
 
-  // Atualiza a POSIÇÃO do container (asset)
-  const handleDragStop = (e, d) => {
-    onUpdate(id, { top: d.y, left: d.x });
+  const style = {
+    border: `2px solid ${isSelected ? config.borderColor : 'transparent'}`,
+    backgroundColor: config.color,
+    boxSizing: 'border-box',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: 'white',
+    fontFamily: 'monospace',
+    fontSize: '12px',
+    textShadow: '0 0 2px black',
   };
-
-  // Atualiza o TAMANHO do container (asset)
-  const handleResizeStop = (e, direction, ref, delta, position) => {
-    onUpdate(id, {
-      width: parseInt(ref.style.width, 10),
-      height: parseInt(ref.style.height, 10),
-      ...position, // Pega top/left também
-    });
-  };
-
-  // Atualiza a POSIÇÃO do input (relativo ao asset)
-  const handleInputDragStop = (e, d) => {
-    e.stopPropagation(); // Impede que o container de fora se mova junto
-    onUpdate(id, { inputTop: d.y, inputLeft: d.x });
-  };
-
-  // Atualiza o TAMANHO do input
-  const handleInputResizeStop = (e, direction, ref, delta, position) => {
-    e.stopPropagation();
-    onUpdate(id, {
-      inputWidth: parseInt(ref.style.width, 10),
-      inputHeight: parseInt(ref.style.height, 10),
-      inputTop: position.y,
-      inputLeft: position.x,
-    });
-  };
-
-  const borderColor = isSelected ? 'border-blue-500' : 'border-transparent';
 
   return (
-    // Container Principal (Asset)
     <Rnd
-      style={{ border: `2px dashed ${isSelected ? '#03a9f4' : 'transparent'}` }}
+      style={style}
       size={{ width: width, height: height }}
       position={{ x: left, y: top }}
       onDragStart={onSelect}
-      onDragStop={handleDragStop}
-      onResizeStop={handleResizeStop}
-      resizeHandleClasses={{ bottom: 'resize-handle-bottom' }}
-      onClick={onSelect}
-      lockAspectRatio
+      onDragStop={(e, d) => {
+        onUpdate(id, { top: d.y, left: d.x });
+      }}
+      onResizeStop={(e, direction, ref, delta, position) => {
+        onUpdate(id, {
+          width: parseInt(ref.style.width, 10),
+          height: parseInt(ref.style.height, 10),
+          ...position,
+        });
+      }}
+      onClick={(e) => {
+        e.stopPropagation(); 
+        onSelect();
+      }}
       className="z-10"
     >
-      <img
-        src={asset.src}
-        alt={id}
-        className="w-full h-full pointer-events-none" // Imagem preenche o container
-      />
-      {/* Caixa do Input (Se o tipo não for 'static') */}
-      {asset.type !== 'static' && (
-        <Rnd
-          style={{
-            backgroundColor: 'rgba(3, 169, 244, 0.3)',
-            border: '2px solid #03a9f4',
-            boxSizing: 'border-box',
-          }}
-          size={{ width: inputWidth, height: inputHeight }}
-          position={{ x: inputLeft, y: inputTop }}
-          onDragStart={(e) => e.stopPropagation()}
-          onDragStop={handleInputDragStop}
-          onResizeStop={handleInputResizeStop}
-          onClick={(e) => {
-            e.stopPropagation();
-            onSelect();
-          }}
-          className="z-20"
-        >
-          <span className="text-xs text-white p-1 select-none">Input</span>
-        </Rnd>
-      )}
+      {id}
     </Rnd>
   );
 };
 
-// --- 4. O COMPONENTE PRINCIPAL DA FERRAMENTA ---
+// --- COMPONENTE PRINCIPAL DA FERRAMENTA ---
 const ClassicSheetAdjuster = ({ onBack }) => {
-  const [elements, setElements] = useState({}); // Onde guardamos as posições
+  const [elements, setElements] = useState({}); 
   const [selectedElementId, setSelectedElementId] = useState(null);
-  const stageRef = useRef(null);
   const fileInputRef = useRef(null);
 
   const selectedElementData = useMemo(() => {
     return selectedElementId ? elements[selectedElementId] : null;
   }, [selectedElementId, elements]);
 
-  // Adiciona um novo elemento ao "palco"
-  const handleAddElement = (assetKey) => {
-    const asset = ASSET_MANIFEST[assetKey];
-    if (!asset) return;
+  const handleAddElement = (type) => {
+    if (!type) return;
 
-    // Tenta nomear de forma única (ex: fortitude_1, fortitude_2)
-    let count = 1;
-    let newId = `${assetKey}_${count}`;
-    while (elements[newId]) {
-      count++;
-      newId = `${assetKey}_${count}`;
+    const id = prompt(`Digite o ID único para este elemento (ex: "name", "attr_for", "roll_des"):`);
+    if (!id) return; 
+    if (elements[id]) {
+      alert("Erro: Este ID já está em uso.");
+      return;
     }
-
-    const img = new Image();
-    img.src = asset.src;
-    img.onload = () => {
-      const aspectRatio = img.width / img.height;
-      const initialWidth = 100;
-      const initialHeight = initialWidth / aspectRatio;
 
     setElements((prev) => ({
       ...prev,
-      [newId]: {
-        assetKey: assetKey,
+      [id]: {
+        type: type,
         top: 10,
         left: 10,
-        width: initialWidth, // Tamanho padrão
-        // Padrões do Input
-        inputTop: 5,
-        inputLeft: 5,
-        inputWidth: 80,
-        inputHeight: 30,
+        width: 150, 
+        height: 30, 
       },
     }));
-    setSelectedElementId(newId);
-    }
-
+    setSelectedElementId(id);
   };
 
-  // Atualiza um elemento no state
   const handleUpdateElement = (id, newProps) => {
     setElements((prev) => ({
       ...prev,
@@ -240,16 +128,84 @@ const ClassicSheetAdjuster = ({ onBack }) => {
     }));
   };
 
-  // Atualiza pelos inputs numéricos (para precisão)
   const handlePropertyChange = (e) => {
     if (!selectedElementId) return;
     const { name, value } = e.target;
     handleUpdateElement(selectedElementId, { [name]: parseInt(value, 10) || 0 });
   };
+  
+  const handleIdChange = (e) => {
+    const newId = e.target.value.trim();
+    if (!newId || newId === selectedElementId) return;
+    
+    if (elements[newId]) {
+      console.warn(`ID "${newId}" já existe.`);
+      return; 
+    }
 
-  // Exporta o JSON
+    setElements((prev) => {
+      const { [selectedElementId]: currentData, ...rest } = prev;
+      return {
+        ...rest,
+        [newId]: currentData,
+      };
+    });
+    setSelectedElementId(newId);
+  };
+
+  // --- (NOVA FUNÇÃO ADICIONADA PARA MUDAR O TIPO) ---
+  const handleTypeChange = (e) => {
+    if (!selectedElementId) return;
+    const { value } = e.target;
+    handleUpdateElement(selectedElementId, { type: value });
+  };
+
+  // --- (Função de Copiar que você já tinha) ---
+  const handleCopyElement = () => {
+    if (!selectedElementId || !elements[selectedElementId]) return;
+
+    const originalElement = elements[selectedElementId];
+    
+    let newId = prompt(
+      `Digite o NOVO ID único para a cópia:`, 
+      `${selectedElementId}_copia`
+    );
+
+    if (!newId) return; 
+
+    while (elements[newId]) {
+      alert(`Erro: O ID "${newId}" já está em uso.`);
+      newId = prompt(`Por favor, digite um ID DIFERENTE:`, `${newId}_2`);
+      if (!newId) return; 
+    }
+
+    const newElementData = {
+      ...originalElement,
+      top: originalElement.top, 
+      left: originalElement.left + 20, 
+    };
+
+    setElements((prev) => ({
+      ...prev,
+      [newId]: newElementData,
+    }));
+    setSelectedElementId(newId);
+  };
+
   const handleExport = () => {
-    const json = JSON.stringify(elements, null, 2);
+    const exportedElements = {};
+    
+    Object.entries(elements).forEach(([id, data]) => {
+      exportedElements[id] = {
+        type: data.type,
+        top: (data.top / STAGE_HEIGHT) * 100,
+        left: (data.left / STAGE_WIDTH) * 100,
+        width: (data.width / STAGE_WIDTH) * 100,
+        height: (data.height / STAGE_HEIGHT) * 100,
+      };
+    });
+
+    const json = JSON.stringify(exportedElements, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -261,22 +217,36 @@ const ClassicSheetAdjuster = ({ onBack }) => {
     URL.revokeObjectURL(url);
   };
 
-  // Importa um JSON
   const handleImportChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
-        const importedElements = JSON.parse(event.target.result);
+        const importedData = JSON.parse(event.target.result);
+        const importedElements = {};
+        
+        Object.entries(importedData).forEach(([id, data]) => {
+          if (!data.type || data.top == null) {
+            throw new Error(`Elemento "${id}" é inválido.`);
+          }
+          importedElements[id] = {
+            type: data.type,
+            top: (data.top / 100) * STAGE_HEIGHT,
+            left: (data.left / 100) * STAGE_WIDTH,
+            width: (data.width / 100) * STAGE_WIDTH,
+            height: (data.height / 100) * STAGE_HEIGHT,
+          };
+        });
+        
         setElements(importedElements);
       } catch (err) {
         console.error("Erro ao importar JSON:", err);
-        alert("Arquivo JSON inválido.");
+        alert(`Arquivo JSON inválido: ${err.message}`);
       }
     };
     reader.readAsText(file);
-    e.target.value = null; // Limpa o input
+    e.target.value = null; 
   };
 
   return (
@@ -298,13 +268,17 @@ const ClassicSheetAdjuster = ({ onBack }) => {
           ← Voltar
         </button>
         <select
-          onChange={(e) => handleAddElement(e.target.value)}
+          onChange={(e) => {
+            handleAddElement(e.target.value);
+            e.target.value = ""; 
+          }}
           className="bg-gray-700 text-white px-3 py-1 rounded"
           value=""
         >
-          <option value="" disabled>Adicionar Elemento...</option>
-          {Object.keys(ASSET_MANIFEST).map((key) => (
-            <option key={key} value={key}>{key.replace(/_/g, ' ')}</option>
+          <option value="" disabled>Adicionar Zona...</option>
+          {/* Agora o 'image' vai aparecer aqui */}
+          {Object.entries(ELEMENT_TYPES).map(([key, config]) => (
+            <option key={key} value={key}>{config.name}</option>
           ))}
         </select>
         <button
@@ -317,19 +291,33 @@ const ClassicSheetAdjuster = ({ onBack }) => {
           onClick={handleExport}
           className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded"
         >
-          Exportar JSON
+          Exportar JSON (%)
         </button>
+
+        {/* Botões de Ação (Copiar e Remover) */}
         {selectedElementId && (
-          <button
-            onClick={() => {
-              const { [selectedElementId]: _, ...rest } = elements;
-              setElements(rest);
-              setSelectedElementId(null);
-            }}
-            className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded ml-auto"
-          >
-            Remover ({selectedElementId})
-          </button>
+          <div className="flex items-center gap-2 ml-auto">
+            <button
+              onClick={handleCopyElement}
+              className="px-3 py-1 bg-cyan-600 hover:bg-cyan-700 rounded"
+              title={`Copiar ${selectedElementId}`}
+            >
+              Copiar
+            </button>
+            <button
+              onClick={() => {
+                if (window.confirm(`Tem certeza que quer remover o elemento "${selectedElementId}"?`)) {
+                  const { [selectedElementId]: _, ...rest } = elements;
+                  setElements(rest);
+                  setSelectedElementId(null);
+                }
+              }}
+              className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded"
+              title={`Remover ${selectedElementId}`}
+            >
+              Remover
+            </button>
+          </div>
         )}
       </header>
 
@@ -337,25 +325,24 @@ const ClassicSheetAdjuster = ({ onBack }) => {
       <div className="flex" style={{ height: 'calc(100vh - 48px)' }}>
         
         {/* O Palco (Stage) */}
-        <div className="flex-1 overflow-auto p-4 bg-gray-900" ref={stageRef}>
+        <div className="flex-1 overflow-auto p-4 bg-gray-900">
           <div
             className="mx-auto"
             style={{
               position: 'relative',
-              width: '827px', // Largura fixa para facilitar
-              height: '1170px', // Altura fixa para facilitar
+              width: `${STAGE_WIDTH}px`,
+              height: `${STAGE_HEIGHT}px`,
               backgroundImage: `url(${bgImage})`,
               backgroundSize: 'contain',
               backgroundRepeat: 'no-repeat',
             }}
-            onClick={() => setSelectedElementId(null)} // Desseleciona ao clicar no fundo
+            onClick={() => setSelectedElementId(null)} 
           >
             {Object.entries(elements).map(([id, data]) => (
               <AdjustableElement
                 key={id}
                 id={id}
                 data={data}
-                asset={ASSET_MANIFEST[data.assetKey]}
                 onUpdate={handleUpdateElement}
                 onSelect={() => setSelectedElementId(id)}
                 isSelected={id === selectedElementId}
@@ -369,28 +356,50 @@ const ClassicSheetAdjuster = ({ onBack }) => {
           <h2 className="text-lg font-bold mb-4">Propriedades</h2>
           {selectedElementData ? (
             <div className="space-y-2">
-              <h3 className="font-bold text-blue-300">{selectedElementId}</h3>
-              <PropertyInput label="Asset Key" name="assetKey" value={selectedElementData.assetKey} readOnly />
               <fieldset className="border border-gray-600 p-2 rounded">
-                <legend className="text-sm px-1">Container (Asset)</legend>
-                <PropertyInput label="Top" name="top" value={selectedElementData.top} onChange={handlePropertyChange} />
-                <PropertyInput label="Left" name="left" value={selectedElementData.left} onChange={handlePropertyChange} />
-                <PropertyInput label="Width" name="width" value={selectedElementData.width} onChange={handlePropertyChange} />
-                <PropertyInput label="Height" name="height" value={selectedElementData.height} onChange={handlePropertyChange} />
+                <legend className="text-sm px-1">Elemento</legend>
+                <PropertyInput 
+                  label="ID" 
+                  name="id" 
+                  value={selectedElementId} 
+                  onChange={handleIdChange} 
+                  onBlur={handleIdChange} 
+                  type="text" 
+                />
+                
+                {/* --- (CAMPO "TIPO" MODIFICADO PARA DROPDOWN) --- */}
+                <div className="flex justify-between items-center mb-1">
+                  <label htmlFor="type" className="text-sm text-gray-300">Tipo:</label>
+                  <select
+                    id="type"
+                    name="type"
+                    value={selectedElementData.type}
+                    onChange={handleTypeChange} // Usa a nova função
+                    className="w-2/3 p-1 rounded bg-gray-700 text-white"
+                  >
+                    {/* Lista todos os tipos, incluindo 'image' */}
+                    {Object.entries(ELEMENT_TYPES).map(([key, config]) => (
+                      <option key={key} value={key}>
+                        {config.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {/* ---------------------------------- */}
+                
               </fieldset>
               
-              {ASSET_MANIFEST[selectedElementData.assetKey]?.type !== 'static' && (
-                <fieldset className="border border-blue-500 p-2 rounded">
-                  <legend className="text-sm px-1 text-blue-300">Input (Relativo)</legend>
-                  <PropertyInput label="Input Top" name="inputTop" value={selectedElementData.inputTop} onChange={handlePropertyChange} />
-                  <PropertyInput label="Input Left" name="inputLeft" value={selectedElementData.inputLeft} onChange={handlePropertyChange} />
-                  <PropertyInput label="Input Width" name="inputWidth" value={selectedElementData.inputWidth} onChange={handlePropertyChange} />
-                  <PropertyInput label="Input Height" name="inputHeight" value={selectedElementData.inputHeight} onChange={handlePropertyChange} />
-                </fieldset>
-              )}
+              <fieldset className="border border-gray-600 p-2 rounded">
+                  <legend className="text-sm px-1">Posição (em pixels)</legend>
+                  <PropertyInput label="Top" name="top" value={selectedElementData.top} onChange={handlePropertyChange} />
+                  <PropertyInput label="Left" name="left" value={selectedElementData.left} onChange={handlePropertyChange} />
+                  <PropertyInput label="Width" name="width" value={selectedElementData.width} onChange={handlePropertyChange} />
+                  <PropertyInput label="Height" name="height" value={selectedElementData.height} onChange={handlePropertyChange} />
+              </fieldset>
+              
             </div>
           ) : (
-            <p className="text-gray-400">Selecione um elemento para editar suas propriedades.</p>
+            <p className="text-gray-400">Selecione um elemento ou adicione uma nova zona.</p>
           )}
         </aside>
       </div>
@@ -398,16 +407,17 @@ const ClassicSheetAdjuster = ({ onBack }) => {
   );
 };
 
-// Componente helper para o painel de propriedades
-const PropertyInput = ({ label, name, value, onChange, readOnly = false }) => (
-  <div className="flex justify-between items-center">
+// Componente helper (Sem alterações)
+const PropertyInput = ({ label, name, value, onChange, onBlur, readOnly = false, type = "number" }) => (
+  <div className="flex justify-between items-center mb-1">
     <label htmlFor={name} className="text-sm text-gray-300">{label}:</label>
     <input
-      type={readOnly ? "text" : "number"}
+      type={type}
       id={name}
       name={name}
       value={value}
       onChange={onChange}
+      onBlur={onBlur} 
       readOnly={readOnly}
       className={`w-2/3 p-1 rounded ${readOnly ? 'bg-gray-600 text-gray-400' : 'bg-gray-700 text-white'}`}
     />
