@@ -30,6 +30,7 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
     const mainAttrs = [
         'Iniciativa', 'FA', 'FM', 'FD', 'Acerto', 'MD', 'ME',
         'Força', 'Destreza', 'Constituição', 'Inteligencia', 'Sabedoria', 'Carisma',
+        'Fortitude', 'Reflexo', 'Vontade',
     ];
     // A lógica para atributos dinâmicos foi removida.
     return mainAttrs;
@@ -491,15 +492,20 @@ const handleExecuteFormulaAction = async (action) => {
                 mainAttributes: { 
                     hp: { current: 10, max: 10, temp: 0 }, mp: { current: 10, max: 10 }, 
                     fa: 0, fm: 0, fd: 0, acerto: 0, me: 0,
-                    forca: 0, destreza: 0, constituicao: 0, inteligencia: 0, sabedoria: 0, carisma: 0 
+                    forca: 0, destreza: 0, constituicao: 0, inteligencia: 0, sabedoria: 0, carisma: 0,
+                    fortitude: 0, reflexo: 0, vontade: 0
                 }, 
                 attributes: [], // Mantém limpo pois a seção está desativada
                 inventory: [], 
-                wallet: { zeni: 0, inspiration: 0 }, 
+                wallet: { zeni: 0, inspiration: 0 },
+                fortitude: 0, reflexo: 0, vontade: 0,
                 advantages: [], disadvantages: [], abilities: [],
                 equippedItems: [], history: [], notes: [], buffs: [], 
                 formulaActions: [], 
-                discordWebhookUrl: '', 
+                discordWebhookUrl: '',
+                fortitudeAttr: 'CON',
+                reflexoAttr: 'DES',
+                vontadeAttr: 'SAB',
                 skillSystem: {} // Reseta o novo sistema de perícias
             }; 
             for (const [field, value] of Object.entries(fieldsToReset)) { 

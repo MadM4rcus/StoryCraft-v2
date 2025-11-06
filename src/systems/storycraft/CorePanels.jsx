@@ -190,6 +190,20 @@ const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, toggleSect
         return calculateTotal(localMainAttributes?.constituicao, 'Constituição');
     }, [localMainAttributes?.constituicao, buffModifiers]);
 
+    const wisdomValue = useMemo(() => {
+        return calculateTotal(localMainAttributes?.sabedoria, 'Sabedoria');
+    }, [localMainAttributes?.sabedoria, buffModifiers]);
+
+    // Mapeamento de abreviações para os valores totais dos atributos
+    const attrValueMap = useMemo(() => ({
+        FOR: calculateTotal(localMainAttributes?.forca, 'Força'),
+        DES: dexterityValue,
+        CON: constitutionValue,
+        INT: calculateTotal(localMainAttributes?.inteligencia, 'Inteligencia'),
+        SAB: wisdomValue,
+        CAR: calculateTotal(localMainAttributes?.carisma, 'Carisma'),
+    }), [localMainAttributes, dexterityValue, constitutionValue, wisdomValue, buffModifiers]);
+
     const mdBaseValue = (parseInt(localMainAttributes?.fd, 10) || 0);
 
     const handleLocalChange = (e, attributeKey) => {
@@ -309,10 +323,10 @@ const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, toggleSect
                         })}
                     </div>
                 
-                {/* --- NOVO LAYOUT "EMPILHADO" APLICADO AQUI TAMBÉM --- */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 auto-rows-fr">
+                    {/* --- ATRIBUTOS DE COMBATE --- */}
                     {['Iniciativa', 'FA', 'FM', 'MD', 'Acerto', 'ME'].map(key => {
-                            const lowerKey = key.toLowerCase(); // iniciativa, fa, fm...
+                            const lowerKey = key.toLowerCase();
                             const isCalculated = false; 
                             let baseValue, total;
 
@@ -370,6 +384,71 @@ a                                         ria-label={`${key}
                                 </div>
                             );
                         })}
+
+                    {/* --- TESTES DE RESISTÊNCIA --- */}
+                    {[{key: 'Fortitude', defaultAttr: 'CON'}, {key: 'Reflexo', defaultAttr: 'DES'}, {key: 'Vontade', defaultAttr: 'SAB'}].map(({key, defaultAttr}) => {
+                        const lowerKey = key.toLowerCase();
+                        const attrField = `${lowerKey}Attr`; // ex: 'fortitudeAttr'
+                        
+                        // Pega o atributo selecionado do personagem, ou usa o padrão
+                        const selectedAttr = character[attrField] || defaultAttr;
+                        
+                        // Pega o valor do atributo selecionado do mapa
+                        const attrValue = attrValueMap[selectedAttr] || 0;
+
+                        const baseValue = localMainAttributes?.[lowerKey] ?? '';
+                        const total = (parseInt(baseValue, 10) || 0) + attrValue + (buffModifiers[key] || 0);
+
+                        const handleAttrChange = (newAttr) => {
+                            onUpdate(attrField, newAttr);
+                        };
+
+                        return (
+                            <div key={key} className="flex flex-col items-center p-2 bg-bgElement rounded-md col-span-2 justify-between">
+                                <span 
+                                    className="text-4xl font-bold text-textPrimary cursor-pointer hover:text-btnHighlightBg"
+                                    onClick={() => onAttributeRoll(key, total)}
+                                    title={`Clique para rolar ${key} (Valor: ${total})`}>
+                                    {total}
+                                </span>
+
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="number"
+                                        id={key}
+                                        name={lowerKey}
+                                        value={baseValue}
+                                        onChange={handleLocalChange}
+                                        onBlur={() => handleSave(lowerKey)}
+                                        className="w-16 p-1 text-center bg-bgInput border border-bgElement rounded-md text-textSecondary text-lg"
+                                        disabled={!canEditGeneral || !isEditMode}
+                                        aria-label={`${key} Base`}
+                                    />
+                                    {isEditMode ? (
+                                        <select 
+                                            value={selectedAttr}
+                                            onChange={(e) => handleAttrChange(e.target.value)}
+                                            className="bg-bgInput text-textPrimary text-sm font-bold rounded-md p-1 border-none focus:ring-2 focus:ring-btnHighlightBg"
+                                            disabled={!canEditGeneral}
+                                        >
+                                            {Object.keys(attrValueMap).map(attr => (
+                                                <option key={attr} value={attr}>{attr}</option>
+                                            ))}
+                                        </select>
+                                    ) : (
+                                        <span className="font-semibold text-textSecondary text-sm ml-1">({selectedAttr})</span>
+                                    )}
+                                </div>
+
+                                <label 
+                                    htmlFor={key} 
+                                    className="uppercase font-bold text-sm text-textSecondary mt-1"
+                                >
+                                    {key}
+                                </label>
+                            </div>
+                        );
+                    })}
                     </div>
             </div>
         </SheetSkin>
