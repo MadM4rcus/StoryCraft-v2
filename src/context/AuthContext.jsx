@@ -1,10 +1,8 @@
 import React, { createContext, useEffect, useState } from "react";
 import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
 import { auth, db } from "../services/firebase.js";
-import { doc, setDoc, getDoc, onSnapshot } from "firebase/firestore";
-
-// Este identificador é fixo para a coleção onde o status de mestre é armazenado.
-const GLOBAL_APP_IDENTIFIER = '1:727724875985:web:97411448885c68c289e5f0';
+import { doc, setDoc, onSnapshot } from "firebase/firestore";
+import { useSystem } from "@/hooks"; // Importar o hook useSystem
 
 export const AuthContext = createContext();
 
@@ -12,6 +10,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isMaster, setIsMaster] = useState(false);
   const [loading, setLoading] = useState(true);
+  const { GLOBAL_APP_IDENTIFIER } = useSystem(); // Obter a constante do SystemContext
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
@@ -25,7 +24,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    if (user) {
+    if (user && GLOBAL_APP_IDENTIFIER) { // Garantir que a constante foi carregada
       // A informação de 'isMaster' é buscada do caminho original do StoryCraft V1,
       // que é considerado o local central para essa flag.
       const userDocRef = doc(db, `artifacts2/${GLOBAL_APP_IDENTIFIER}/users/${user.uid}`);
@@ -58,7 +57,7 @@ export const AuthProvider = ({ children }) => {
     }
     // Se não houver usuário, resetamos o estado.
     setIsMaster(false);
-  }, [user]);
+  }, [user, GLOBAL_APP_IDENTIFIER]);
 
   const googleSignIn = () => {
     const provider = new GoogleAuthProvider();

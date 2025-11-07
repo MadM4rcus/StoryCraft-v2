@@ -11,6 +11,9 @@ export const useSystem = () => useContext(SystemContext);
 // Ele é usado como uma sub-coleção dentro da coleção principal de dados de personagem.
 const GLOBAL_APP_IDENTIFIER = '1:727724875985:web:97411448885c68c289e5f0';
 
+// Define o caminho GLOBAL e ÚNICO para todos os dados de sessão (chat, feed, etc.)
+const GLOBAL_SESSION_PATH = 'storycraft-v2/default-session';
+
 export const SystemProvider = ({ children }) => {
   // O padrão agora é null para forçar a tela de seleção a aparecer primeiro.
   const [currentSystem, setCurrentSystem] = useState(null); 
@@ -25,10 +28,10 @@ export const SystemProvider = ({ children }) => {
   }, [currentSystem]);
 
   // Define o caminho da coleção para DADOS DE SESSÃO (chat, feed, etc.), que é sempre o mesmo.
-  const sessionDataCollectionRoot = `storycraft-v2/${GLOBAL_APP_IDENTIFIER}`;
+  const sessionDataCollectionRoot = GLOBAL_SESSION_PATH;
 
 
-  const value = { currentSystem, setCurrentSystem, characterDataCollectionRoot, sessionDataCollectionRoot, GLOBAL_APP_IDENTIFIER };
+  const value = { currentSystem, setCurrentSystem, characterDataCollectionRoot, sessionDataCollectionRoot, GLOBAL_APP_IDENTIFIER, GLOBAL_SESSION_PATH };
 
   return <SystemContext.Provider value={value}>{children}</SystemContext.Provider>;
 };

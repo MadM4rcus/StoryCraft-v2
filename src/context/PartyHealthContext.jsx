@@ -11,11 +11,9 @@ const PartyHealthContext = createContext();
 
 export const usePartyHealth = () => useContext(PartyHealthContext);
 
-const GLOBAL_SESSION_PATH = 'storycraft-v2/default-session'; // <-- ADICIONADO: A mesma constante global
-
 export const PartyHealthProvider = ({ children }) => {
   const { user, isMaster } = useAuth();
-  const { characterDataCollectionRoot, sessionDataCollectionRoot } = useSystem(); // Use SystemContext
+  const { characterDataCollectionRoot, GLOBAL_SESSION_PATH } = useSystem(); // Use SystemContext
   const [allCharacters, setAllCharacters] = useState([]);
   const [selectedCharIds, setSelectedCharIds] = useState(() => {
     // Tenta carregar do localStorage como valor inicial para evitar piscar
