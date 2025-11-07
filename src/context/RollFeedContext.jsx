@@ -21,22 +21,26 @@ export const RollFeedProvider = ({ children }) => {
     }
 
     setIsLoading(true);
+    console.log("[DIAGNÓSTICO ROLLFEED] Assinando feed global:", GLOBAL_FEED_PATH);
     // Passa o caminho global para a função de inscrição
     const unsubscribe = subscribeToFeed(GLOBAL_FEED_PATH, (items) => {
       setFeedItems(items);
       setIsLoading(false);
+      console.log("[DIAGNÓSTICO ROLLFEED] Feed atualizado. Total de itens:", items.length);
     });
 
     return () => unsubscribe();
   }, [user]);
 
   const addRollToFeed = useCallback((newRoll) => {
-    if (!user) return;
+    if (!user) { console.warn("[DIAGNÓSTICO ROLLFEED] Tentativa de adicionar rolagem sem usuário logado."); return; }
+    console.log("[DIAGNÓSTICO ROLLFEED] Adicionando rolagem ao feed global:", GLOBAL_FEED_PATH, newRoll);
     addItemToFeed(GLOBAL_FEED_PATH, { ...newRoll, type: 'roll' });
   }, [user]);
 
   const addMessageToFeed = useCallback((newMessage) => {
-    if (!user) return; // Check for user instead of sessionPath
+    if (!user) { console.warn("[DIAGNÓSTICO ROLLFEED] Tentativa de adicionar mensagem sem usuário logado."); return; }
+    console.log("[DIAGNÓSTICO ROLLFEED] Adicionando mensagem ao feed global:", GLOBAL_FEED_PATH, newMessage);
     addItemToFeed(GLOBAL_FEED_PATH, { ...newMessage, type: 'message' });
   }, [user]);
 
