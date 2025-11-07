@@ -36,16 +36,16 @@ const DashboardV2 = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
   const fetchCharacters = async () => {
     if (user) {
       console.log(`%c[DIAGNÓSTICO DASHBOARD V2]`, 'color: #f59e0b; font-weight: bold;', `Buscando fichas V2. isMaster: ${isMaster}, viewingAll: ${viewingAll}`);
-      const userCharacters = await getCharactersForUser(user.uid, isMaster && viewingAll, characterDataCollectionRoot, GLOBAL_APP_IDENTIFIER);
+      const userCharacters = await getCharactersForUser(characterDataCollectionRoot, user.uid, isMaster && viewingAll);
       setCharacters(userCharacters);
     }
   };
   useEffect(() => {
     fetchCharacters();
-  }, [user, viewingAll, isMaster, characterDataCollectionRoot, GLOBAL_APP_IDENTIFIER]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user, viewingAll, isMaster, characterDataCollectionRoot]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCreateClick = async () => {
-    const newChar = await createNewCharacter(user.uid, characterDataCollectionRoot, GLOBAL_APP_IDENTIFIER);
+    const newChar = await createNewCharacter(characterDataCollectionRoot, user.uid);
     if (newChar) {
       fetchCharacters();
     }
@@ -70,7 +70,7 @@ const DashboardV2 = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
           props: {
             message: `Deseja criar um novo personagem para o sistema ${currentSystem.toUpperCase()} com os dados de "${importedData.name}"?`,
             onConfirm: async () => {
-              const newCharRef = doc(collection(db, `${characterDataCollectionRoot}/${GLOBAL_APP_IDENTIFIER}/users/${user.uid}/characterSheets`));
+              const newCharRef = doc(collection(db, `${characterDataCollectionRoot}/users/${user.uid}/characterSheets`));
               const finalData = { ...importedData, ownerUid: user.uid, system: currentSystem };
               delete finalData.id;
               await setDoc(newCharRef, finalData);
@@ -95,7 +95,7 @@ const DashboardV2 = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
       props: {
         message: `Tem a certeza que deseja excluir permanentemente a ficha de "${charToDelete.name}" do sistema ${currentSystem.toUpperCase()}?`,
         onConfirm: async () => {
-          const success = await deleteCharacter(ownerId, charToDelete.id, characterDataCollectionRoot, GLOBAL_APP_IDENTIFIER);
+          const success = await deleteCharacter(characterDataCollectionRoot, ownerId, charToDelete.id);
           if (success) {
             setCharacters(prevChars => prevChars.filter(c => c.id !== charToDelete.id));
           } else {

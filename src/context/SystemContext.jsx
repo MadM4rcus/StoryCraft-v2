@@ -15,16 +15,20 @@ export const SystemProvider = ({ children }) => {
   // O padrão agora é null para forçar a tela de seleção a aparecer primeiro.
   const [currentSystem, setCurrentSystem] = useState(null); 
 
-  // Define o nome da coleção raiz para os dados de personagem com base no sistema selecionado
+  // Define o caminho da coleção para FICHAS DE PERSONAGEM com base no sistema selecionado
   const characterDataCollectionRoot = useMemo(() => {
     switch (currentSystem) {
-      case 'v1': return 'artifacts2'; // Dados existentes do StoryCraft V1 estão em 'artifacts2'
-      case 'v2': return 'storycraft-v2'; // Novos dados do StoryCraft V2 estarão em 'storycraft-v2'
-      default: return 'artifacts2'; // Fallback para V1
+      case 'v1': return `artifacts2/${GLOBAL_APP_IDENTIFIER}`;
+      case 'v2': return `artifacts2/${GLOBAL_APP_IDENTIFIER}`; // V2 também usa artifacts2 para fichas
+      default: return null; // Retorna null se nenhum sistema for selecionado
     }
   }, [currentSystem]);
 
-  const value = { currentSystem, setCurrentSystem, characterDataCollectionRoot, GLOBAL_APP_IDENTIFIER };
+  // Define o caminho da coleção para DADOS DE SESSÃO (chat, feed, etc.), que é sempre o mesmo.
+  const sessionDataCollectionRoot = `storycraft-v2/${GLOBAL_APP_IDENTIFIER}`;
+
+
+  const value = { currentSystem, setCurrentSystem, characterDataCollectionRoot, sessionDataCollectionRoot, GLOBAL_APP_IDENTIFIER };
 
   return <SystemContext.Provider value={value}>{children}</SystemContext.Provider>;
 };

@@ -21,8 +21,8 @@ const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
 
   useEffect(() => {
     if (selectedCharacter?.id && selectedCharacter?.ownerUid) {
-        // A linha abaixo estava com um `appId` hardcoded, a correção já usa o contexto.
-        const unsubscribe = onSnapshot(doc(db, `${characterDataCollectionRoot}/${GLOBAL_APP_IDENTIFIER}/users/${selectedCharacter.ownerUid}/characterSheets/${selectedCharacter.id}`), async (docSnap) => {
+        // CORREÇÃO: O characterDataCollectionRoot já contém o caminho completo.
+        const unsubscribe = onSnapshot(doc(db, `${characterDataCollectionRoot}/users/${selectedCharacter.ownerUid}/characterSheets/${selectedCharacter.id}`), async (docSnap) => {
             if (docSnap.exists()) {
                 const characterData = docSnap.data();
                 if (characterData.activeThemeId) {
@@ -35,9 +35,9 @@ const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
         });
         return () => unsubscribe();
     } else {
-        setActiveTheme(null);
+      setActiveTheme(null);
     }
-  }, [selectedCharacter, setActiveTheme, characterDataCollectionRoot, GLOBAL_APP_IDENTIFIER, db, getThemeById]);
+  }, [selectedCharacter, setActiveTheme, characterDataCollectionRoot, db]);
 
   const handleCloseEditor = () => {
     setIsThemeEditorOpen(false);
@@ -52,16 +52,16 @@ const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
     if (user) {
       // FERRAMENTA DE DIAGNÓSTICO
       console.log('%c[DIAGNÓSTICO DASHBOARD]', 'color: #00A8E8; font-weight: bold;', `Buscando fichas. isMaster: ${isMaster}, viewingAll: ${viewingAll}`);
-      const userCharacters = await getCharactersForUser(user.uid, isMaster && viewingAll, characterDataCollectionRoot, GLOBAL_APP_IDENTIFIER);
+      const userCharacters = await getCharactersForUser(characterDataCollectionRoot, user.uid, isMaster && viewingAll);
       setCharacters(userCharacters);
     }
   };
   useEffect(() => {
     fetchCharacters();
-  }, [user, viewingAll, isMaster, characterDataCollectionRoot, GLOBAL_APP_IDENTIFIER]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user, viewingAll, isMaster, characterDataCollectionRoot]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCreateClick = async () => {
-    const newChar = await createNewCharacter(user.uid, characterDataCollectionRoot, GLOBAL_APP_IDENTIFIER);
+    const newChar = await createNewCharacter(characterDataCollectionRoot, user.uid);
     if (newChar) {
       fetchCharacters();
     }
@@ -86,7 +86,7 @@ const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
           props: {
             message: `Deseja criar um novo personagem para o sistema ${currentSystem.toUpperCase()} com os dados de "${importedData.name}"?`,
             onConfirm: async () => {
-              const newCharRef = doc(collection(db, `${characterDataCollectionRoot}/${GLOBAL_APP_IDENTIFIER}/users/${user.uid}/characterSheets`));
+              const newCharRef = doc(collection(db, `${characterDataCollectionRoot}/users/${user.uid}/characterSheets`));
               const finalData = { ...importedData, ownerUid: user.uid, system: currentSystem }; // Adiciona o sistema ao personagem importado
               delete finalData.id;
               await setDoc(newCharRef, finalData);
@@ -111,7 +111,7 @@ const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
       props: {
         message: `Tem a certeza que deseja excluir permanentemente a ficha de "${charToDelete.name}" do sistema ${currentSystem.toUpperCase()}?`,
         onConfirm: async () => {
-          const success = await deleteCharacter(ownerId, charToDelete.id, characterDataCollectionRoot, GLOBAL_APP_IDENTIFIER);
+          const success = await deleteCharacter(characterDataCollectionRoot, ownerId, charToDelete.id);
           if (success) {
             setCharacters(prevChars => prevChars.filter(c => c.id !== charToDelete.id));
           } else {

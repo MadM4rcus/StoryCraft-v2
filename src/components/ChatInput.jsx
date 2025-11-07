@@ -1,18 +1,19 @@
 import React, { useState } from 'react';
 import { useRollFeed } from '@/context';
-import { useAuth } from '@/hooks';
+import { useAuth, useCharacter } from '@/hooks';
 
-const ChatInput = ({ characterName }) => {
+const ChatInput = () => {
   const [message, setMessage] = useState('');
   const { addMessageToFeed } = useRollFeed();
   const { user } = useAuth();
+  const { character } = useCharacter(); // Pega o personagem ativo do contexto
 
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (message.trim() === '') return;
 
     addMessageToFeed({
-      characterName: characterName || user.displayName || 'Usuário',
+      characterName: character?.name || user.displayName || 'Usuário',
       text: message,
       ownerUid: user.uid,
     });

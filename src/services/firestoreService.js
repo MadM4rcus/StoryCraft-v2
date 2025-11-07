@@ -1,19 +1,17 @@
 import { db } from './firebase';
 import { collection, query, getDocs, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
 
-const appId = "1:727724875985:web:97411448885c68c289e5f0";
-
 // A função agora pode buscar todas as fichas se fetchAll for verdadeiro
-export const getCharactersForUser = async (userId, fetchAll = false) => {
-  if (!userId) return [];
+export const getCharactersForUser = async (basePath, userId, fetchAll = false) => {
+  if (!userId || !basePath) return [];
   try {
     let characters = [];
     if (fetchAll) {
       // Busca em todos os utilizadores
-      const usersRef = collection(db, `artifacts2/${appId}/users`);
+      const usersRef = collection(db, `${basePath}/users`);
       const usersSnapshot = await getDocs(usersRef);
       for (const userDoc of usersSnapshot.docs) {
-        const charactersRef = collection(db, `artifacts2/${appId}/users/${userDoc.id}/characterSheets`);
+        const charactersRef = collection(db, `${basePath}/users/${userDoc.id}/characterSheets`);
         const q = query(charactersRef);
         const querySnapshot = await getDocs(q);
         querySnapshot.forEach((doc) => {
@@ -22,11 +20,11 @@ export const getCharactersForUser = async (userId, fetchAll = false) => {
       }
     } else {
       // Busca apenas no utilizador atual
-      const charactersRef = collection(db, `artifacts2/${appId}/users/${userId}/characterSheets`);
+      const charactersRef = collection(db, `${basePath}/users/${userId}/characterSheets`);
       const q = query(charactersRef);
       const querySnapshot = await getDocs(q);
       querySnapshot.forEach((doc) => {
-        characters.push({ id: doc.id, ...doc.data() });
+        characters.push({ id: doc.id, ownerUid: userId, ...doc.data() });
       });
     }
     return characters;
@@ -36,12 +34,12 @@ export const getCharactersForUser = async (userId, fetchAll = false) => {
   }
 };
 
-export const createNewCharacter = async (userId) => {
-  if (!userId) return null;
+export const createNewCharacter = async (basePath, userId) => {
+  if (!userId || !basePath) return null;
   const characterName = prompt("Qual o nome do novo personagem?");
   if (!characterName) return null;
   try {
-    const charactersRef = collection(db, `artifacts2/${appId}/users/${userId}/characterSheets`);
+    const charactersRef = collection(db, `${basePath}/users/${userId}/characterSheets`);
     const newCharData = {
       name: characterName,
       ownerUid: userId,
@@ -68,10 +66,10 @@ export const createNewCharacter = async (userId) => {
   }
 };
 
-export const deleteCharacter = async (userId, characterId) => {
-  if (!userId || !characterId) return false;
+export const deleteCharacter = async (basePath, userId, characterId) => {
+  if (!userId || !characterId || !basePath) return false;
   try {
-    const charDocRef = doc(db, `artifacts2/${appId}/users/${userId}/characterSheets/${characterId}`);
+    const charDocRef = doc(db, `${basePath}/users/${userId}/characterSheets/${characterId}`);
     await deleteDoc(charDocRef);
     console.log("Ficha deletada com sucesso!");
     return true;

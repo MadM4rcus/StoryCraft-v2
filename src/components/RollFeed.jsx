@@ -4,13 +4,14 @@ import { useAuth } from '@/hooks';
 import { ChatInput } from '@/components';
 
 const RollFeed = () => {
-  const { feedItems } = useRollFeed();
+  const { feedItems, isLoading } = useRollFeed();
   const [isCollapsed, setIsCollapsed] = useState(true);
 
   const formatTimestamp = (timestamp) => {
-    if (!timestamp) return '';
-    // Agora o timestamp é um objeto Date do JS
-    return timestamp.toLocaleTimeString('pt-BR', {
+    // O timestamp do Firebase pode ser null (enquanto está sendo setado) ou um objeto com toDate()
+    if (!timestamp || typeof timestamp.toDate !== 'function') return '';
+    const date = timestamp.toDate();
+    return date.toLocaleTimeString('pt-BR', {
       hour: '2-digit',
       minute: '2-digit',
     });
@@ -151,7 +152,10 @@ const RollFeed = () => {
         </button>
       </div>
       <div className="flex-grow p-3 overflow-y-auto">
-        {feedItems.length === 0 && <p className="text-textSecondary italic">Nenhuma rolagem ou mensagem ainda...</p>}
+        {isLoading && <p className="text-textSecondary italic">Carregando feed...</p>}
+        {!isLoading && feedItems.length === 0 && (
+          <p className="text-textSecondary italic">Nenhuma rolagem ou mensagem ainda...</p>
+        )}
         {feedItems.map(renderFeedItem)}
       </div>
       <ChatInput />
