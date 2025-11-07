@@ -87,6 +87,3 @@ service cloud.firestore {
 ___________________________________________________
 
 Next:
-
-Estilizar o display das mensagens de rolagens no feed.
-Perguntar como. 

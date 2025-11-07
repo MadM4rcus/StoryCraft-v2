@@ -214,6 +214,33 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
 const handleExecuteFormulaAction = async (action) => {
     if (!action) return;
 
+    // --- INÍCIO DA CORREÇÃO: Verificação de Custo Antecipada ---
+    const initialCost = { HP: 0, MP: 0 };
+    const actionCostValue = parseInt(action.costValue, 10) || 0;
+
+    // 1. Custo da própria ação
+    if (action.costType && actionCostValue > 0) {
+        initialCost[action.costType] += actionCostValue;
+    }
+
+    // 2. Custo de manutenção de buffs ativos
+    const activeBuffs = (character.buffs || []).filter(b => b.isActive);
+    activeBuffs.forEach(buff => {
+        if (buff.costType && buff.costValue) {
+            const buffCost = parseInt(buff.costValue, 10) || 0;
+            if (buffCost > 0) {
+                initialCost[buff.costType] += buffCost;
+            }
+        }
+    });
+
+    // 3. Verificação e bloqueio se os recursos forem insuficientes
+    if (character.mainAttributes.hp.current < initialCost.HP || character.mainAttributes.mp.current < initialCost.MP) {
+        setModalState({ type: 'info', props: { message: `Recursos insuficientes! Custo: ${initialCost.HP} HP, ${initialCost.MP} MP.`, onConfirm: closeModal } });
+        return; // Bloqueia a execução da ação
+    }
+    // --- FIM DA CORREÇÃO ---
+
     let totalResult = 0;
     let acertoResult = null;
     let rollResultsForFeed = [];
@@ -278,7 +305,7 @@ const handleExecuteFormulaAction = async (action) => {
                 const critDisplay = `Crítico(${critFormula}: ${rolls.join('+')}) = ${critRollResult}`;
                 criticals.push(critDisplay); // Adiciona aos detalhes do Discord
             
-            } else if (!isNaN(parseInt(critFormula, 10)) && critFormula.trim() !== '') { 
+            } if (!isNaN(parseInt(critFormula, 10)) && critFormula.trim() !== '') { 
                  // Se for apenas um número (ex: "50")
                  const num = parseInt(critFormula, 10);
                  totalResult += num;
@@ -383,7 +410,6 @@ const handleExecuteFormulaAction = async (action) => {
 
     const totalCost = { HP: 0, MP: 0 };
     let costDetails = [];
-    const activeBuffs = (character.buffs || []).filter(b => b.isActive);
     const costValue = (action.costType && action.costIsRollResult) ? -totalResult : (parseInt(action.costValue, 10) || 0);
 
     if (action.costType) {
@@ -412,13 +438,6 @@ const handleExecuteFormulaAction = async (action) => {
             }
         }
     });
-
-    const totalNegativeCostHP = Math.abs(Math.min(0, totalCost.HP));
-    const totalNegativeCostMP = Math.abs(Math.min(0, totalCost.MP));
-    if ((character.mainAttributes.hp.current < totalNegativeCostHP) || (character.mainAttributes.mp.current < totalNegativeCostMP)) {
-        setModalState({ type: 'info', props: { message: `Custo de HP/MP insuficiente!`, onConfirm: closeModal } });
-        return;
-    }
 
     const urlRegex = /(https?:\/\/[^\s]+)/i;
     let imageUrl = '';
