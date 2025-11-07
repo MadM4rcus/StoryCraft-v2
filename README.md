@@ -94,3 +94,8 @@ quando eu faço uma rolagem e troco de conta no mesmo navegador eu consigo ver o
 
 mas outro usuario em outro computador não consegue ver minhas rolagens nem eu as dele. 
 
+não preciso me preocupar em criar sessões ou campanhas diferentes. no momento preciso que todos os usuarios logados no aplicativo consigam ver todas as mensagens e rolagens de todos des de sempre. 
+
+a coleção no firestore deveria ser uma coleção global, com todas as mensagens roladas por todos os usuarios não uma coleção individual. 
+
+meu rpg agora tem apenas uma unica campanha. depois eu penso em como implementar diferentes campanhas, mas o foco é fazer funcionar agora, pois hoje vamos jogar e o app tem que estar liso. 
