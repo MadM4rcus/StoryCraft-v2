@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRollFeed } from '@/context';
 import { useAuth } from '@/hooks';
 import { ChatInput } from '@/components';
@@ -138,6 +138,15 @@ const RollFeed = () => {
     }
   };
 
+  const feedRef = useRef(null);
+
+  // Scroll to bottom on new messages
+  useEffect(() => {
+    if (feedRef.current) {
+      feedRef.current.scrollTop = feedRef.current.scrollHeight;
+    }
+  }, [feedItems]);
+
   if (isCollapsed) {
     return (
       <div 
@@ -163,7 +172,7 @@ const RollFeed = () => {
           —
         </button>
       </div>
-      <div className="flex-grow p-3 overflow-y-auto">
+      <div ref={feedRef} className="flex-grow p-3 overflow-y-auto flex flex-col-reverse">
         {isLoading && <p className="text-textSecondary italic">Carregando feed...</p>}
         {!isLoading && feedItems.length === 0 && (
           <p className="text-textSecondary italic">Nenhuma rolagem ou mensagem ainda...</p>
