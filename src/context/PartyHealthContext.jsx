@@ -11,6 +11,8 @@ const PartyHealthContext = createContext();
 
 export const usePartyHealth = () => useContext(PartyHealthContext);
 
+const GLOBAL_SESSION_PATH = 'storycraft-v2/default-session'; // <-- ADICIONADO: A mesma constante global
+
 export const PartyHealthProvider = ({ children }) => {
   const { user, isMaster } = useAuth();
   const { characterDataCollectionRoot, sessionDataCollectionRoot } = useSystem(); // Use SystemContext
@@ -24,12 +26,11 @@ export const PartyHealthProvider = ({ children }) => {
       return [];
     }
   });
-  const [isLoading, setIsLoading] = useState(true);
-  const sessionPath = sessionDataCollectionRoot; // O root já contém o caminho completo necessário
+  const [isLoading, setIsLoading] = useState(true); 
 
   // Efeito para buscar as configurações do usuário APENAS quando o usuário ou o caminho da sessão mudam.
   useEffect(() => {
-    if (!user || !sessionPath || sessionPath.includes('null')) {
+    if (!user) { // <-- SIMPLIFICADO: Não depende mais de um caminho de sessão dinâmico
       return;
     }
 
@@ -41,7 +42,7 @@ export const PartyHealthProvider = ({ children }) => {
     };
 
     fetchSettings();
-  }, [user, sessionPath]);
+  }, [user]);
 
   useEffect(() => {
     if (!user || !characterDataCollectionRoot) { // <-- ADICIONADO: Não executa se o caminho da sessão for nulo
@@ -134,18 +135,18 @@ export const PartyHealthProvider = ({ children }) => {
   // Debounce para salvar as alterações no Firestore e no localStorage
   const debouncedSave = useRef(
     debounce((path, uid, ids) => {
-      localStorage.setItem('selectedCharIds', JSON.stringify(ids));
-      if (uid && path) {
+      localStorage.setItem('selectedCharIds', JSON.stringify(ids)); 
+      if (uid) { // <-- SIMPLIFICADO: Não depende mais do caminho
         saveUserSettings(uid, { selectedCharIds: ids });
       }
     }, 1000)
   ).current;
 
   useEffect(() => {
-    if (user) {
-      debouncedSave(sessionPath, user.uid, selectedCharIds);
+    if (user) { 
+      debouncedSave(GLOBAL_SESSION_PATH, user.uid, selectedCharIds); // <-- Usa o caminho global
     }
-  }, [selectedCharIds, user, sessionPath, debouncedSave]);
+  }, [selectedCharIds, user, debouncedSave]);
 
   // Deriva os dados dos selecionados
   const partyHealthData = useMemo(() => {
