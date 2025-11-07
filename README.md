@@ -88,28 +88,5 @@ ___________________________________________________
 
 Next:
 
-O chat de e feed de rolagens não está aparecendo para todos os jogadores. 
-
-quando eu faço uma rolagem e troco de conta no mesmo navegador eu consigo ver o histórico. 
-
-mas outro usuario em outro computador não consegue ver minhas rolagens nem eu as dele. 
-
-No meu app tem 2 sistemas: storycraft v1 e v2. o storycraft v2 é apenas uma skin classica para o v1. são ambos storycraft. 
-e o v2 ainda está em construção nem está sendo utilizado. 
-
-não preciso me preocupar em criar sessões ou campanhas diferentes. no momento preciso que todos os usuarios logados no aplicativo consigam ver todas as mensagens e rolagens de todos des de sempre. 
-
-a coleção no firestore deveria ser uma coleção global, com todas as mensagens roladas por todos os usuarios não uma coleção individual. 
-
-meu rpg agora tem apenas uma unica campanha. depois eu penso em como implementar diferentes campanhas, mas o foco é fazer funcionar agora, pois hoje vamos jogar e o app tem que estar liso. 
-
-Update: usando a mesma conta uma no celular e outra no computador o chat é diferente. não vejo pelo celular as coisas q eu escrevo pelo computador. usando a mesma fucking conta. que saco o chat deveria ler do firebase as mensagens, qual a dificuldade?
-
-Update 2
-
-notei que tem mais de 1 coleçoes no firestore sobre chat etec. 
-/storycraft-v2/1:727724875985:web:97411448885c68c289e5f0/feed
-
-/storycraft-v2/default-session/feed
-
-/storycraft-v2/storycraft-v2-main-session/feed
+Estilizar o display das mensagens de rolagens no feed.
+Perguntar como. 

@@ -208,12 +208,10 @@ const SpecializationsList = ({
     const handleSkillRoll = (skill, totalBonus) => {
         const bonusString = `${totalBonus > 0 ? '+' : ''}${totalBonus}`;
         const action = {
-            name: `Perícia: ${skill.name}`,
+            name: `Teste de ${skill.name}`,
             components: [
-                { type: 'dice', value: '1d20' }, // O dado base
-                { type: 'number', value: totalBonus, label: 'Bônus Total' } // O bônus calculado
+                { type: 'skillRoll', skill: skill.name }
             ],
-            discordText: `Rolagem de ${skill.name} (1d20${bonusString})`
         };
         // Usa a função passada pelo CharacterSheet para rolar e enviar aos feeds
         onExecuteFormula(action);

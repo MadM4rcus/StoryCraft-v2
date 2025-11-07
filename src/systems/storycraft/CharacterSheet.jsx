@@ -244,14 +244,13 @@ const handleExecuteFormulaAction = async (action) => {
         const d20Roll = Math.floor(Math.random() * 20) + 1;
         const skillBonus = calculateTotalBonus(skillRollComp.skill, character);
         const totalAcerto = d20Roll + skillBonus;
-        const critMin = parseInt(skillRollComp.critMin, 10) || 19;
-        const isCrit = d20Roll >= critMin;
+        const isCrit = d20Roll === 20; // Um 20 natural é sempre um crítico para perícias
 
         acertoResult = {
             roll: d20Roll,
             bonus: skillBonus,
             total: totalAcerto,
-            isCrit: isCrit,
+            isCrit,
             skillName: skillRollComp.skill,
         };
 
@@ -448,7 +447,7 @@ const handleExecuteFormulaAction = async (action) => {
     let discordDescription;
 
     if (acertoResult) {
-        const acertoString = `**Acerto (${acertoResult.skillName}):** ${acertoResult.total} (d20:${acertoResult.roll} + Bônus:${acertoResult.bonus})`;
+        const acertoString = `**Teste de ${acertoResult.skillName}:** ${acertoResult.total} (d20:${acertoResult.roll} + Bônus:${acertoResult.bonus})`;
         discordDescription = `${descriptionText}\n${acertoString}\n\n**Dano/Resultado: ${totalResult}**`;
     } else {
         discordDescription = `${descriptionText}\n\n**Resultado Final: ${totalResult}**`;

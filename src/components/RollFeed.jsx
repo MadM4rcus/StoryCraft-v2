@@ -44,8 +44,19 @@ const RollFeed = () => {
 
   const renderRollResult = (roll) => {
     // O total agora vem diretamente do 'roll', em vez de ser calculado aqui
-    const total = roll.totalResult; 
-    const formula = roll.results.map(r => r.displayValue).join(' + ');
+    const total = roll.totalResult;
+    const isCrit = (roll.acertoResult && roll.acertoResult.isCrit) || (roll.criticals && roll.criticals.length > 0);
+
+    const formula = roll.results.map((r, index) => (
+      <React.Fragment key={index}>
+        {index > 0 && ' + '}
+        {r.value === 1 && r.dice === 'd20' ? (
+          <span className="text-red-500 font-bold">{r.displayValue}</span>
+        ) : (
+          r.displayValue
+        )}
+      </React.Fragment>
+    ));
 
     return (
       <div key={roll.id} className="p-3 bg-bgElement rounded-md border border-bgInput mb-2">
@@ -61,9 +72,9 @@ const RollFeed = () => {
         {roll.acertoResult && (
           <div className="mt-2 pt-2 border-t border-bgInput/50">
             {/* Linha 1: Acerto: 19 (Misticismo) */}
-            <p className="font-semibold text-textPrimary/90">
+            <p className={`font-semibold ${isCrit ? 'text-green-400' : 'text-textPrimary/90'}`}>
               Acerto: 
-              <span className="font-bold text-lg text-textAccent ml-2">
+              <span className={`font-bold text-lg ml-2 ${isCrit ? 'text-green-400' : 'text-textAccent'}`}>
                 {roll.acertoResult.total}
               </span>
               <span className="text-sm text-textSecondary ml-2">
@@ -72,8 +83,9 @@ const RollFeed = () => {
             </p>
             {/* Linha 2: 1d20(16) + 3 CRITICO */}
             <p className="text-sm text-textSecondary mt-1">
-              1d20(<span className={roll.acertoResult.isCrit ? 'text-red-400 font-bold' : ''}>{roll.acertoResult.roll}</span>) + {roll.acertoResult.bonus}
-              {roll.acertoResult.isCrit && <span className="text-red-400 font-bold ml-2">🎯 CRÍTICO!</span>}
+              1d20(<span className={roll.acertoResult.isCrit ? 'text-green-400 font-bold' : roll.acertoResult.roll === 1 ? 'text-red-500 font-bold' : ''}>{roll.acertoResult.roll}</span>) + {roll.acertoResult.bonus}
+              {roll.acertoResult.isCrit && <span className="text-green-400 font-bold ml-2">🎯 CRÍTICO!</span>}
+              {roll.acertoResult.roll === 1 && <span className="text-red-500 font-bold ml-2">💥 FALHA CRÍTICA!</span>}
             </p>
           </div>
         )}
@@ -83,9 +95,9 @@ const RollFeed = () => {
           <div className="mt-2 pt-2 border-t border-bgInput/50">
             
             {/* Linha 1: Dano: 668 */}
-            <p className="font-semibold text-textPrimary/90">
+            <p className={`font-semibold ${isCrit ? 'text-green-400' : 'text-textPrimary/90'}`}>
               {roll.acertoResult ? 'Dano/Resultado:' : 'Resultado:'}
-              <span className="font-bold text-3xl text-textAccent ml-2">
+              <span className={`font-bold text-3xl ml-2 ${isCrit ? 'text-green-400' : 'text-textAccent'}`}>
                 {total}
               </span>
             </p>
@@ -99,7 +111,7 @@ const RollFeed = () => {
             
             {/* Linha 3: <dados da função de critico> (Vem do array 'criticals') */}
             {roll.criticals && roll.criticals.length > 0 && (
-                <p className="text-sm text-red-400 font-semibold whitespace-pre-wrap mt-1">
+                <p className="text-sm text-green-400 font-semibold whitespace-pre-wrap mt-1">
                   {/* Filtra a msg "Acerto Crítico..." para não repetir aqui */}
                   {roll.criticals.filter(c => !c.startsWith('Acerto Crítico')).join('\n')}
                 </p>
