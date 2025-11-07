@@ -1,44 +1,44 @@
 import React, { createContext, useState, useContext, useCallback, useEffect } from 'react';
-import { useSystem, useAuth } from '@/hooks';
+import { useAuth } from '@/hooks';
 import { addItemToFeed, subscribeToFeed } from '@/services/sessionService';
 
 const RollFeedContext = createContext();
 
 export const useRollFeed = () => useContext(RollFeedContext);
 
+const GLOBAL_FEED_PATH = 'storycraft-v2/default-session';
+
 export const RollFeedProvider = ({ children }) => {
   const { user } = useAuth();
-  const { sessionDataCollectionRoot } = useSystem();
   const [feedItems, setFeedItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const sessionPath = sessionDataCollectionRoot; // O root já contém o caminho completo necessário
-
   useEffect(() => {
-    if (!user || !sessionPath) { // <-- SIMPLIFICADO: Apenas verifica se o caminho da sessão é nulo/falsy
+    if (!user) {
       setFeedItems([]);
       setIsLoading(false);
       return;
     }
 
     setIsLoading(true);
-    const unsubscribe = subscribeToFeed((items) => { // Removed sessionPath argument
+    // Passa o caminho global para a função de inscrição
+    const unsubscribe = subscribeToFeed(GLOBAL_FEED_PATH, (items) => {
       setFeedItems(items);
       setIsLoading(false);
     });
 
     return () => unsubscribe();
-  }, [user, sessionPath]);
+  }, [user]);
 
   const addRollToFeed = useCallback((newRoll) => {
-    if (!user) return; // Check for user instead of sessionPath, as sessionPath is not passed to addItemToFeed
-    addItemToFeed({ ...newRoll, type: 'roll' }); // Removed sessionPath argument
-  }, [sessionPath]);
+    if (!user) return;
+    addItemToFeed(GLOBAL_FEED_PATH, { ...newRoll, type: 'roll' });
+  }, [user]);
 
   const addMessageToFeed = useCallback((newMessage) => {
     if (!user) return; // Check for user instead of sessionPath
-    addItemToFeed({ ...newMessage, type: 'message' }); // Removed sessionPath argument
-  }, [sessionPath]);
+    addItemToFeed(GLOBAL_FEED_PATH, { ...newMessage, type: 'message' });
+  }, [user]);
 
   const value = {
     feedItems,

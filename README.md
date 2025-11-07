@@ -102,3 +102,5 @@ não preciso me preocupar em criar sessões ou campanhas diferentes. no momento 
 a coleção no firestore deveria ser uma coleção global, com todas as mensagens roladas por todos os usuarios não uma coleção individual. 
 
 meu rpg agora tem apenas uma unica campanha. depois eu penso em como implementar diferentes campanhas, mas o foco é fazer funcionar agora, pois hoje vamos jogar e o app tem que estar liso. 
+
+Update: usando a mesma conta uma no celular e outra no computador o chat é diferente. não vejo pelo celular as coisas q eu escrevo pelo computador. usando a mesma fucking conta. que saco o chat deveria ler do firebase as mensagens, qual a dificuldade?

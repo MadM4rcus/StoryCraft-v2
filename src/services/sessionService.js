@@ -8,29 +8,31 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase"; // Assuming you export 'db' from firebase.js
 
-// Use a constant global identifier for the session/app.
-const GLOBAL_APP_IDENTIFIER = "storycraft-v2-main-session";
-
-const feedCollectionRef = collection(db, "storycraft-v2", GLOBAL_APP_IDENTIFIER, "feed");
-
-export const addItemToFeed = async (messageData) => {
+export const addItemToFeed = async (sessionPath, messageData) => {
   try {
+    const feedCollectionRef = collection(db, sessionPath, "feed");
     await addDoc(feedCollectionRef, {
       ...messageData,
       timestamp: serverTimestamp(),
     });
   } catch (error) {
     console.error("Error adding document to feed: ", error);
+    // Adicione um tratamento de erro mais robusto se necessário
   }
 };
 
-export const subscribeToFeed = (callback) => {
+export const subscribeToFeed = (sessionPath, callback) => {
+  const feedCollectionRef = collection(db, sessionPath, "feed");
   const q = query(feedCollectionRef, orderBy("timestamp", "desc"));
+
   return onSnapshot(q, (querySnapshot) => {
     const feedItems = [];
     querySnapshot.forEach((doc) => {
       feedItems.push({ id: doc.id, ...doc.data() });
     });
     callback(feedItems);
+  }, (error) => {
+    console.error("Error subscribing to feed:", error);
+    // Adicione um tratamento de erro mais robusto se necessário
   });
 };
