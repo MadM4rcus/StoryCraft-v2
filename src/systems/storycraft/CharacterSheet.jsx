@@ -346,7 +346,11 @@ const handleExecuteFormulaAction = async (action) => {
                     totalResult += diceRollResult;
                     rollResultsForFeed.push({ type: 'dice', value: diceRollResult, displayValue: `${comp.value}(${rolls.join('+')})` });
                 } else if (!isNaN(parseInt(comp.value, 10))) { // Permite números fixos
-                    // Ignora se não for um formato de dado válido
+                    // --- INÍCIO DA CORREÇÃO ---
+                    const num = parseInt(comp.value, 10) || 0;
+                    totalResult += num;
+                    rollResultsForFeed.push({ type: 'number', value: num, displayValue: `${num}` });
+                    // --- FIM DA CORREÇÃO ---
                 }
             } else if (comp.type === 'number') {
                 const num = parseInt(comp.value, 10) || 0;
