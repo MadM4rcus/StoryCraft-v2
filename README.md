@@ -94,6 +94,9 @@ quando eu faço uma rolagem e troco de conta no mesmo navegador eu consigo ver o
 
 mas outro usuario em outro computador não consegue ver minhas rolagens nem eu as dele. 
 
+No meu app tem 2 sistemas: storycraft v1 e v2. o storycraft v2 é apenas uma skin classica para o v1. são ambos storycraft. 
+e o v2 ainda está em construção nem está sendo utilizado. 
+
 não preciso me preocupar em criar sessões ou campanhas diferentes. no momento preciso que todos os usuarios logados no aplicativo consigam ver todas as mensagens e rolagens de todos des de sempre. 
 
 a coleção no firestore deveria ser uma coleção global, com todas as mensagens roladas por todos os usuarios não uma coleção individual. 
