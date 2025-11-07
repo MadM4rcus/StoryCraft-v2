@@ -1,6 +1,6 @@
 import { db } from './firebase';
 import { getCharactersForUser, createNewCharacter, deleteCharacter } from './firestoreService';
-import { getThemeById } from './themeService';
+import { getThemeById, getUserSettings, saveUserSettings } from './themeService';
 
 export {
   db,
@@ -8,4 +8,6 @@ export {
   createNewCharacter,
   deleteCharacter,
   getThemeById,
+  getUserSettings,
+  saveUserSettings,
 };

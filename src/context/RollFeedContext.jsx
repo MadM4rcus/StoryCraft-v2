@@ -22,7 +22,7 @@ export const RollFeedProvider = ({ children }) => {
     }
 
     setIsLoading(true);
-    const unsubscribe = subscribeToFeed(sessionPath, (items) => {
+    const unsubscribe = subscribeToFeed((items) => { // Removed sessionPath argument
       setFeedItems(items);
       setIsLoading(false);
     });
@@ -31,13 +31,13 @@ export const RollFeedProvider = ({ children }) => {
   }, [user, sessionPath]);
 
   const addRollToFeed = useCallback((newRoll) => {
-    if (!sessionPath) return;
-    addItemToFeed(sessionPath, { ...newRoll, type: 'roll' });
+    if (!user) return; // Check for user instead of sessionPath, as sessionPath is not passed to addItemToFeed
+    addItemToFeed({ ...newRoll, type: 'roll' }); // Removed sessionPath argument
   }, [sessionPath]);
 
   const addMessageToFeed = useCallback((newMessage) => {
-    if (!sessionPath) return;
-    addItemToFeed(sessionPath, { ...newMessage, type: 'message' });
+    if (!user) return; // Check for user instead of sessionPath
+    addItemToFeed({ ...newMessage, type: 'message' }); // Removed sessionPath argument
   }, [sessionPath]);
 
   const value = {

@@ -4,7 +4,7 @@ import React, { createContext, useState, useContext, useCallback, useEffect, use
 import { useAuth, useSystem } from '@/hooks'; // Import useSystem
 import { db } from '@/services';
 import { collection, onSnapshot, query } from 'firebase/firestore';
-import { getUserSettings, saveUserSettings } from '@/services/sessionService';
+import { getUserSettings, saveUserSettings } from '@/services';
 import debounce from 'lodash/debounce';
 
 const PartyHealthContext = createContext();
@@ -34,7 +34,7 @@ export const PartyHealthProvider = ({ children }) => {
     }
 
     const fetchSettings = async () => {
-      const settings = await getUserSettings(sessionPath, user.uid);
+      const settings = await getUserSettings(user.uid);
       if (settings && settings.selectedCharIds) {
         setSelectedCharIds(settings.selectedCharIds);
       }
@@ -136,7 +136,7 @@ export const PartyHealthProvider = ({ children }) => {
     debounce((path, uid, ids) => {
       localStorage.setItem('selectedCharIds', JSON.stringify(ids));
       if (uid && path) {
-        saveUserSettings(path, uid, { selectedCharIds: ids });
+        saveUserSettings(uid, { selectedCharIds: ids });
       }
     }, 1000)
   ).current;

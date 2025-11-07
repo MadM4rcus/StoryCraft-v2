@@ -81,6 +81,39 @@ export const deleteTheme = async (themeId) => {
 };
 
 /**
+ * Busca as configurações de usuário para um ID de usuário específico.
+ */
+export const getUserSettings = async (userId) => {
+  if (!userId) return null;
+  try {
+    const userSettingsRef = doc(db, 'storycraft-v2', GLOBAL_APP_IDENTIFIER, 'userSettings', userId);
+    const docSnap = await getDoc(userSettingsRef);
+    if (docSnap.exists()) {
+      return { id: docSnap.id, ...docSnap.data() };
+    }
+    return null;
+  } catch (error) {
+    console.error("Erro ao buscar configurações de usuário:", error);
+    return null;
+  }
+};
+
+/**
+ * Salva (cria ou atualiza) as configurações de usuário no Firestore.
+ */
+export const saveUserSettings = async (userId, settingsData) => {
+  if (!userId || !settingsData) return false;
+  try {
+    const userSettingsRef = doc(db, 'storycraft-v2', GLOBAL_APP_IDENTIFIER, 'userSettings', userId);
+    await setDoc(userSettingsRef, settingsData, { merge: true });
+    return true;
+  } catch (error) {
+    console.error("Erro ao salvar configurações de usuário:", error);
+    return false;
+  }
+};
+
+/**
  * Aplica um tema a uma ficha de personagem específica.
  */
 export const applyThemeToCharacter = async (ownerUid, characterId, themeId, characterDataCollectionRoot) => {
