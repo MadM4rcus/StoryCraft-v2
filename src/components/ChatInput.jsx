@@ -4,19 +4,89 @@ import { useAuth } from '@/hooks';
 
 const ChatInput = () => {
   const [message, setMessage] = useState('');
-  const { addMessageToFeed } = useRollFeed();
+  const { addMessageToFeed, addRollToFeed } = useRollFeed();
   const { user } = useAuth();
-  const { activeCharacter } = useSystem(); // Pega o personagem ativo do contexto do sistema
+  const { activeCharacter } = useSystem();
+
+  /**
+   * Parses a dice formula string (e.g., "1d20+5", "2d6-1d4+2") and returns the roll details.
+   * @param {string} formula - The dice formula.
+   * @returns {{results: Array, totalResult: number}}
+   */
+  const parseAndRoll = (formula) => {
+    const components = formula.replace(/\s/g, '').replace(/-/g, '+-').split('+');
+    let totalResult = 0;
+    const rollResultsForFeed = [];
+
+    components.forEach(comp => {
+      if (comp.includes('d')) {
+        const [numDiceStr, numSidesStr] = comp.split('d');
+        const numDice = parseInt(numDiceStr, 10) || 1;
+        const numSides = parseInt(numSidesStr, 10);
+
+        if (!isNaN(numSides) && numSides > 0) {
+          let rolls = [];
+          let diceRollResult = 0;
+          for (let d = 0; d < numDice; d++) {
+            const roll = Math.floor(Math.random() * numSides) + 1;
+            rolls.push(roll);
+            diceRollResult += roll;
+          }
+          totalResult += diceRollResult;
+          rollResultsForFeed.push({
+            type: 'dice',
+            value: diceRollResult,
+            displayValue: `${comp}(${rolls.join('+')})`
+          });
+        }
+      } else {
+        const num = parseInt(comp, 10);
+        if (!isNaN(num)) {
+          totalResult += num;
+          rollResultsForFeed.push({
+            type: 'number',
+            value: num,
+            displayValue: `${num}`
+          });
+        }
+      }
+    });
+
+    return { results: rollResultsForFeed, totalResult };
+  };
 
   const handleSendMessage = (e) => {
     e.preventDefault();
-    if (message.trim() === '') return;
+    const trimmedMessage = message.trim();
+    if (trimmedMessage === '') return;
 
-    addMessageToFeed({
-      characterName: activeCharacter?.name || user.displayName || 'Usuário',
-      text: message,
-      ownerUid: user.uid,
-    });
+    if (trimmedMessage.toLowerCase().startsWith('r ')) {
+      const formula = trimmedMessage.substring(2);
+      // Apenas executa a rolagem se a fórmula não estiver vazia
+      if (formula.trim()) {
+        const { results, totalResult } = parseAndRoll(formula);
+        addRollToFeed({
+          characterName: activeCharacter?.name || user.displayName || 'Usuário',
+          rollName: `Rolagem: ${formula}`,
+          results,
+          totalResult,
+          ownerUid: user.uid,
+        });
+      } else {
+        // Se for apenas "r ", envia como mensagem normal
+        addMessageToFeed({
+          characterName: activeCharacter?.name || user.displayName || 'Usuário',
+          text: message,
+          ownerUid: user.uid,
+        });
+      }
+    } else {
+      addMessageToFeed({
+        characterName: activeCharacter?.name || user.displayName || 'Usuário',
+        text: message,
+        ownerUid: user.uid,
+      });
+    }
 
     setMessage('');
   };

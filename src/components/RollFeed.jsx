@@ -66,7 +66,7 @@ const RollFeed = () => {
         </div>
         
         {/* Nome da Ação */}
-        <p className="font-semibold text-lg text-textPrimary">{roll.rollName}</p>
+        <p className="font-semibold text-lg text-textPrimary">{roll.rollName || 'Rolagem de Dados'}</p>
         
         {/* --- NOVO: Bloco de Acerto (Layout 2.0) --- */}
         {roll.acertoResult && (
