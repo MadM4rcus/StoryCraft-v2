@@ -21,7 +21,7 @@ const RollFeed = () => {
     return (
       <div key={message.id} className="p-3 bg-bgElement rounded-md border border-bgInput mb-2">
         <div className="flex justify-between items-center text-xs text-textSecondary mb-1">
-          <span className="font-bold">{message.characterName}</span>
+          <span className="font-bold text-base text-textPrimary">{message.characterName}</span>
           <span>{formatTimestamp(message.timestamp)}</span>
         </div>
         
@@ -61,7 +61,7 @@ const RollFeed = () => {
     return (
       <div key={roll.id} className="p-3 bg-bgElement rounded-md border border-bgInput mb-2">
         <div className="flex justify-between items-center text-xs text-textSecondary mb-1">
-          <span>{roll.characterName}</span>
+          <span className="font-bold text-base text-textPrimary">{roll.characterName}</span>
           <span>{formatTimestamp(roll.timestamp)}</span>
         </div>
         

@@ -18,6 +18,9 @@ export const SystemProvider = ({ children }) => {
   // O padrão agora é null para forçar a tela de seleção a aparecer primeiro.
   const [currentSystem, setCurrentSystem] = useState(null); 
 
+  // Novo estado para rastrear o personagem ativo em toda a aplicação
+  const [activeCharacter, setActiveCharacter] = useState(null);
+
   // Define o caminho da coleção para FICHAS DE PERSONAGEM com base no sistema selecionado
   const characterDataCollectionRoot = useMemo(() => {
     switch (currentSystem) {
@@ -31,7 +34,15 @@ export const SystemProvider = ({ children }) => {
   const sessionDataCollectionRoot = GLOBAL_SESSION_PATH;
 
 
-  const value = { currentSystem, setCurrentSystem, characterDataCollectionRoot, sessionDataCollectionRoot, GLOBAL_APP_IDENTIFIER, GLOBAL_SESSION_PATH };
+  const value = { 
+    currentSystem, 
+    setCurrentSystem, 
+    characterDataCollectionRoot, 
+    sessionDataCollectionRoot, 
+    GLOBAL_APP_IDENTIFIER, 
+    GLOBAL_SESSION_PATH,
+    activeCharacter, setActiveCharacter // Exporta o estado e o setter
+  };
 
   return <SystemContext.Provider value={value}>{children}</SystemContext.Provider>;
 };

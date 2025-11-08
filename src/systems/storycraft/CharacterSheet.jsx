@@ -1,6 +1,6 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useCharacter, useAuth } from '@/hooks';
-import { useRollFeed } from '@/context';
+import { useRollFeed, useSystem } from '@/context';
 import { ModalManager } from '@/components';
 import FloatingNav from './FloatingNav';
 import { CharacterInfo, MainAttributes, Wallet, DiscordIntegration} from './CorePanels';
@@ -15,6 +15,14 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
   const { character, loading, updateCharacterField, toggleSection } = useCharacter(initialCharacter.id, initialCharacter.ownerUid);
   const { addRollToFeed, addMessageToFeed } = useRollFeed();
   const { user } = useAuth();
+  const { setActiveCharacter } = useSystem();
+
+  // Define este personagem como ativo quando a ficha é montada
+  // e limpa quando é desmontada.
+  useEffect(() => {
+    setActiveCharacter(character);
+    return () => setActiveCharacter(null);
+  }, [character, setActiveCharacter]);
 
   // Novo estado para controlar o modo de edição vs. modo de jogo
   const [isEditMode, setIsEditMode] = useState(false);
