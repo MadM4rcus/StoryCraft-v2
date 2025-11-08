@@ -1,5 +1,5 @@
 ### Firebase ###
-.firebase/
+.firebase
 firebase-debug.log
 firebase-debug-*.log
 
@@ -14,7 +14,7 @@ yarn-debug.log*
 yarn-error.log*
 
 ### User ###
-obsolete/
+obsolete
 .git/
 
 ### Vite ###
@@ -35,7 +35,7 @@ yarn-error.log*
 *.code-workspace
 
 # Dependency directories
-node_modules/
+node_modules
 
 # Production
 /dist

@@ -57,65 +57,64 @@ Aqui é onde podemos rastrear as próximas grandes tarefas.
 file tree
 
 📦STORYCRAFT-V2
- ┣ 📂src
- ┃ ┣ 📂components
- ┃ ┃ ┣ 📜ChatInput.jsx
- ┃ ┃ ┣ 📜Login.jsx
- ┃ ┃ ┣ 📜LoginScreen.jsx
- ┃ ┃ ┣ 📜ModalManager.jsx
- ┃ ┃ ┣ 📜PartyHealthMonitor.jsx
- ┃ ┃ ┣ 📜RollFeed.jsx
- ┃ ┃ ┣ 📜SystemRouter.jsx
- ┃ ┃ ┗ 📜ThemeEditor.jsx
- ┃ ┣ 📂context
- ┃ ┃ ┣ 📜AuthContext.jsx
- ┃ ┃ ┣ 📜PartyHealthContext.jsx
- ┃ ┃ ┣ 📜RollFeedContext.jsx
- ┃ ┃ ┗ 📜SystemContext.jsx
- ┃ ┣ 📂hooks
- ┃ ┃ ┣ 📜useAuth.js
- ┃ ┃ ┗ 📜useCharacter.js
- ┃ ┣ 📂package
- ┃ ┃ ┗ 📜storycraft-bg-classic.png
- ┃ ┣ 📂services
- ┃ ┃ ┣ 📜firebase.js
- ┃ ┃ ┣ 📜firestoreService.js
- ┃ ┃ ┣ 📜index.js
- ┃ ┃ ┣ 📜sessionService.js
- ┃ ┃ ┗ 📜themeService.js
- ┃ ┣ 📂systems
- ┃ ┃ ┣ 📂storycraft
- ┃ ┃ ┃ ┣ 📜ActionsSection.jsx
- ┃ ┃ ┃ ┣ 📜BuffsSection.jsx
- ┃ ┃ ┃ ┣ 📜CharacterList.jsx
- ┃ ┃ ┃ ┣ 📜CharacterSheet.jsx
- ┃ ┃ ┃ ┣ 📜ContentSections.jsx
- ┃ ┃ ┃ ┣ 📜CorePanels.jsx
- ┃ ┃ ┃ ┣ 📜Dashboard.jsx
- ┃ ┃ ┃ ┣ 📜FloatingNav.jsx
- ┃ ┃ ┃ ┣ 📜ListSections.jsx
- ┃ ┃ ┃ ┣ 📜QuickRoll.jsx
- ┃ ┃ ┃ ┣ 📜SheetSkin.jsx
- ┃ ┃ ┃ ┗ 📜Specializations.jsx
- ┃ ┃ ┗ 📂storycraft_v2
- ┃ ┃ ┃ ┣ 📜ClassicHeader.jsx
- ┃ ┃ ┃ ┣ 📜ClassicSheet.jsx
- ┃ ┃ ┃ ┣ 📜ClassicSheetAdjuster.jsx
- ┃ ┃ ┃ ┣ 📜classicSheetStyles.css
- ┃ ┃ ┃ ┣ 📜Dashboard.jsx
- ┃ ┃ ┃ ┗ 📜sheet_layout.json
- ┃ ┣ 📜App.jsx
- ┃ ┣ 📜index.css
- ┃ ┗ 📜main.jsx
- ┣ 📜.firebaserc
- ┣ 📜.gitignore
- ┣ 📜firebase.json
- ┣ 📜firestore.rules
- ┣ 📜index.html
- ┣ 📜jsconfig.json
- ┣ 📜package-lock.json
- ┣ 📜package.json
- ┣ 📜postcss.config.js
- ┣ 📜README.md
- ┣ 📜tailwind.config.js
- ┗ 📜vite.config.js
+┣ 📂src
+┃ ┣ 📂components
+┃ ┃ ┣ 📜ChatInput.jsx
+┃ ┃ ┣ 📜Login.jsx
+┃ ┃ ┣ 📜LoginScreen.jsx
+┃ ┃ ┣ 📜ModalManager.jsx
+┃ ┃ ┣ 📜PartyHealthMonitor.jsx
+┃ ┃ ┣ 📜RollFeed.jsx
+┃ ┃ ┣ 📜SystemRouter.jsx
+┃ ┃ ┗ 📜ThemeEditor.jsx
+┃ ┣ 📂context
+┃ ┃ ┣ 📜AuthContext.jsx
+┃ ┃ ┣ 📜PartyHealthContext.jsx
+┃ ┃ ┣ 📜RollFeedContext.jsx
+┃ ┃ ┗ 📜SystemContext.jsx
+┃ ┣ 📂hooks
+┃ ┃ ┣ 📜useAuth.js
+┃ ┃ ┗ 📜useCharacter.js
+┃ ┣ 📂package
+┃ ┃ ┗ 📜storycraft-bg-classic.png
+┃ ┣ 📂services
+┃ ┃ ┣ 📜firebase.js
+┃ ┃ ┣ 📜firestoreService.js
+┃ ┃ ┣ 📜index.js
+┃ ┃ ┣ 📜sessionService.js
+┃ ┃ ┗ 📜themeService.js
+┃ ┣ 📂systems
+┃ ┃ ┣ 📂storycraft
+┃ ┃ ┃ ┣ 📜ActionsSection.jsx
+┃ ┃ ┃ ┣ 📜BuffsSection.jsx
+┃ ┃ ┃ ┣ 📜CharacterList.jsx
+┃ ┃ ┃ ┣ 📜CharacterSheet.jsx
+┃ ┃ ┃ ┣ 📜ContentSections.jsx
+┃ ┃ ┃ ┣ 📜CorePanels.jsx
+┃ ┃ ┃ ┣ 📜Dashboard.jsx
+┃ ┃ ┃ ┣ 📜FloatingNav.jsx
+┃ ┃ ┃ ┣ 📜ListSections.jsx
+┃ ┃ ┃ ┣ 📜QuickRoll.jsx
+┃ ┃ ┃ ┣ 📜SheetSkin.jsx
+┃ ┃ ┃ ┗ 📜Specializations.jsx
+┃ ┃ ┗ 📂storycraft_v2
+┃ ┃   ┣ 📜ClassicHeader.jsx
+┃ ┃   ┣ 📜ClassicSheet.jsx
+┃ ┃   ┣ 📜ClassicSheetAdjuster.jsx
+┃ ┃   ┣ 📜classicSheetStyles.css
+┃ ┃   ┣ 📜Dashboard.jsx
+┃ ┃   ┗ 📜sheet_layout.json
+┃ ┣ 📜App.jsx
+┃ ┣ 📜index.css
+┃ ┗ 📜main.jsx
+┣ 📜.firebaserc
+┣ 📜.gitignore
+┣ 📜firebase.json
+┣ 📜firestore.rules
+┣ 📜index.html
+┣ 📜jsconfig.json
+┣ 📜package.json
+┣ 📜postcss.config.js
+┣ 📜README.md
+┣ 📜tailwind.config.js
+┗ 📜vite.config.js
