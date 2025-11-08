@@ -1,5 +1,5 @@
 import { db } from './firebase';
-import { collection, query, getDocs, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, getDocs, addDoc, serverTimestamp, deleteDoc, doc, getDoc, setDoc } from 'firebase/firestore';
 
 // A função agora pode buscar todas as fichas se fetchAll for verdadeiro
 export const getCharactersForUser = async (basePath, userId, fetchAll = false) => {
@@ -77,4 +77,33 @@ export const deleteCharacter = async (basePath, userId, characterId) => {
     console.error("Erro ao deletar personagem:", error);
     return false;
   }
+};
+
+/**
+ * Busca as configurações de um usuário no Firestore.
+ * @param {string} userId - O UID do usuário.
+ * @returns {Promise<object|null>} As configurações do usuário ou null se não encontradas.
+ */
+export const getUserSettings = async (userId) => {
+  if (!userId) return null;
+  // As configurações do usuário são globais e não dependem do sistema (v1 ou v2)
+  const settingsDocRef = doc(db, `artifacts2/storycraft/users/${userId}`);
+  try {
+    const docSnap = await getDoc(settingsDocRef);
+    return docSnap.exists() ? docSnap.data() : null;
+  } catch (error) {
+    console.error("Erro ao buscar configurações do usuário:", error);
+    return null;
+  }
+};
+
+/**
+ * Salva as configurações de um usuário no Firestore.
+ * @param {string} userId - O UID do usuário.
+ * @param {object} settings - O objeto de configurações a ser salvo.
+ */
+export const saveUserSettings = async (userId, settings) => {
+  if (!userId) return;
+  const settingsDocRef = doc(db, `artifacts2/storycraft/users/${userId}`);
+  await setDoc(settingsDocRef, settings, { merge: true });
 };

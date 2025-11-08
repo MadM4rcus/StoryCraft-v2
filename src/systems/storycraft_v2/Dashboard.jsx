@@ -5,9 +5,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import CharacterList from '@/systems/storycraft/CharacterList'; 
 // import ClassicSheet from './ClassicSheet'; // 1. Comentamos a ficha real
 import ClassicSheetAdjuster from './ClassicSheetAdjuster'; // 2. Importamos a nova ferramenta
-import { ModalManager, ThemeEditor, PartyHealthMonitor } from '@/components';
-import { useAuth, useSystem } from '@/hooks';
-import { getCharactersForUser, createNewCharacter, deleteCharacter, getThemeById, db } from '@/services';
+import ModalManager from '@/components/ModalManager';
+import ThemeEditor from '@/components/ThemeEditor';
+import PartyHealthMonitor from '@/components/PartyHealthMonitor';
+import { useAuth } from '@/hooks/useAuth';
+import { useSystem } from '@/context/SystemContext';
+import { getCharactersForUser, createNewCharacter, deleteCharacter } from '@/services/firestoreService';
+import { getThemeById } from '@/services/themeService';
+import { db } from '@/services/firebase';
 import { doc, setDoc, collection, onSnapshot } from 'firebase/firestore';
 
 const DashboardV2 = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {

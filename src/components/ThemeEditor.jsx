@@ -1,7 +1,8 @@
 // src/components/ThemeEditor.jsx
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useAuth, useSystem } from '@/hooks';
+import { useAuth } from '../hooks/useAuth';
+import { useSystem } from '../context/SystemContext';
 import { getThemesForUser, saveTheme, deleteTheme, applyThemeToCharacter } from '../services/themeService';
 import ModalManager from './ModalManager'; // 1. IMPORTAÇÃO CORRIGIDA
 

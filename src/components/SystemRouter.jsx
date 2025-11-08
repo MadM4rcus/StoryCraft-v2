@@ -1,7 +1,7 @@
 // src/components/SystemRouter.jsx
 
 import React, { useState } from 'react';
-import { useSystem } from '@/hooks';
+import { useSystem } from '@/context/SystemContext';
 import StoryCraftV1Dashboard from '@/systems/storycraft/Dashboard'; // Dashboard do V1
 import StoryCraftV2Dashboard from '@/systems/storycraft_v2/Dashboard'; // Dashboard do V2 com o caminho corrigido
 

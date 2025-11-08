@@ -1,10 +1,11 @@
 // src/context/PartyHealthContext.jsx
 
 import React, { createContext, useState, useContext, useCallback, useEffect, useMemo, useRef } from 'react';
-import { useAuth, useSystem } from '@/hooks'; // Import useSystem
-import { db } from '@/services';
+import { useAuth } from '@/hooks/useAuth';
+import { useSystem } from '@/context/SystemContext'; // Import useSystem
+import { db } from '@/services/firebase';
 import { collection, onSnapshot, query } from 'firebase/firestore';
-import { getUserSettings, saveUserSettings } from '@/services';
+import { getUserSettings, saveUserSettings } from '@/services/firestoreService';
 import debounce from 'lodash/debounce';
 
 const PartyHealthContext = createContext();

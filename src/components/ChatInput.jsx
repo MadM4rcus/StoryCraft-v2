@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { useRollFeed, useSystem } from '@/context';
-import { useAuth } from '@/hooks';
+import { useRollFeed } from '@/context/RollFeedContext';
+import { useSystem } from '@/context/SystemContext';
+import { useAuth } from '@/hooks/useAuth';
 
 const ChatInput = () => {
   const [message, setMessage] = useState('');

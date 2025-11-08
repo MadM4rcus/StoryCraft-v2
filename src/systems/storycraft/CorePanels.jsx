@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useAuth } from '@/hooks';
+import { useAuth } from '@/hooks/useAuth';
 import SheetSkin from './SheetSkin';
 
 // --- Novo Sub-componente: ImageUrlModal ---

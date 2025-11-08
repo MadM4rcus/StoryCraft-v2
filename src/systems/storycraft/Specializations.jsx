@@ -1,7 +1,7 @@
 // src/systems/storycraft/Specializations.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import SheetSkin from './SheetSkin.jsx';
-import { useAuth } from '../../hooks'; // Necessário para verificar permissão de edição
+import { useAuth } from '@/hooks/useAuth'; // Necessário para verificar permissão de edição
 
 // --- DADOS DAS PERÍCIAS ---
 // Lista fixa de 30 perícias com seus nomes e atributos base

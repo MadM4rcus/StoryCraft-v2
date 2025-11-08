@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useAuth } from '@/hooks';
+import { useAuth } from '@/hooks/useAuth';
 import { PREDEFINED_SKILLS } from './Specializations';
 import SheetSkin from './SheetSkin';
 

@@ -1,10 +1,10 @@
 // src/App.jsx
 
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks';
+import { useAuth } from './hooks/useAuth';
 import SystemRouter from './components/SystemRouter';
 import LoginScreen from './components/LoginScreen';
-import { RollFeed } from '@/components'; // RollFeed é um overlay global, pode ser renderizado aqui
+import RollFeed from './components/RollFeed'; // RollFeed é um overlay global, pode ser renderizado aqui
 
 function hexToRgb(hex) {
   if (!hex) return '55, 65, 81';

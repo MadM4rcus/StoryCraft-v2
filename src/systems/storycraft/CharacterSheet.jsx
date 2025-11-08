@@ -1,7 +1,9 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { useCharacter, useAuth } from '@/hooks';
-import { useRollFeed, useSystem } from '@/context';
-import { ModalManager } from '@/components';
+import { useCharacter } from '@/hooks/useCharacter';
+import { useAuth } from '@/hooks/useAuth';
+import { useRollFeed } from '@/context/RollFeedContext';
+import { useSystem } from '@/context/SystemContext';
+import ModalManager from '@/components/ModalManager';
 import FloatingNav from './FloatingNav'; 
 import { CharacterInfo, MainAttributes, Wallet, DiscordIntegration } from './CorePanels';
 import { InventoryList, EquippedItemsList, SkillsList, PerksList } from './ListSections';

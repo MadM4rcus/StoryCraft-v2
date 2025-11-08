@@ -1,7 +1,7 @@
 // src/components/LoginScreen.jsx
 
 import React, { useState } from 'react';
-import { useAuth } from '@/hooks';
+import { useAuth } from '../hooks/useAuth';
 
 const LoginScreen = () => {
   const { googleSignIn } = useAuth();

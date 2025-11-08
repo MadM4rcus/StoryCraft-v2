@@ -2,7 +2,7 @@ import React, { createContext, useEffect, useState } from "react";
 import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
 import { auth, db } from "../services/firebase.js";
 import { doc, setDoc, onSnapshot } from "firebase/firestore";
-import { useSystem } from "@/hooks"; // Importar o hook useSystem
+import { useSystem } from "./SystemContext.jsx"; // Importar o hook useSystem
 
 export const AuthContext = createContext();
 

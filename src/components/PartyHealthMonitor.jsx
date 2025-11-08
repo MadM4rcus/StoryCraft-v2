@@ -1,8 +1,8 @@
 // src/components/PartyHealthMonitor.jsx
 
 import React, { useState } from 'react';
-import { useAuth } from '@/hooks';
-import { usePartyHealth } from '@/context';
+import { useAuth } from '@/hooks/useAuth';
+import { usePartyHealth } from '@/context/PartyHealthContext';
 
 const PartyHealthMonitor = ({ onCharacterClick }) => {
   const { isMaster } = useAuth();

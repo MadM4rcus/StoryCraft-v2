@@ -1,11 +1,17 @@
 // src/systems/storycraft/Dashboard.jsx
 
 import React, { useState, useEffect, useRef } from 'react';
-import { CharacterList, CharacterSheet } from './index';
-import { ModalManager, ThemeEditor, PartyHealthMonitor } from '@/components';
-import { useAuth, useSystem } from '@/hooks';
-import { getCharactersForUser, createNewCharacter, deleteCharacter, getThemeById, db } from '@/services';
+import CharacterList from './CharacterList';
+import CharacterSheet from './CharacterSheet';
+import ModalManager from '@/components/ModalManager';
+import ThemeEditor from '@/components/ThemeEditor';
+import PartyHealthMonitor from '@/components/PartyHealthMonitor';
+import { useAuth } from '@/hooks/useAuth';
+import { useSystem } from '@/context/SystemContext';
+import { getCharactersForUser, createNewCharacter, deleteCharacter } from '@/services/firestoreService';
+import { getThemeById } from '@/services/themeService';
 import { doc, setDoc, collection, onSnapshot } from 'firebase/firestore';
+import { db } from '@/services/firebase';
 
 const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
   const { user, googleSignOut, isMaster } = useAuth();

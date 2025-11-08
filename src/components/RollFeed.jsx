@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useRollFeed } from '@/context';
-import { useAuth } from '@/hooks';
-import { ChatInput } from '@/components';
+import { useRollFeed } from '@/context/RollFeedContext';
+import { useAuth } from '@/hooks/useAuth';
+import ChatInput from '@/components/ChatInput';
 
 const RollFeed = () => {
   const { feedItems, isLoading } = useRollFeed();

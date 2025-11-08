@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useCallback, useEffect } from 'react';
-import { useAuth, useSystem } from '@/hooks';
+import { useAuth } from '@/hooks/useAuth';
+import { useSystem } from '@/context/SystemContext';
 import { addItemToFeed, subscribeToFeed } from '@/services/sessionService';
 
 const RollFeedContext = createContext();
