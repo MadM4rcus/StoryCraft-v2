@@ -97,13 +97,13 @@ file tree
 ┃ ┃ ┃ ┣ 📜QuickRoll.jsx
 ┃ ┃ ┃ ┣ 📜SheetSkin.jsx
 ┃ ┃ ┃ ┗ 📜Specializations.jsx
-┃ ┃ ┗ 📂storycraft_v2
+┃ ┃ ┗ 📂storycraft_classic
+┃ ┃   ┣ 📜classic_sheet_layout.json
+┃ ┃   ┣ 📜ClassicDashboard.jsx
 ┃ ┃   ┣ 📜ClassicHeader.jsx
 ┃ ┃   ┣ 📜ClassicSheet.jsx
 ┃ ┃   ┣ 📜ClassicSheetAdjuster.jsx
-┃ ┃   ┣ 📜classicSheetStyles.css
-┃ ┃   ┣ 📜Dashboard.jsx
-┃ ┃   ┗ 📜sheet_layout.json
+┃ ┃   ┗ 📜classicSheetStyles.css
 ┃ ┣ 📜App.jsx
 ┃ ┣ 📜index.css
 ┃ ┗ 📜main.jsx
@@ -118,3 +118,7 @@ file tree
 ┣ 📜README.md
 ┣ 📜tailwind.config.js
 ┗ 📜vite.config.js
+
+
+
+então o lance é o seguinte, a ultima ideia que vc me deu foi usar o sheet_layout.json que está dentro da pasta do storycraft_v2, mas eu dei a ideia de fazer o seguinte, pegar a ferramenta e colocar como uma ferramenta de mestre. e em vez de o app ler o arquivo json dentro da pasta, ele deveria ler um documento dentro do firebase, um documento que o a propria ferramenta edita e salva em tempo real. e fica salva no firebase, como qualquer outra ficha de jogador. claro fariamos uma coleçao especifica pra isso. 
