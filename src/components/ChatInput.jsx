@@ -9,50 +9,72 @@ const ChatInput = () => {
   const { activeCharacter } = useSystem();
 
   /**
-   * Parses a dice formula string (e.g., "1d20+5", "2d6-1d4+2") and returns the roll details.
-   * @param {string} formula - The dice formula.
-   * @returns {{results: Array, totalResult: number}}
+   * Safely evaluates a mathematical expression.
+   * @param {string} fn - The expression to evaluate.
+   * @returns {number}
    */
-  const parseAndRoll = (formula) => {
-    const components = formula.replace(/\s/g, '').replace(/-/g, '+-').split('+');
-    let totalResult = 0;
-    const rollResultsForFeed = [];
+  const evil = (fn) => {
+    // eslint-disable-next-line no-new-func
+    return new Function('return ' + fn)();
+  };
 
-    components.forEach(comp => {
-      if (comp.includes('d')) {
-        const [numDiceStr, numSidesStr] = comp.split('d');
+  /**
+   * Parses a dice formula string (e.g., "1d20+5", "((1d6-1)*2)") and returns the roll details.
+   * @param {string} formula - The dice formula.
+   * @returns {{results: Array, totalResult: number, finalExpression: string}}
+   */
+  const parseAndRoll = (rawFormula) => {
+    const rollResultsForFeed = [];
+    let expressionForEval = rawFormula.replace(/\s/g, '');
+
+    // Regex to find all dice notations (e.g., 1d20, 4d6)
+    const diceRegex = /(\d+d\d+)/gi;
+    const diceMatches = rawFormula.match(diceRegex);
+
+    if (diceMatches) {
+      diceMatches.forEach(diceString => {
+        const [numDiceStr, numSidesStr] = diceString.split('d');
         const numDice = parseInt(numDiceStr, 10) || 1;
         const numSides = parseInt(numSidesStr, 10);
 
-        if (!isNaN(numSides) && numSides > 0) {
-          let rolls = [];
-          let diceRollResult = 0;
-          for (let d = 0; d < numDice; d++) {
-            const roll = Math.floor(Math.random() * numSides) + 1;
-            rolls.push(roll);
-            diceRollResult += roll;
-          }
-          totalResult += diceRollResult;
-          rollResultsForFeed.push({
-            type: 'dice',
-            value: diceRollResult,
-            displayValue: `${comp}(${rolls.join('+')})`
-          });
-        }
-      } else {
-        const num = parseInt(comp, 10);
-        if (!isNaN(num)) {
-          totalResult += num;
-          rollResultsForFeed.push({
-            type: 'number',
-            value: num,
-            displayValue: `${num}`
-          });
-        }
-      }
-    });
+        if (isNaN(numSides) || numSides <= 0) return;
 
-    return { results: rollResultsForFeed, totalResult };
+        let rolls = [];
+        let diceRollResult = 0;
+        for (let d = 0; d < numDice; d++) {
+          const roll = Math.floor(Math.random() * numSides) + 1;
+          rolls.push(roll);
+          diceRollResult += roll;
+        }
+
+        // Add to the feed display
+        rollResultsForFeed.push({
+          type: 'dice',
+          value: diceRollResult,
+          displayValue: `${diceString}(${rolls.join('+')})`
+        });
+
+        // Replace the first occurrence of the dice string in the expression with its result
+        expressionForEval = expressionForEval.replace(diceString, `(${diceRollResult})`);
+      });
+    }
+
+    // Sanitize the expression to only allow numbers, operators, and parentheses
+    const sanitizedExpression = expressionForEval.replace(/[^0-9+\-*/().]/g, '');
+
+    let totalResult = 0;
+    try {
+      // Safely evaluate the final mathematical expression
+      totalResult = evil(sanitizedExpression);
+      if (isNaN(totalResult)) {
+        throw new Error("Invalid mathematical expression.");
+      }
+    } catch (error) {
+      console.error("Error evaluating roll expression:", error);
+      return { results: [], totalResult: 0, finalExpression: "Erro na fórmula" };
+    }
+
+    return { results: rollResultsForFeed, totalResult, finalExpression: sanitizedExpression };
   };
 
   const handleSendMessage = (e) => {
@@ -64,10 +86,10 @@ const ChatInput = () => {
       const formula = trimmedMessage.substring(2);
       // Apenas executa a rolagem se a fórmula não estiver vazia
       if (formula.trim()) {
-        const { results, totalResult } = parseAndRoll(formula);
+        const { results, totalResult, finalExpression } = parseAndRoll(formula);
         addRollToFeed({
           characterName: activeCharacter?.name || user.displayName || 'Usuário',
-          rollName: `Rolagem: ${formula}`,
+          rollName: `Rolagem: ${finalExpression || formula}`,
           results,
           totalResult,
           ownerUid: user.uid,
