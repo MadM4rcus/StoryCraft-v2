@@ -60,7 +60,6 @@ file tree
  ┣ 📂src
  ┃ ┣ 📂components
  ┃ ┃ ┣ 📜ChatInput.jsx
- ┃ ┃ ┣ 📜index.js
  ┃ ┃ ┣ 📜Login.jsx
  ┃ ┃ ┣ 📜LoginScreen.jsx
  ┃ ┃ ┣ 📜ModalManager.jsx
@@ -70,12 +69,10 @@ file tree
  ┃ ┃ ┗ 📜ThemeEditor.jsx
  ┃ ┣ 📂context
  ┃ ┃ ┣ 📜AuthContext.jsx
- ┃ ┃ ┣ 📜index.js
  ┃ ┃ ┣ 📜PartyHealthContext.jsx
  ┃ ┃ ┣ 📜RollFeedContext.jsx
  ┃ ┃ ┗ 📜SystemContext.jsx
  ┃ ┣ 📂hooks
- ┃ ┃ ┣ 📜index.js
  ┃ ┃ ┣ 📜useAuth.js
  ┃ ┃ ┗ 📜useCharacter.js
  ┃ ┣ 📂package
@@ -96,7 +93,6 @@ file tree
  ┃ ┃ ┃ ┣ 📜CorePanels.jsx
  ┃ ┃ ┃ ┣ 📜Dashboard.jsx
  ┃ ┃ ┃ ┣ 📜FloatingNav.jsx
- ┃ ┃ ┃ ┣ 📜index.js
  ┃ ┃ ┃ ┣ 📜ListSections.jsx
  ┃ ┃ ┃ ┣ 📜QuickRoll.jsx
  ┃ ┃ ┃ ┣ 📜SheetSkin.jsx
