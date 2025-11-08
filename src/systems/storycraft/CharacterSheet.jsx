@@ -2,8 +2,8 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useCharacter, useAuth } from '@/hooks';
 import { useRollFeed, useSystem } from '@/context';
 import { ModalManager } from '@/components';
-import FloatingNav from './FloatingNav';
-import { CharacterInfo, MainAttributes, Wallet, DiscordIntegration} from './CorePanels';
+import FloatingNav from './FloatingNav'; 
+import { CharacterInfo, MainAttributes, Wallet, DiscordIntegration } from './CorePanels';
 import { InventoryList, EquippedItemsList, SkillsList, PerksList } from './ListSections';
 import SpecializationsList, { PREDEFINED_SKILLS, ATTR_MAP } from './Specializations';
 import { Story, Notes } from './ContentSections';
@@ -26,6 +26,9 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
 
   // Novo estado para controlar o modo de edição vs. modo de jogo
   const [isEditMode, setIsEditMode] = useState(false);
+  // Novo estado para armazenar o mapa de atributos totais vindo do CorePanels
+  const [totalAttributesMap, setTotalAttributesMap] = useState({});
+
   const canToggleEditMode = isMaster || (user && user.uid === character?.ownerUid);
 
   const [modalState, setModalState] = useState({ type: null, props: {} });
@@ -173,15 +176,27 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
     setModalState({ type: 'damageHeal', props: { attributeName, onConfirm: handleConfirmAction, onClose: closeModal } });
   };
 
-  const handleSimpleAttributeRoll = (attributeName, attributeValue) => {
+  const handleSimpleAttributeRoll = (attributeName, totalBonus) => {
     if (!character) return;
+
+    // 1. Rola o d20 para obter o resultado do dado.
+    const d20Roll = Math.floor(Math.random() * 20) + 1;
+    const isCrit = d20Roll === 20;
+    const isCritFail = d20Roll === 1;
+
+    // 2. Monta o objeto de ação, incluindo o novo `acertoResult`.
     const action = {
         name: `Rolagem de ${attributeName}`,
-        components: [
-            { type: 'dice', value: '1d20' },
-            { type: 'number', value: attributeValue, label: 'Bônus' }
-        ],
-        discordText: `Rolagem de ${attributeName} (1d20${attributeValue >= 0 ? '+' : ''}${attributeValue})`
+        components: [{ type: 'number', value: totalBonus, label: 'Bônus' }],
+        acertoResult: {
+            roll: d20Roll,
+            bonus: totalBonus,
+            total: d20Roll + totalBonus,
+            isCrit: isCrit,
+            isCritFail: isCritFail, // Adiciona a falha crítica
+            skillName: attributeName, // Usa o nome do atributo como "perícia"
+        },
+        discordText: `Rolagem de ${attributeName} (1d20${totalBonus >= 0 ? '+' : ''}${totalBonus})`
     };
     handleExecuteFormulaAction(action);
   };
@@ -199,10 +214,10 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
     const skill = PREDEFINED_SKILLS.find(s => s.name === skillName);
     const skillState = character.skillSystem?.[skillName];
     if (!skill || !skillState) return 0;
-
-    // 1. Bônus de Atributo
-    const selectedAttr = skillState.selectedAttr || skill.attr;
-    const attrKey = ATTR_MAP[selectedAttr];
+    const selectedAttr = skillState.selectedAttr || skill.attr;    // ATENÇÃO: A chave do atributo no mainAttributes é minúscula (ex: 'forca'),
+    // mas o nome do atributo no buff é capitalizado (ex: 'Força').
+    const attrKey = ATTR_MAP[selectedAttr].toLowerCase();
+    const attrNameForBuff = Object.keys(ATTR_MAP).find(key => ATTR_MAP[key] === attrKey);
     const attrBonus = character.mainAttributes?.[attrKey] || 0;
 
     // 2. Bônus de Treinamento (se aplicável)
@@ -250,7 +265,7 @@ const handleExecuteFormulaAction = async (action) => {
     // --- FIM DA CORREÇÃO ---
 
     let totalResult = 0;
-    let acertoResult = null;
+    let acertoResult = action.acertoResult || null; // Pega o acertoResult da ação, se existir
     let rollResultsForFeed = [];
     let criticals = [];
     const multiplier = action.multiplier || 1;
@@ -280,12 +295,14 @@ const handleExecuteFormulaAction = async (action) => {
         const skillBonus = calculateTotalBonus(skillRollComp.skill, character);
         const totalAcerto = d20Roll + skillBonus;
         const isCrit = d20Roll === 20; // Um 20 natural é sempre um crítico para perícias
+        const isCritFail = d20Roll === 1;
 
         acertoResult = {
             roll: d20Roll,
             bonus: skillBonus,
             total: totalAcerto,
             isCrit,
+            isCritFail,
             skillName: skillRollComp.skill,
         };
 
@@ -323,13 +340,15 @@ const handleExecuteFormulaAction = async (action) => {
             }
             // --- FIM DA NOVA LÓGICA DO DANO CRÍTICO ---
         }
-    } else {
+    } else if (!acertoResult) {
         // Lógica antiga para rolagens sem acerto (ex: rolagens de atributo)
+        // Isso só será executado se a ação não tiver nem `skillRoll` nem `acertoResult` pré-definido.
         const hasDiceComponent = (action.components || []).some(c => c.type === 'dice' || c.type === 'critDice');
         if (!hasDiceComponent) {
             const roll = Math.floor(Math.random() * 20) + 1;
             totalResult += roll;
             rollResultsForFeed.push({ type: 'dice', value: roll, displayValue: `1d20(${roll})` });
+
         }
     }
 
@@ -474,7 +493,7 @@ const handleExecuteFormulaAction = async (action) => {
     let discordDescription;
 
     if (acertoResult) {
-        const acertoString = `**Teste de ${acertoResult.skillName}:** ${acertoResult.total} (d20:${acertoResult.roll} + Bônus:${acertoResult.bonus})`;
+        const acertoString = `**Teste de ${acertoResult.skillName}:** ${acertoResult.total} (d20:${acertoResult.roll} + Bônus:${acertoResult.bonus || 0})`;
         discordDescription = `${descriptionText}\n${acertoString}\n\n**Dano/Resultado: ${totalResult}**`;
     } else {
         discordDescription = `${descriptionText}\n\n**Resultado Final: ${totalResult}**`;
@@ -569,7 +588,7 @@ const handleExecuteFormulaAction = async (action) => {
           </div>
 
       <div id="info"><CharacterInfo character={character} onUpdate={updateCharacterField} isMaster={isMaster} isEditMode={isEditMode} isCollapsed={character.collapsedStates?.info} toggleSection={() => toggleSection('info')} /></div>
-      <div id="main-attributes"><MainAttributes character={character} onUpdate={updateCharacterField} isMaster={isMaster} isEditMode={isEditMode} buffModifiers={buffModifiers.attributes} isCollapsed={character.collapsedStates?.main} toggleSection={() => toggleSection('main')} onAttributeRoll={handleAttributeClick} /></div>      
+      <div id="main-attributes"><MainAttributes character={character} onUpdate={updateCharacterField} isMaster={isMaster} isEditMode={isEditMode} buffModifiers={buffModifiers.attributes} isCollapsed={character.collapsedStates?.main} toggleSection={() => toggleSection('main')} onAttributeRoll={handleAttributeClick} onMapUpdate={setTotalAttributesMap} /></div>      
       
       <div id="actions"><ActionsSection character={character} isMaster={isMaster} isCollapsed={character.collapsedStates?.actions} toggleSection={() => toggleSection('actions')} allAttributes={allAttributes} onUpdate={updateCharacterField} onExecuteFormula={handleExecuteFormulaAction} isEditMode={isEditMode} /></div>
       <div id="buffs"><BuffsSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} allAttributes={allAttributes} isCollapsed={character.collapsedStates?.buffs} toggleSection={() => toggleSection('buffs')} isEditMode={isEditMode} /></div>
@@ -580,9 +599,8 @@ const handleExecuteFormulaAction = async (action) => {
       <div id="perks"><PerksList character={character} onUpdate={updateCharacterField} onShowDiscord={handleShowOnDiscord} isCollapsed={character.collapsedStates?.perks} toggleSection={() => toggleSection('perks')} isEditMode={isEditMode} /></div>
       {/* SkillsList é a seção de HABILIDADES e deve ser mantida. */}
       <div id="skills"><SkillsList character={character} onUpdate={updateCharacterField} isMaster={isMaster} onShowDiscord={handleShowOnDiscord} isCollapsed={character.collapsedStates?.skills} toggleSection={() => toggleSection('skills')} isEditMode={isEditMode} /></div>
-      
-      {/* SpecializationsList foi refatorado para ser a nova seção de PERÍCIAS. */}
-      <div id="specializations"><SpecializationsList character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.specializations} toggleSection={() => toggleSection('specializations')} onExecuteFormula={handleExecuteFormulaAction} isEditMode={isEditMode} /></div>
+      {/* SpecializationsList foi refatorado para ser a nova seção de PERÍCIAS. Passamos o mapa de atributos totais. */}
+      <div id="specializations"><SpecializationsList character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.specializations} toggleSection={() => toggleSection('specializations')} onExecuteFormula={handleExecuteFormulaAction} isEditMode={isEditMode} totalAttributesMap={totalAttributesMap} /></div>
 
       <div id="story"><Story character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.story} toggleSection={() => toggleSection('story')} isEditMode={isEditMode} /></div>
       <div id="notes"><Notes character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.notes} toggleSection={() => toggleSection('notes')} isEditMode={isEditMode} /></div>

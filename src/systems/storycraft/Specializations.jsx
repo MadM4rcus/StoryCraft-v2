@@ -57,7 +57,8 @@ const SpecializationsList = ({
     toggleSection,
     onUpdate,
     onExecuteFormula, // Usado para enviar a rolagem para o feed/Discord
-    isEditMode
+    isEditMode,    
+    totalAttributesMap // Recebe o mapa de atributos já somados com buffs
 }) => {
     const { user } = useAuth();
     const canEdit = user.uid === character.ownerUid || isMaster;
@@ -104,8 +105,7 @@ const SpecializationsList = ({
 
         // 1. Bônus de Atributo (usa o atributo selecionado, ou o padrão se não houver)
         const selectedAttr = skillState.selectedAttr || skill.attr;
-        const attrKey = ATTR_MAP[selectedAttr];
-        const attrBonus = mainAttributes[attrKey] || 0;
+        const attrBonus = totalAttributesMap[selectedAttr] || 0;
 
         // 2. Bônus de Treinamento (+2 base +1 a cada 10 níveis, se treinada)
         let trainingBonus = 0;
@@ -115,11 +115,10 @@ const SpecializationsList = ({
         
         // 3. Bônus Variável (Outros)
         const otherBonus = parseInt(skillState.otherBonus, 10) || 0;
-        
+
         // Retorna a soma total
         return attrBonus + trainingBonus + otherBonus;
-
-    }, [mainAttributes, level]);
+    }, [totalAttributesMap, level]);
 
     /**
      * Alterna o estado 'trained' de uma perícia e salva na ficha.

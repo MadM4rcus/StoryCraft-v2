@@ -169,7 +169,7 @@ const CharacterInfo = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
 };
 
 // --- Sub-componente: MainAttributes ---
-const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, toggleSection, buffModifiers, isEditMode, onAttributeRoll }) => {
+export const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, toggleSection, buffModifiers, isEditMode, onAttributeRoll, onMapUpdate }) => {
     const { user } = useAuth();
     const canEdit = user && (user.uid === character.ownerUid || isMaster);
     const canEditGeneral = user && (user.uid === character.ownerUid || isMaster);
@@ -204,6 +204,13 @@ const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, toggleSect
         CAR: calculateTotal(localMainAttributes?.carisma, 'Carisma'),
     }), [localMainAttributes, dexterityValue, constitutionValue, wisdomValue, buffModifiers]);
 
+    // Chama o callback para atualizar o mapa no componente pai sempre que ele mudar.
+    useEffect(() => {
+        if (onMapUpdate) {
+            onMapUpdate(attrValueMap);
+        }
+    }, [attrValueMap, onMapUpdate]);
+
     const mdBaseValue = (parseInt(localMainAttributes?.fd, 10) || 0);
 
     const handleLocalChange = (e, attributeKey) => {
@@ -230,7 +237,7 @@ const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, toggleSect
             const localValue = localMainAttributes?.[attributeKey]?.[name];
             const originalAttribute = currentMainAttributes[attributeKey] || {};
             const originalValue = originalAttribute[name];
-            const finalValue = parseInt(localValue, 10) || 0;
+            const finalValue = localValue === '' ? 0 : (parseInt(localValue, 10) || 0);
 
             if (finalValue !== (originalValue || 0)) {
                 const updatedAttribute = { ...originalAttribute, [name]: finalValue };
@@ -241,7 +248,7 @@ const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, toggleSect
             const localDirectValue = localMainAttributes?.[name];
             const originalDirectValue = currentMainAttributes[name];
             const finalDirectValue = parseInt(localDirectValue, 10) || 0;
-
+            
             if (finalDirectValue !== (originalDirectValue || 0)) {
                 const updatedMainAttributes = { 
                     ...currentMainAttributes, 
@@ -547,4 +554,4 @@ const DiscordIntegration = ({ character, onUpdate, isMaster, isCollapsed, toggle
 
 
 // Exporta cada componente individualmente para que o CharacterSheet possa controlá-los
-export { CharacterInfo, MainAttributes, Wallet, DiscordIntegration };
+export { CharacterInfo, Wallet, DiscordIntegration };
