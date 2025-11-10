@@ -3,6 +3,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 
 // 1. Importar os assets que este componente usa
+// --- COMENTADOS TEMPORARIAMENTE ---
+// Todos estes imports estão falhando porque o caminho "@/package/sheet/" não existe.
+// Você precisará corrigir esses caminhos para onde as imagens realmente estão.
+/*
 import imgNome from '@/package/sheet/nome do personagem.png';
 import imgClasse from '@/package/sheet/classe.png';
 import imgRaca from '@/package/sheet/raca.png';
@@ -11,6 +15,9 @@ import imgEscala from '@/package/sheet/escala.png';
 import imgDeslocamento from '@/package/sheet/deslocamento.png';
 import imgTamanho from '@/package/sheet/tamanho.png';
 import imgTendencia from '@/package/sheet/tendencia.png';
+*/
+// --- FIM DOS COMENTÁRIOS ---
+
 
 // -------------------------------------------------------------------
 // 2. LÓGICA DE ESCALA (copiada do CorePanels.jsx V1)
@@ -62,7 +69,7 @@ const ClassicInput = ({ fieldName, value, onUpdate, assetImg, top, left, width, 
   return (
     <div style={{ position: 'absolute', top: `${top}px`, left: `${left}px` }}>
       {/* A Imagem de Fundo (o Asset) */}
-      <img src={assetImg} alt={fieldName} />
+      {/* <img src={assetImg} alt={fieldName} /> */} {/* <-- COMENTADO TEMPORARIAMENTE */}
       
       {/* O Input Transparente (a "Mágica") */}
       <InputComponent
@@ -103,9 +110,12 @@ const ClassicHeader = ({ character, onUpdate }) => {
         
         SUA TAREFA: Ajustar os valores de 'top', 'left', 'width' e 'height'
         até que o input transparente se alinhe perfeitamente com a imagem do asset.
+        
+        --- COMENTADOS TEMPORARIAMENTE ATÉ OS IMPORTS SEREM CORRIGIDOS ---
       */}
 
       {/* Nome do Personagem */}
+      {/*
       <ClassicInput
         fieldName="name"
         value={character.name}
@@ -113,8 +123,10 @@ const ClassicHeader = ({ character, onUpdate }) => {
         assetImg={imgNome}
         top={75} left={100} width={300} height={30} 
       />
+      */}
       
       {/* Raça */}
+      {/*
       <ClassicInput
         fieldName="race"
         value={character.race}
@@ -122,8 +134,10 @@ const ClassicHeader = ({ character, onUpdate }) => {
         assetImg={imgRaca}
         top={130} left={100} width={200} height={30}
       />
+      */}
       
       {/* Classe */}
+      {/*
       <ClassicInput
         fieldName="class"
         value={character.class}
@@ -131,8 +145,10 @@ const ClassicHeader = ({ character, onUpdate }) => {
         assetImg={imgClasse}
         top={130} left={400} width={200} height={30}
       />
+      */}
       
       {/* Nível */}
+      {/*
       <ClassicInput
         fieldName="level"
         value={character.level}
@@ -141,8 +157,10 @@ const ClassicHeader = ({ character, onUpdate }) => {
         top={130} left={700} width={50} height={30}
         isNumeric={true}
       />
+      */}
       
       {/* Escala (Campo Apenas Leitura) */}
+      {/*
       <div style={{ position: 'absolute', top: 180, left: 100 }}>
         <img src={imgEscala} alt="Escala" />
         <span 
@@ -156,8 +174,10 @@ const ClassicHeader = ({ character, onUpdate }) => {
           {powerScaleCategory}
         </span>
       </div>
+      */}
 
       {/* Deslocamento */}
+      {/*
       <ClassicInput
         fieldName="deslocamento" // Assumindo novo campo 'deslocamento'
         value={character.deslocamento}
@@ -165,8 +185,10 @@ const ClassicHeader = ({ character, onUpdate }) => {
         assetImg={imgDeslocamento}
         top={180} left={400} width={200} height={30}
       />
+      */}
       
       {/* Tendências */}
+      {/*
       <ClassicInput
         fieldName="alignment" // Reutilizando campo 'alignment'
         value={character.alignment}
@@ -174,8 +196,10 @@ const ClassicHeader = ({ character, onUpdate }) => {
         assetImg={imgTendencia}
         top={75} left={700} width={150} height={30}
       />
+      */}
       
       {/* Tamanho */}
+      {/*
       <ClassicInput
         fieldName="tamanho" // Assumindo novo campo 'tamanho'
         value={character.tamanho}
@@ -183,6 +207,7 @@ const ClassicHeader = ({ character, onUpdate }) => {
         assetImg={imgTamanho}
         top={130} left={800} width={100} height={30}
       />
+      */}
     </>
   );
 };

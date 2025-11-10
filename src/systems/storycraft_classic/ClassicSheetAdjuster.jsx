@@ -1,11 +1,15 @@
 // src/systems/storycraft_v2/ClassicSheetAdjuster.jsx
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react'; // 1. Adicionado useEffect
 import { Rnd } from 'react-rnd'; 
 
-import bgImage from '../../package/storycraft-bg-classic.png'; 
+import bgImage from '../../package/storycraft-bg-classic.png';
 
-// --- 1. MANIFEST DE TIPOS DE ELEMENTO ---
+// 2. Importar as novas funções de serviço
+import { getLayout, saveLayout } from '@/services/firestoreService';
+
+// --- 1. MANIFEST DE TIPOS DE ELEMENTO --- (Sem alterações)
 const ELEMENT_TYPES = {
+  // ... (código original sem alterações)
   input: {
     name: 'Campo de Input (Texto)',
     color: 'rgba(3, 169, 244, 0.4)', // Azul
@@ -26,7 +30,6 @@ const ELEMENT_TYPES = {
     color: 'rgba(255, 152, 0, 0.4)', // Laranja
     borderColor: '#ff9800',
   },
-  // --- ADICIONADO DE VOLTA O TIPO 'image' ---
   image: {
     name: 'Zona de Imagem (Foto)',
     color: 'rgba(156, 39, 176, 0.4)', // Roxo
@@ -39,6 +42,7 @@ const STAGE_HEIGHT = 1170;
 
 // --- COMPONENTE DE ELEMENTO AJUSTÁVEL (Sem alterações) ---
 const AdjustableElement = ({
+  // ... (código original sem alterações)
   id,
   data,
   onUpdate,
@@ -90,15 +94,41 @@ const AdjustableElement = ({
 
 // --- COMPONENTE PRINCIPAL DA FERRAMENTA ---
 const ClassicSheetAdjuster = ({ onBack }) => {
-  const [elements, setElements] = useState({}); 
+  const [elements, setElements] = useState({});
   const [selectedElementId, setSelectedElementId] = useState(null);
   const fileInputRef = useRef(null);
 
+  // 3. Novos estados para feedback de UI
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // 4. ID do Layout (para o Firestore)
+  const systemId = 'storycraft_classic';
+
+  // 5. NOVO: Carregar o layout do Firestore ao montar
+  useEffect(() => {
+    setIsLoading(true);
+    
+    // Chama getLayout, que ouve em tempo real.
+    // O service já converte de % para pixels para nós.
+    const unsubscribe = getLayout(systemId, (layoutInPixels) => {
+      setElements(layoutInPixels); // Atualiza o estado com os dados em pixels
+      setIsLoading(false);
+    });
+
+    // Retorna a função de cleanup para parar de ouvir quando o componente for desmontado
+    return () => {
+      unsubscribe();
+    };
+  }, [systemId]); // O array vazio [] garante que isso rode apenas uma vez
+
   const selectedElementData = useMemo(() => {
+    // ... (código original sem alterações)
     return selectedElementId ? elements[selectedElementId] : null;
   }, [selectedElementId, elements]);
 
   const handleAddElement = (type) => {
+    // ... (código original sem alterações)
     if (!type) return;
 
     const id = prompt(`Digite o ID único para este elemento (ex: "name", "attr_for", "roll_des"):`);
@@ -122,6 +152,7 @@ const ClassicSheetAdjuster = ({ onBack }) => {
   };
 
   const handleUpdateElement = (id, newProps) => {
+    // ... (código original sem alterações)
     setElements((prev) => ({
       ...prev,
       [id]: { ...prev[id], ...newProps },
@@ -129,12 +160,14 @@ const ClassicSheetAdjuster = ({ onBack }) => {
   };
 
   const handlePropertyChange = (e) => {
+    // ... (código original sem alterações)
     if (!selectedElementId) return;
     const { name, value } = e.target;
     handleUpdateElement(selectedElementId, { [name]: parseInt(value, 10) || 0 });
   };
   
   const handleIdChange = (e) => {
+    // ... (código original sem alterações)
     const newId = e.target.value.trim();
     if (!newId || newId === selectedElementId) return;
     
@@ -153,15 +186,15 @@ const ClassicSheetAdjuster = ({ onBack }) => {
     setSelectedElementId(newId);
   };
 
-  // --- (NOVA FUNÇÃO ADICIONADA PARA MUDAR O TIPO) ---
   const handleTypeChange = (e) => {
+    // ... (código original sem alterações)
     if (!selectedElementId) return;
     const { value } = e.target;
     handleUpdateElement(selectedElementId, { type: value });
   };
 
-  // --- (Função de Copiar que você já tinha) ---
   const handleCopyElement = () => {
+    // ... (código original sem alterações)
     if (!selectedElementId || !elements[selectedElementId]) return;
 
     const originalElement = elements[selectedElementId];
@@ -192,7 +225,10 @@ const ClassicSheetAdjuster = ({ onBack }) => {
     setSelectedElementId(newId);
   };
 
+  // --- Funções de Import/Export (JSON Local) ---
+  // Elas continuam úteis para backups locais.
   const handleExport = () => {
+    // ... (código original sem alterações)
     const exportedElements = {};
     
     Object.entries(elements).forEach(([id, data]) => {
@@ -218,6 +254,7 @@ const ClassicSheetAdjuster = ({ onBack }) => {
   };
 
   const handleImportChange = (e) => {
+    // ... (código original sem alterações)
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
@@ -248,6 +285,21 @@ const ClassicSheetAdjuster = ({ onBack }) => {
     reader.readAsText(file);
     e.target.value = null; 
   };
+  // -------------------------------------------------
+
+  // 6. NOVA FUNÇÃO: Salvar o layout no Firestore
+  const handleSaveToFirestore = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+    
+    // 'elements' já está em pixels, o service cuida da conversão para %
+    await saveLayout(systemId, elements); 
+    
+    setIsSaving(false);
+    // Dando um feedback simples, pode trocar por um modal se preferir
+    alert('Layout salvo com sucesso no Firestore!');
+  };
+
 
   return (
     <div className="w-full min-h-screen bg-gray-900 text-white">
@@ -276,22 +328,34 @@ const ClassicSheetAdjuster = ({ onBack }) => {
           value=""
         >
           <option value="" disabled>Adicionar Zona...</option>
-          {/* Agora o 'image' vai aparecer aqui */}
           {Object.entries(ELEMENT_TYPES).map(([key, config]) => (
             <option key={key} value={key}>{config.name}</option>
           ))}
         </select>
+
+        {/* 7. BOTÃO DE SALVAR NO FIRESTORE */}
+        <button
+          onClick={handleSaveToFirestore}
+          className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-white font-bold"
+          disabled={isSaving}
+        >
+          {isSaving ? 'Salvando...' : 'Salvar Layout (Firebase)'}
+        </button>
+        
+        <div className="mx-2 h-6 border-l border-gray-600"></div> {/* Separador Visual */}
+
+        {/* Botões de Backup Local */}
         <button
           onClick={() => fileInputRef.current.click()}
           className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded"
         >
-          Importar JSON
+          Importar JSON (Local)
         </button>
         <button
           onClick={handleExport}
-          className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded"
+          className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded" // Corrigido de verde para azul
         >
-          Exportar JSON (%)
+          Exportar JSON (Local)
         </button>
 
         {/* Botões de Ação (Copiar e Remover) */}
@@ -326,29 +390,34 @@ const ClassicSheetAdjuster = ({ onBack }) => {
         
         {/* O Palco (Stage) */}
         <div className="flex-1 overflow-auto p-4 bg-gray-900">
-          <div
-            className="mx-auto"
-            style={{
-              position: 'relative',
-              width: `${STAGE_WIDTH}px`,
-              height: `${STAGE_HEIGHT}px`,
-              backgroundImage: `url(${bgImage})`,
-              backgroundSize: 'contain',
-              backgroundRepeat: 'no-repeat',
-            }}
-            onClick={() => setSelectedElementId(null)} 
-          >
-            {Object.entries(elements).map(([id, data]) => (
-              <AdjustableElement
-                key={id}
-                id={id}
-                data={data}
-                onUpdate={handleUpdateElement}
-                onSelect={() => setSelectedElementId(id)}
-                isSelected={id === selectedElementId}
-              />
-            ))}
-          </div>
+          {/* 8. Feedback de Carregamento */}
+          {isLoading ? (
+            <div className="text-center text-white text-xl p-10">Carregando layout do Firestore...</div>
+          ) : (
+            <div
+              className="mx-auto"
+              style={{
+                position: 'relative',
+                width: `${STAGE_WIDTH}px`,
+                height: `${STAGE_HEIGHT}px`,
+                backgroundImage: `url(${bgImage})`,
+                backgroundSize: 'contain',
+                backgroundRepeat: 'no-repeat',
+              }}
+              onClick={() => setSelectedElementId(null)} 
+            >
+              {Object.entries(elements).map(([id, data]) => (
+                <AdjustableElement
+                  key={id}
+                  id={id}
+                  data={data}
+                  onUpdate={handleUpdateElement}
+                  onSelect={() => setSelectedElementId(id)}
+                  isSelected={id === selectedElementId}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Painel de Propriedades */}
@@ -367,7 +436,6 @@ const ClassicSheetAdjuster = ({ onBack }) => {
                   type="text" 
                 />
                 
-                {/* --- (CAMPO "TIPO" MODIFICADO PARA DROPDOWN) --- */}
                 <div className="flex justify-between items-center mb-1">
                   <label htmlFor="type" className="text-sm text-gray-300">Tipo:</label>
                   <select
@@ -377,7 +445,6 @@ const ClassicSheetAdjuster = ({ onBack }) => {
                     onChange={handleTypeChange} // Usa a nova função
                     className="w-2/3 p-1 rounded bg-gray-700 text-white"
                   >
-                    {/* Lista todos os tipos, incluindo 'image' */}
                     {Object.entries(ELEMENT_TYPES).map(([key, config]) => (
                       <option key={key} value={key}>
                         {config.name}
@@ -385,7 +452,6 @@ const ClassicSheetAdjuster = ({ onBack }) => {
                     ))}
                   </select>
                 </div>
-                {/* ---------------------------------- */}
                 
               </fieldset>
               
@@ -409,6 +475,7 @@ const ClassicSheetAdjuster = ({ onBack }) => {
 
 // Componente helper (Sem alterações)
 const PropertyInput = ({ label, name, value, onChange, onBlur, readOnly = false, type = "number" }) => (
+  // ... (código original sem alterações)
   <div className="flex justify-between items-center mb-1">
     <label htmlFor={name} className="text-sm text-gray-300">{label}:</label>
     <input

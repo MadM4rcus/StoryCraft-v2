@@ -29,33 +29,32 @@ export const PartyHealthProvider = ({ children }) => {
 
   // Efeito para buscar as configurações do usuário APENAS quando o usuário ou o caminho da sessão mudam.
   useEffect(() => {
-    if (!user) { // <-- SIMPLIFICADO: Não depende mais de um caminho de sessão dinâmico
+    if (!user || !characterDataCollectionRoot) { // <-- ADICIONADO: Espera o root da coleção
       return;
     }
 
     const fetchSettings = async () => {
-      const settings = await getUserSettings(user.uid);
+      // 1. CORRIGIDO: Passa o 'basePath' (characterDataCollectionRoot) como primeiro argumento
+      const settings = await getUserSettings(characterDataCollectionRoot, user.uid);
       if (settings && settings.selectedCharIds) {
         setSelectedCharIds(settings.selectedCharIds);
       }
     };
 
     fetchSettings();
-  }, [user]);
+  }, [user, characterDataCollectionRoot]); // <-- ADICIONADO: Depende do root da coleção
 
   useEffect(() => {
-    if (!user || !characterDataCollectionRoot) { // <-- ADICIONADO: Não executa se o caminho da sessão for nulo
+    if (!user || !characterDataCollectionRoot) { 
       setAllCharacters([]);
       setIsLoading(false);
       return;
     }
 
-    // Limpa os personagens ao trocar de sistema para evitar mostrar dados incorretos
+    // ... (resto da função sem alteração) ...
     setAllCharacters([]);
-
     setIsLoading(true);
     const charMap = new Map();
-
     const processSnapshot = (snapshot, userId) => {
       let hasChanges = false;
       snapshot.docChanges().forEach(change => {
@@ -69,7 +68,6 @@ export const PartyHealthProvider = ({ children }) => {
           }
         }
         const charData = { id: change.doc.id, ownerUid: userId, ...rawCharData, mainAttributes: mainAttributes };
-
         if (change.type === "added" || change.type === "modified") {
           charMap.set(charData.id, charData);
           hasChanges = true;
@@ -78,29 +76,24 @@ export const PartyHealthProvider = ({ children }) => {
           hasChanges = true;
         }
       });
-
       if (hasChanges) {
         const newChars = Array.from(charMap.values());
         setAllCharacters(newChars);
       }
       setIsLoading(false);
     };
-
     if (isMaster) {
-      // Lógica para o Mestre (ouve todos os usuários)
       let sheetUnsubscribers = [];
       const usersRef = collection(db, `${characterDataCollectionRoot}/users`);
       const unsubscribeUsers = onSnapshot(usersRef, (usersSnapshot) => {
         sheetUnsubscribers.forEach(unsub => unsub());
         sheetUnsubscribers = [];
-
         if (usersSnapshot.empty) {
           charMap.clear();
           setAllCharacters([]);
           setIsLoading(false);
           return;
         }
-
         usersSnapshot.docs.forEach(userDoc => {
           const userId = userDoc.id;
           const sheetsRef = collection(db, `${characterDataCollectionRoot}/users/${userId}/characterSheets`);
@@ -114,19 +107,16 @@ export const PartyHealthProvider = ({ children }) => {
         console.error("Erro ao ouvir coleção de usuários:", error);
         setIsLoading(false);
       });
-
       return () => {
         unsubscribeUsers();
         sheetUnsubscribers.forEach(unsub => unsub());
       };
     } else {
-      // Lógica para Jogadores (ouve apenas as próprias fichas)
       const sheetsRef = collection(db, `${characterDataCollectionRoot}/users/${user.uid}/characterSheets`);
       const unsubscribe = onSnapshot(sheetsRef, (snapshot) => processSnapshot(snapshot, user.uid), (error) => {
         console.error(`Erro ao ouvir as próprias fichas:`, error);
         setIsLoading(false);
       });
-
       return () => unsubscribe();
     }
   }, [user, isMaster, characterDataCollectionRoot]);
@@ -135,17 +125,19 @@ export const PartyHealthProvider = ({ children }) => {
   const debouncedSave = useRef(
     debounce((path, uid, ids) => {
       localStorage.setItem('selectedCharIds', JSON.stringify(ids)); 
-      if (uid) { // <-- SIMPLIFICADO: Não depende mais do caminho
-        saveUserSettings(uid, { selectedCharIds: ids });
+      if (uid && path) { // <-- ADICIONADO: Verifica se o 'path' (basePath) existe
+        // 2. CORRIGIDO: Passa 'path' (basePath) como primeiro argumento
+        saveUserSettings(path, uid, { selectedCharIds: ids });
       }
     }, 1000)
   ).current;
 
   useEffect(() => {
-    if (user) { 
-      debouncedSave(GLOBAL_SESSION_PATH, user.uid, selectedCharIds); // <-- Usa o caminho global
+    if (user && characterDataCollectionRoot) { // <-- ADICIONADO: Espera o root da coleção
+      // 3. CORRIGIDO: Passa 'characterDataCollectionRoot' em vez de 'GLOBAL_SESSION_PATH'
+      debouncedSave(characterDataCollectionRoot, user.uid, selectedCharIds); 
     }
-  }, [selectedCharIds, user, debouncedSave]);
+  }, [selectedCharIds, user, debouncedSave, characterDataCollectionRoot]); // <-- ADICIONADO: Depende do root da coleção
 
   // Deriva os dados dos selecionados
   const partyHealthData = useMemo(() => {

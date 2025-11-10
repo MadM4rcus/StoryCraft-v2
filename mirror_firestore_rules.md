@@ -38,9 +38,19 @@ service cloud.firestore {
     // =====================================================================
     // REGRAS PARA STORYCRAFT V2 (ATUAL - artifacts2)
     // =====================================================================
+    
+    // --- REGRA CORRIGIDA (Separamos Read e Write para quebrar o loop) ---
     match /artifacts2/{appId}/users/{userId} {
-      allow read, write: if isSignedIn() && (request.auth.uid == userId || isMasterV2(appId));
-      allow list: if isSignedIn() && isMasterV2(appId); // Permite ao mestre listar usuários
+      // Um usuário pode SEMPRE ler seu próprio documento. Isso quebra o loop.
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      
+      // Um usuário pode escrever em seu próprio doc, OU um Mestre pode escrever.
+      // A função 'write' chama 'isMasterV2', que 'lê'.
+      // Como a regra 'read' acima é separada e permite a leitura, o loop é quebrado.
+      allow write: if isSignedIn() && (request.auth.uid == userId || isMasterV2(appId));
+      
+      // Um mestre pode listar todos os usuários.
+      allow list: if isSignedIn() && isMasterV2(appId);
     }
 
     match /artifacts2/{appId}/users/{userId}/characterSheets/{sheetId} {
@@ -51,10 +61,20 @@ service cloud.firestore {
     // REGRAS PARA DADOS DE SESSÃO (CHAT/FEED E CONFIGS) - NOVO
     // =====================================================================
     match /storycraft-v2/{appId}/feed/{messageId} {
-      // Qualquer usuário logado pode ler o feed e criar novas mensagens/rolagens.
-      // Ninguém pode atualizar ou deletar mensagens para manter a integridade do log.
       allow read, create: if isSignedIn();
-      allow update, delete: if false; // Proíbe explicitamente a alteração/deleção
+      allow update, delete: if false; 
+    }
+
+    // --- REGRA PARA OS LAYOUTS DE FICHA (SKINS) ---
+    match /storycraft-v2/{appId}/layouts/{systemId} {
+      allow read: if isSignedIn();
+      
+      // *** AQUI ESTÁ A REGRA CORRETA QUE VOCÊ QUERIA ***
+      // Agora ela funciona, pois 'isMasterV2' pode ler o doc de usuário sem travar.
+      // Ela usa o {appId} do seu aplicativo (o 1:727...) que o seu app
+      // deve conhecer e passar para a função isMasterV2.
+      // Vamos usar o seu appId específico, como você me mostrou.
+      allow write: if isSignedIn() && isMasterV2("1:727724875985:web:97411448885c68c289e5f0");
     }
 
     match /storycraft-v2/{appId}/userSettings/{userId} {

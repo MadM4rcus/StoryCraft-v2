@@ -1,18 +1,20 @@
 // src/systems/storycraft_v2/ClassicSheet.jsx
 
 import React, { useState } from 'react';
-import { useCharacter } from '@/hooks';
-import { ModalManager } from '@/components';
+// 1. CORRIGIDO: O import precisa apontar para o arquivo .js
+import { useCharacter } from '@/hooks/useCharacter'; 
+// 2. CORRIGIDO: O import precisa apontar para o componente .jsx
+import ModalManager from '@/components/ModalManager'; 
 
-// 1. Importar o background e os novos componentes
-import bgImage from '@/package/sheet/background castle paper.png';
+// 3. CORRIGIDO: O nome do arquivo de background
+import bgImage from '@/package/storycraft-bg-classic.png'; 
 import ClassicHeader from './ClassicHeader'; // Nosso primeiro componente de UI
 
-// 2. Importar o CSS para os inputs (vamos criar este arquivo)
+// Importar o CSS para os inputs
 import './classicSheetStyles.css';
 
 const ClassicSheet = ({ character: initialCharacter, onBack, isMaster }) => {
-  // 3. Conectar a lógica de dados da V1
+  // Conectar a lógica de dados da V1
   const { character, loading, updateCharacterField, toggleSection } = useCharacter(
     initialCharacter.id,
     initialCharacter.ownerUid
@@ -28,7 +30,7 @@ const ClassicSheet = ({ character: initialCharacter, onBack, isMaster }) => {
     return <div className="text-center p-8"><p className="text-xl text-red-400">Erro: Personagem não encontrado.</p></div>;
   }
 
-  // 4. A função de atualização que passaremos para os filhos
+  // A função de atualização que passaremos para os filhos
   const handleUpdate = (fieldName, value) => {
     updateCharacterField(fieldName, value);
   };
@@ -43,27 +45,19 @@ const ClassicSheet = ({ character: initialCharacter, onBack, isMaster }) => {
         ← Voltar para a Lista (V2)
       </button>
 
-      {/* --- O PALCO PRINCIPAL ---
-        Este é o container que segura a ficha inteira.
-        - position: 'relative' é crucial para que o 'position: absolute' dos filhos funcione.
-        - A imagem de fundo define o tamanho e a aparência.
-      */}
+      {/* --- O PALCO PRINCIPAL --- */}
       <div
         className="w-full"
         style={{
           position: 'relative',
           // Usamos a proporção da imagem de referência (827x1170)
-          // Isso torna o container responsivo à largura.
           aspectRatio: '827 / 1170', 
-          backgroundImage: `url(${bgImage})`,
+          backgroundImage: `url(${bgImage})`, // <- Usa a variável corrigida
           backgroundSize: 'contain',
           backgroundRepeat: 'no-repeat',
         }}
       >
-        {/* --- OS ATORES ---
-          Aqui é onde vamos "empilhar" nossos componentes de UI.
-          Cada componente usará 'position: absolute' para se fixar no lugar certo.
-        */}
+        {/* --- OS ATORES --- */}
         
         <ClassicHeader 
           character={character} 

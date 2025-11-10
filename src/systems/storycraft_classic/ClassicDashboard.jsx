@@ -1,10 +1,10 @@
-// src/systems/storycraft_v2/Dashboard.jsx
-// --- VERSÃO MODIFICADA PARA CARREGAR A FERRAMENTA ---
+// src/systems/storycraft_v2/ClassicDashboard.jsx
+// --- VERSÃO CORRIGIDA (Fluxo Correto de Usuário) ---
 
 import React, { useState, useEffect, useRef } from 'react';
-import CharacterList from '@/systems/storycraft/CharacterList'; 
-// import ClassicSheet from './ClassicSheet'; // 1. Comentamos a ficha real
-import ClassicSheetAdjuster from './ClassicSheetAdjuster'; // 2. Importamos a nova ferramenta
+import CharacterList from '@/systems/storycraft/CharacterList';
+import ClassicSheet from './ClassicSheet'; // 1. DESCOMENTADO - A ficha real
+import ClassicSheetAdjuster from './ClassicSheetAdjuster'; // 2. MANTIDO - A ferramenta de GM
 import ModalManager from '@/components/ModalManager';
 import ThemeEditor from '@/components/ThemeEditor';
 import PartyHealthMonitor from '@/components/PartyHealthMonitor';
@@ -18,6 +18,10 @@ import { doc, setDoc, collection, onSnapshot } from 'firebase/firestore';
 const DashboardV2 = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
   const { user, googleSignOut, isMaster } = useAuth();
   const [selectedCharacter, setSelectedCharacter] = useState(null);
+  
+  // 3. NOVO ESTADO para controlar a ferramenta de layout
+  const [isAdjusterOpen, setIsAdjusterOpen] = useState(false);
+  
   const [characters, setCharacters] = useState([]);
   const fileInputRef = useRef(null);
   const [viewingAll, setViewingAll] = useState(false);
@@ -36,6 +40,7 @@ const DashboardV2 = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
 
   const handleCharacterClickFromMonitor = (character) => {
     setSelectedCharacter(character);
+    setIsAdjusterOpen(false); // Garante que a ferramenta feche
   };
 
   const fetchCharacters = async () => {
@@ -61,6 +66,7 @@ const DashboardV2 = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
   };
 
   const handleFileChange = (event) => {
+    // ... (função original sem alterações)
     const file = event.target.files[0];
     if (!file) return;
     const reader = new FileReader();
@@ -75,7 +81,7 @@ const DashboardV2 = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
           props: {
             message: `Deseja criar um novo personagem para o sistema ${currentSystem.toUpperCase()} com os dados de "${importedData.name}"?`,
             onConfirm: async () => {
-              const newCharRef = doc(collection(db, `${characterDataCollectionRoot}/users/${user.uid}/characterSheets`));
+              const newCharRef = doc(collection(db, `${basePath}/users/${user.uid}/characterSheets`));
               const finalData = { ...importedData, ownerUid: user.uid, system: currentSystem };
               delete finalData.id;
               await setDoc(newCharRef, finalData);
@@ -94,6 +100,7 @@ const DashboardV2 = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
   };
 
   const handleDeleteClick = (charToDelete) => {
+    // ... (função original sem alterações)
     const ownerId = charToDelete.ownerUid || user.uid;
     setModalState({
       type: 'confirm',
@@ -115,48 +122,83 @@ const DashboardV2 = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
 
   const partyMonitor = <PartyHealthMonitor onCharacterClick={handleCharacterClickFromMonitor} />;
 
+  // 4. LÓGICA DE RENDERIZAÇÃO CORRIGIDA
+  // Prioridade:
+  // 1. A ferramenta de GM está aberta?
+  // 2. Uma ficha de personagem está selecionada?
+  // 3. Senão, mostrar o painel (lista de personagens).
+  
+  if (isAdjusterOpen) {
+    return (
+      <ClassicSheetAdjuster 
+        onBack={() => setIsAdjusterOpen(false)} 
+      />
+    );
+  }
+
+  if (selectedCharacter) {
+    return (
+      <>
+        {partyMonitor} 
+        <ClassicSheet 
+          character={selectedCharacter} 
+          onBack={() => setSelectedCharacter(null)} 
+          isMaster={isMaster} 
+        />
+      </>
+    );
+  }
+
+  // Se nenhum dos acima for verdadeiro, mostra o Dashboard (lista)
   return (
     <>
       {partyMonitor}
       
-      {selectedCharacter ? (
-        // 3. A MUDANÇA PRINCIPAL
-        // Agora estamos carregando a FERRAMENTA em vez da Ficha
-        <ClassicSheetAdjuster 
-          onBack={() => setSelectedCharacter(null)} 
-        />
+      <div className="w-full max-w-5xl mx-auto p-4 md:p-8">
+        <ModalManager modalState={modalState} closeModal={closeModal} />
         
-        /* <ClassicSheet 
-             character={selectedCharacter} 
-             onBack={() => setSelectedCharacter(null)} 
-             isMaster={isMaster} 
-           /> */
-
-      ) : (
-        <div className="w-full max-w-5xl mx-auto p-4 md:p-8">
-          <ModalManager modalState={modalState} closeModal={closeModal} />
-          
-          <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".json" className="hidden" />
-          <header className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-2xl font-bold text-textPrimary">Painel StoryCraft V2 (Clássico)</h1>
-              <p className="text-textSecondary">Bem-vindo, {user.displayName}!</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <button 
-                onClick={() => setCurrentSystem(null)}
-                className="px-4 py-2 bg-bgElement hover:bg-opacity-80 text-textPrimary font-semibold rounded-lg shadow-lg"
+        <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".json" className="hidden" />
+        <header className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-2xl font-bold text-textPrimary">Painel StoryCraft V2 (Clássico)</h1>
+            <p className="text-textSecondary">Bem-vindo, {user.displayName}!</p>
+          </div>
+          <div className="flex items-center gap-4">
+            
+            {/* 5. NOVO BOTÃO (SÓ PARA GM) */}
+            {isMaster && (
+              <button
+                onClick={() => setIsAdjusterOpen(true)}
+                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-lg shadow-lg"
+                title="Ajustar Layout da Ficha (GM)"
               >
-                Trocar Sistema
+                Ajustar Layout
               </button>
-              <button onClick={googleSignOut} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg">Sair</button>
-            </div>
-          </header>
-          <main>
-            <CharacterList user={user} onSelectCharacter={setSelectedCharacter} handleImportClick={handleImportClick} handleDeleteClick={handleDeleteClick} handleCreateClick={handleCreateClick} characters={characters} isMaster={isMaster} viewingAll={viewingAll} onToggleView={setViewingAll} />
-          </main>
-        </div>
-      )}
+            )}
+
+            <button 
+              onClick={() => setCurrentSystem(null)}
+              className="px-4 py-2 bg-bgElement hover:bg-opacity-80 text-textPrimary font-semibold rounded-lg shadow-lg"
+            >
+              Trocar Sistema
+            </button>
+            <button onClick={googleSignOut} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg">Sair</button>
+          </div>
+        </header>
+        <main>
+          <CharacterList 
+            user={user} 
+            onSelectCharacter={setSelectedCharacter} // Ação de clique normal
+            handleImportClick={handleImportClick} 
+            handleDeleteClick={handleDeleteClick} 
+            handleCreateClick={handleCreateClick} 
+            characters={characters} 
+            isMaster={isMaster} 
+            viewingAll={viewingAll} 
+            onToggleView={setViewingAll} 
+          />
+        </main>
+      </div>
     </>
   );
 };
