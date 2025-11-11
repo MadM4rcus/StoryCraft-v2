@@ -226,6 +226,44 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
     return attrBonus + trainingBonus + otherBonus;
   }, []);
 
+  // Função para parsear e rolar fórmulas complexas (ex: "1d10+5+1d4")
+  const parseAndRollFormula = (formula) => {
+    if (!formula) return { total: 0, details: '' };
+
+    let expressionForEval = formula.replace(/\s/g, '');
+    let details = formula;
+
+    // Regex para encontrar todas as notações de dados (e.g., 1d20, 4d6)
+    const diceRegex = /(\d+d\d+)/gi;
+    const diceMatches = formula.match(diceRegex);
+
+    if (diceMatches) {
+      diceMatches.forEach(diceString => {
+        const [numDiceStr, numSidesStr] = diceString.split('d');
+        const numDice = parseInt(numDiceStr, 10) || 1;
+        const numSides = parseInt(numSidesStr, 10);
+
+        if (isNaN(numSides) || numSides <= 0) return;
+
+        let rolls = [];
+        let diceRollResult = 0;
+        for (let d = 0; d < numDice; d++) {
+          const roll = Math.floor(Math.random() * numSides) + 1;
+          rolls.push(roll);
+          diceRollResult += roll;
+        }
+        
+        // Substitui a primeira ocorrência do dado na string de detalhes e na de avaliação
+        details = details.replace(diceString, `${diceString}(${rolls.join('+')})`);
+        expressionForEval = expressionForEval.replace(diceString, `(${diceRollResult})`);
+      });
+    }
+
+    // Avalia a expressão matemática final de forma segura
+    const total = new Function('return ' + expressionForEval.replace(/[^0-9+\-*/().]/g, ''))();
+    return { total, details };
+  };
+
 const handleExecuteFormulaAction = async (action) => {
     if (!action) return;
 
@@ -304,32 +342,13 @@ const handleExecuteFormulaAction = async (action) => {
             
             // --- INÍCIO DA NOVA LÓGICA DO DANO CRÍTICO ---
             const critFormula = skillRollComp.critFormula || '';
-            // Tenta extrair dados do formato "XdY" (ex: 10d100)
-            const match = critFormula.match(/(\d+)d(\d+)/i);
-            
-            if (match) {
-                const numDice = parseInt(match[1], 10);
-                const numSides = parseInt(match[2], 10);
-                let rolls = [];
-                let critRollResult = 0;
-                for (let d = 0; d < numDice; d++) {
-                    const roll = Math.floor(Math.random() * numSides) + 1;
-                    rolls.push(roll);
-                    critRollResult += roll;
+            if (critFormula) {
+                const { total: critRollResult, details: critDetails } = parseAndRollFormula(critFormula);
+                if (critRollResult > 0) {
+                    totalResult += critRollResult;
+                    const critDisplay = `Crítico(${critDetails}) = ${critRollResult}`;
+                    criticals.push(critDisplay);
                 }
-                totalResult += critRollResult; // Adiciona ao resultado total
-                
-                // Formata a exibição para o feed e Discord
-                const critDisplay = `Crítico(${critFormula}: ${rolls.join('+')}) = ${critRollResult}`;
-                criticals.push(critDisplay); // Adiciona aos detalhes do Discord
-            
-            } if (!isNaN(parseInt(critFormula, 10)) && critFormula.trim() !== '') { 
-                 // Se for apenas um número (ex: "50")
-                 const num = parseInt(critFormula, 10);
-                 totalResult += num;
-                 const critDisplay = `Crítico(Bônus: ${num})`;
-                 rollResultsForFeed.push({ type: 'number', value: num, displayValue: critDisplay });
-                 criticals.push(critDisplay);
             }
             // --- FIM DA NOVA LÓGICA DO DANO CRÍTICO ---
         }

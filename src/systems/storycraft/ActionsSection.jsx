@@ -70,7 +70,7 @@ const ActionsSection = ({
         } else if (type === 'attribute') {
             newComponent = { id: crypto.randomUUID(), type, value: '' };
         } else if (type === 'skillRoll') {
-            newComponent = { id: crypto.randomUUID(), type, skill: '', critMin: 19, critFormula: '' };
+            newComponent = { id: crypto.randomUUID(), type, skill: '', critMin: 20, critFormula: '' };
         }
 
         onUpdate('formulaActions', (character.formulaActions || []).map(a =>
@@ -215,7 +215,7 @@ const ActionsSection = ({
                                                                     <span className="flex-shrink-0">Crit. ≥</span>
                                                                     <input
                                                                         type="number"
-                                                                        placeholder="19"
+                                                                        placeholder="20"
                                                                         value={comp.critMin || ''}
                                                                         onChange={(e) => handleLocalComponentChange(action.id, comp.id, 'critMin', e.target.value)}
                                                                         onBlur={() => handleSaveComponentChange(action.id, comp.id, 'critMin')}
