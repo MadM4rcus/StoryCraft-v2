@@ -46,6 +46,12 @@ const RollFeed = () => {
     const total = roll.totalResult;
     const isCrit = (roll.acertoResult && roll.acertoResult.isCrit) || (roll.criticals && roll.criticals.length > 0);
 
+    // --- CORREÇÃO APRIMORADA ---
+    // Determina se é uma rolagem simples (atributo ou perícia pura).
+    // Isso acontece se houver um 'acertoResult', mas nenhum componente de 'dano/resultado' (roll.results)
+    // OU se a ação original tinha apenas um componente 'skillRoll'.
+    const isSimpleCheckRoll = roll.acertoResult && (!roll.results || roll.results.length === 0 || (roll.components?.length === 1 && roll.components[0].type === 'skillRoll'));
+
     const formula = roll.results.map((r, index) => (
       <React.Fragment key={index}>
         {index > 0 && ' + '}
@@ -67,8 +73,27 @@ const RollFeed = () => {
         {/* Nome da Ação */}
         <p className="font-semibold text-lg text-textPrimary">{roll.rollName || 'Rolagem de Dados'}</p>
         
-        {/* --- NOVO: Bloco de Acerto (Layout 2.0) --- */}
-        {roll.acertoResult && (
+        {/* --- NOVO: Bloco para Rolagem de Atributo ou Perícia Simples --- */}
+        {isSimpleCheckRoll ? (
+          <div className="mt-2 pt-2 border-t border-bgInput/50">
+            {/* Linha 1: Resultado: 12 */}
+            <p className={`font-semibold text-textPrimary/90`}>
+              Resultado:
+              <span className={`font-bold text-3xl ml-2 ${roll.acertoResult.isCrit ? 'text-green-400' : roll.acertoResult.isCritFail ? 'text-red-500' : 'text-textAccent'}`}>
+                {roll.acertoResult.total}
+              </span>
+            </p>
+            {/* Linha 2: 1d20(1) + 11 */}
+            <p className="text-sm text-textSecondary mt-1">
+              1d20(<span className={roll.acertoResult.isCrit ? 'text-green-400 font-bold' : roll.acertoResult.isCritFail ? 'text-red-500 font-bold' : ''}>{roll.acertoResult.roll}</span>) + {roll.acertoResult.bonus}
+              {roll.acertoResult.isCrit && <span className="text-green-400 font-bold ml-2">🎯 CRÍTICO!</span>}
+              {roll.acertoResult.isCritFail && <span className="text-red-500 font-bold ml-2">💥 FALHA CRÍTICA!</span>}
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* --- Bloco de Acerto para Perícias/Ataques --- */}
+            {roll.acertoResult && (
           <div className="mt-2 pt-2 border-t border-bgInput/50">
             {/* Linha 1: Acerto: 19 (Misticismo) */}
             <p className={`font-semibold ${isCrit ? 'text-green-400' : 'text-textPrimary/90'}`}>
@@ -83,14 +108,14 @@ const RollFeed = () => {
             {/* Linha 2: 1d20(16) + 3 CRITICO */}
             <p className="text-sm text-textSecondary mt-1">
               1d20(<span className={roll.acertoResult.isCrit ? 'text-green-400 font-bold' : roll.acertoResult.roll === 1 ? 'text-red-500 font-bold' : ''}>{roll.acertoResult.roll}</span>) + {roll.acertoResult.bonus}
-              {roll.acertoResult.isCrit && <span className="text-green-400 font-bold ml-2">🎯 CRÍTICO!</span>}
-              {roll.acertoResult.roll === 1 && <span className="text-red-500 font-bold ml-2">💥 FALHA CRÍTICA!</span>}
+              {roll.acertoResult.isCrit && <span className="text-green-400 font-bold ml-2">🎯 CRÍTICO!</span>} 
+              {roll.acertoResult.isCritFail && <span className="text-red-500 font-bold ml-2">💥 FALHA CRÍTICA!</span>}
             </p>
           </div>
         )}
         
-        {/* Bloco de Dano/Resultado (Layout 2.0) */}
-        {(formula || !roll.acertoResult || (roll.criticals && roll.criticals.length > 0)) && (
+            {/* Bloco de Dano/Resultado (Layout 2.0) */}
+            {(formula || !roll.acertoResult || (roll.criticals && roll.criticals.length > 0)) && (
           <div className="mt-2 pt-2 border-t border-bgInput/50">
             
             {/* Linha 1: Dano: 668 */}
@@ -116,7 +141,9 @@ const RollFeed = () => {
                 </p>
             )}
           </div>
-        )}
+            )}
+          </>
+        )} 
 
         {/* O Bloco de Críticos antigo foi removido pois foi fundido com o Dano/Resultado */}
         

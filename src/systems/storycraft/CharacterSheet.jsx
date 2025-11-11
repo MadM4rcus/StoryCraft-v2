@@ -175,18 +175,23 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
     const d20Roll = Math.floor(Math.random() * 20) + 1;
     const isCrit = d20Roll === 20;
     const isCritFail = d20Roll === 1;
+    const total = isCritFail ? 1 : d20Roll + totalBonus; // Falha crítica sempre resulta em 1.
 
-    // 2. Monta o objeto de ação, incluindo o novo `acertoResult`.
+    // 2. Monta um objeto de ação SIMPLIFICADO.
+    // A lógica de execução principal (`handleExecuteFormulaAction`) foi ajustada
+    // para entender esta estrutura mais simples e não a tratar como um ataque.
     const action = {
         name: `Rolagem de ${attributeName}`,
-        components: [{ type: 'number', value: totalBonus, label: 'Bônus' }],
+        // Não há 'components' para não serem processados como dano.
+        // O resultado total já é calculado aqui.
+        totalResult: total,
         acertoResult: {
             roll: d20Roll,
             bonus: totalBonus,
-            total: d20Roll + totalBonus,
+            total: total,
             isCrit: isCrit,
-            isCritFail: isCritFail, // Adiciona a falha crítica
-            skillName: attributeName, // Usa o nome do atributo como "perícia"
+            isCritFail: isCritFail,
+            skillName: attributeName,
         },
         discordText: `Rolagem de ${attributeName} (1d20${totalBonus >= 0 ? '+' : ''}${totalBonus})`
     };
@@ -204,27 +209,26 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
   // --- Lógica de Cálculo de Bônus de Perícia (movida para cá para ser reutilizável) ---
   const calculateTotalBonus = useCallback((skillName, character) => {
     const skill = PREDEFINED_SKILLS.find(s => s.name === skillName);
-    const skillState = character.skillSystem?.[skillName];
-    if (!skill || !skillState) return 0;
-    const selectedAttr = skillState.selectedAttr || skill.attr;    // ATENÇÃO: A chave do atributo no mainAttributes é minúscula (ex: 'forca'),
-    // mas o nome do atributo no buff é capitalizado (ex: 'Força').
-    const attrKey = ATTR_MAP[selectedAttr].toLowerCase();
-    const attrNameForBuff = Object.keys(ATTR_MAP).find(key => ATTR_MAP[key] === attrKey);
-    const attrBonus = character.mainAttributes?.[attrKey] || 0;
-
-    // 2. Bônus de Treinamento (se aplicável)
+    const skillState = character?.skillSystem?.[skillName];
+    if (!skill || !skillState) return 0;    
+    
+    // --- CORREÇÃO ---
+    // 1. Bônus de Atributo: Usa o `totalAttributesMap` que já inclui os buffs.
+    const selectedAttr = skillState.selectedAttr || skill.attr;
+    const attrBonus = totalAttributesMap[selectedAttr] || 0;
+    
+    // 2. Bônus de Treinamento
     const level = character.level || 0;
     let trainingBonus = 0;
     if (skillState.trained) {
-        // Bônus de 2 + 1 a cada 10 níveis
         trainingBonus = 2 + Math.floor(level / 10);
     }
-
+    
     // 3. Bônus Variável (Outros)
     const otherBonus = parseInt(skillState.otherBonus, 10) || 0;
-
+    
     return attrBonus + trainingBonus + otherBonus;
-  }, []);
+  }, [totalAttributesMap, character?.level, character?.skillSystem]);
 
   // Função para parsear e rolar fórmulas complexas (ex: "1d10+5+1d4")
   const parseAndRollFormula = (formula) => {
@@ -294,7 +298,10 @@ const handleExecuteFormulaAction = async (action) => {
     }
     // --- FIM DA CORREÇÃO ---
 
-    let totalResult = 0;
+    // Se a ação já vier com um totalResult (como em rolagens de atributo simples),
+    // usamos esse valor. Caso contrário, inicializamos com 0 para calcular.
+    let totalResult = action.totalResult ?? 0;
+
     let acertoResult = action.acertoResult || null; // Pega o acertoResult da ação, se existir
     let rollResultsForFeed = [];
     let criticals = [];
@@ -321,12 +328,23 @@ const handleExecuteFormulaAction = async (action) => {
 
     // --- Nova Lógica de Acerto ---
     if (skillRollComp && skillRollComp.skill) {
+        // Determina se é um ataque (tem mais componentes além da perícia)
+        const isAttackRoll = (action.components || []).length > 1;
+
         const d20Roll = Math.floor(Math.random() * 20) + 1;
-        const skillBonus = calculateTotalBonus(skillRollComp.skill, character);
-        const totalAcerto = d20Roll + skillBonus;
+        let skillBonus = calculateTotalBonus(skillRollComp.skill, character);
+
+        // --- CORREÇÃO: Adiciona o bônus de "Acerto" se for um ataque ---
+        if (isAttackRoll) {
+            const acertoBonus = getAttributeValue('Acerto');
+            skillBonus += acertoBonus;
+        }
+
         // O crítico agora é d20 >= critMin (padrão 20 se não definido)
         const isCrit = d20Roll >= (parseInt(skillRollComp.critMin, 10) || 20);
         const isCritFail = d20Roll === 1;
+        // Falha crítica sempre resulta em 1, ignorando bônus.
+        const totalAcerto = isCritFail ? 1 : d20Roll + skillBonus;
 
         acertoResult = {
             roll: d20Roll,
@@ -365,39 +383,45 @@ const handleExecuteFormulaAction = async (action) => {
     }
 
     // --- Lógica de Dano / Resultado Principal ---
-    for (let i = 0; i < (multiplier || 1); i++) {
-        for (const comp of (action.components || [])) {
-            if (comp.type === 'attribute') {
-                const attrName = comp.value;
-                const attrValue = getAttributeValue(attrName);
-                totalResult += attrValue;
-                rollResultsForFeed.push({ type: 'attribute', value: attrValue, displayValue: `${attrName}(${attrValue})` });
-            }  else if (comp.type === 'dice') {
-                const match = String(comp.value || '').match(/(\d+)d(\d+)/i);
-                if (match) {
-                    const numDice = parseInt(match[1], 10);
-                    const numSides = parseInt(match[2], 10);
-                    let rolls = [];
-                    for (let d = 0; d < numDice; d++) {
-                        rolls.push(Math.floor(Math.random() * numSides) + 1);
+    // Define se a ação é uma rolagem de perícia pura (sem outros componentes de resultado)
+    const isPureSkillRoll = skillRollComp && (action.components || []).length === 1;
+
+    // Apenas processa os componentes se a ação não for uma rolagem simples de atributo (que já tem totalResult)
+    if (action.totalResult === undefined && !isPureSkillRoll) {
+        for (let i = 0; i < (multiplier || 1); i++) {
+            for (const comp of (action.components || [])) {
+                if (comp.type === 'attribute') {
+                    const attrName = comp.value;
+                    const attrValue = getAttributeValue(attrName);
+                    totalResult += attrValue;
+                    rollResultsForFeed.push({ type: 'attribute', value: attrValue, displayValue: `${attrName}(${attrValue})` });
+                }  else if (comp.type === 'dice') {
+                    const match = String(comp.value || '').match(/(\d+)d(\d+)/i);
+                    if (match) {
+                        const numDice = parseInt(match[1], 10);
+                        const numSides = parseInt(match[2], 10);
+                        let rolls = [];
+                        for (let d = 0; d < numDice; d++) {
+                            rolls.push(Math.floor(Math.random() * numSides) + 1);
+                        }
+                        const diceRollResult = rolls.reduce((a, b) => a + b, 0);
+                        totalResult += diceRollResult;
+                        rollResultsForFeed.push({ type: 'dice', value: diceRollResult, displayValue: `${comp.value}(${rolls.join('+')})` });
+                    } else if (!isNaN(parseInt(comp.value, 10))) { // Permite números fixos
+                        // --- INÍCIO DA CORREÇÃO ---
+                        const num = parseInt(comp.value, 10) || 0;
+                        totalResult += num;
+                        rollResultsForFeed.push({ type: 'number', value: num, displayValue: `${num}` });
+                        // --- FIM DA CORREÇÃO ---
                     }
-                    const diceRollResult = rolls.reduce((a, b) => a + b, 0);
-                    totalResult += diceRollResult;
-                    rollResultsForFeed.push({ type: 'dice', value: diceRollResult, displayValue: `${comp.value}(${rolls.join('+')})` });
-                } else if (!isNaN(parseInt(comp.value, 10))) { // Permite números fixos
-                    // --- INÍCIO DA CORREÇÃO ---
+                } else if (comp.type === 'number') {
                     const num = parseInt(comp.value, 10) || 0;
                     totalResult += num;
-                    rollResultsForFeed.push({ type: 'number', value: num, displayValue: `${num}` });
-                    // --- FIM DA CORREÇÃO ---
+                    const label = comp.label ? `${comp.label}(${num >= 0 ? '+' : ''}${num})` : `${num}`;
+                    rollResultsForFeed.push({ type: 'number', value: num, displayValue: label });
+                } else if (comp.type === 'skillRoll') {
+                    // O componente skillRoll já foi processado, então o ignoramos aqui.
                 }
-            } else if (comp.type === 'number') {
-                const num = parseInt(comp.value, 10) || 0;
-                totalResult += num;
-                const label = comp.label ? `${comp.label}(${num >= 0 ? '+' : ''}${num})` : `${num}`;
-                rollResultsForFeed.push({ type: 'number', value: num, displayValue: label });
-            } else if (comp.type === 'skillRoll') {
-                // O componente skillRoll já foi processado, então o ignoramos aqui.
             }
         }
     }
@@ -478,12 +502,17 @@ const handleExecuteFormulaAction = async (action) => {
     let detailsString = rollResultsForFeed.map(r => r.displayValue).join(' + ');
     let discordDescription;
 
-    if (acertoResult) {
+    // Se for uma rolagem de atributo simples, a descrição é diferente.
+    if (acertoResult && action.totalResult !== undefined && !action.components?.some(c => c.type === 'skillRoll')) {
+        discordDescription = `${descriptionText}\n\n**Resultado: ${acertoResult.total}**`;
+        detailsString = `1d20(${acertoResult.roll}) ${acertoResult.bonus >= 0 ? '+' : '-'} ${Math.abs(acertoResult.bonus)}`;
+    } else if (acertoResult) { // Rolagem de perícia/ataque
         const acertoString = `**Teste de ${acertoResult.skillName}:** ${acertoResult.total} (d20:${acertoResult.roll} + Bônus:${acertoResult.bonus || 0})`;
         discordDescription = `${descriptionText}\n${acertoString}\n\n**Dano/Resultado: ${totalResult}**`;
-    } else {
+    } else { // Rolagem sem acerto (ex: cura)
         discordDescription = `${descriptionText}\n\n**Resultado Final: ${totalResult}**`;
     }
+
     const discordFields = [{ name: 'Detalhes da Rolagem', value: detailsString || 'N/A', inline: false }];
     if (criticals.length > 0) {
         discordFields.push({ name: 'Críticos', value: criticals.join('\n'), inline: false });
@@ -575,7 +604,7 @@ const handleExecuteFormulaAction = async (action) => {
       {/* SkillsList é a seção de HABILIDADES e deve ser mantida. */}
       <div id="skills"><SkillsList character={character} onUpdate={updateCharacterField} isMaster={isMaster} onShowDiscord={handleShowOnDiscord} isCollapsed={character.collapsedStates?.skills} toggleSection={() => toggleSection('skills')} isEditMode={isEditMode} /></div>
       {/* SpecializationsList foi refatorado para ser a nova seção de PERÍCIAS. Passamos o mapa de atributos totais. */}
-      <div id="specializations"><SpecializationsList character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.specializations} toggleSection={() => toggleSection('specializations')} onExecuteFormula={handleExecuteFormulaAction} isEditMode={isEditMode} totalAttributesMap={totalAttributesMap} /></div>
+      <div id="specializations"><SpecializationsList character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.specializations} toggleSection={() => toggleSection('specializations')} onExecuteFormula={handleExecuteFormulaAction} isEditMode={isEditMode} totalAttributesMap={totalAttributesMap} buffModifiers={buffModifiers.attributes} /></div>
 
       <div id="story"><Story character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.story} toggleSection={() => toggleSection('story')} isEditMode={isEditMode} /></div>
       <div id="notes"><Notes character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.notes} toggleSection={() => toggleSection('notes')} isEditMode={isEditMode} /></div>

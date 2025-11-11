@@ -340,13 +340,14 @@ export const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, tog
                             if (key === 'Iniciativa') {
                                 baseValue = localMainAttributes?.[lowerKey] ?? '';
                                 const initiativeBonus = parseInt(baseValue, 10) || 0;
-                                total = initiativeBonus + dexterityValue + (buffModifiers['Iniciativa'] || 0);
+                                total = calculateTotal(baseValue, 'Iniciativa') + dexterityValue;
                             } else if (key === 'MD') {
                                 baseValue = localMainAttributes?.fd ?? '';
-                                total = (parseInt(baseValue, 10) || 0) + constitutionValue + (buffModifiers['MD'] || 0);
+                                total = calculateTotal(baseValue, 'MD') + constitutionValue; 
                             } else {
                                 baseValue = localMainAttributes?.[lowerKey] ?? '';
-                                total = calculateTotal(localMainAttributes?.[lowerKey] || 0, key.toUpperCase());
+                                // Para FA, FM, Acerto, ME, o cálculo é direto.
+                                total = calculateTotal(baseValue, key);
                             }
                             
                             return (
