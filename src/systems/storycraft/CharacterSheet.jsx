@@ -373,12 +373,16 @@ const handleExecuteFormulaAction = async (action) => {
     } else if (!acertoResult) {
         // Lógica antiga para rolagens sem acerto (ex: rolagens de atributo)
         // Isso só será executado se a ação não tiver nem `skillRoll` nem `acertoResult` pré-definido.
-        const hasDiceComponent = (action.components || []).some(c => c.type === 'dice' || c.type === 'critDice');
-        if (!hasDiceComponent) {
+        const components = action.components || [];
+        const hasDiceComponent = components.some(c => c.type === 'dice' || c.type === 'critDice');
+        
+        // --- CORREÇÃO ---
+        // Rola um d20 apenas se a ação tiver componentes, mas nenhum deles for um dado.
+        // Se não houver componentes, não rola nada.
+        if (components.length > 0 && !hasDiceComponent) {
             const roll = Math.floor(Math.random() * 20) + 1;
             totalResult += roll;
             rollResultsForFeed.push({ type: 'dice', value: roll, displayValue: `1d20(${roll})` });
-
         }
     }
 
@@ -543,6 +547,8 @@ const handleExecuteFormulaAction = async (action) => {
         acertoResult: acertoResult,   // O objeto de acerto (ou null)
         criticals: criticals,         // O array de strings de críticos
         discordText: descriptionText,
+        costText: footerText,         // <-- ADICIONADO: Passa o texto do custo para o feed
+        components: action.components,  // <-- ADICIONADO: Passa os componentes para o feed
     });
 };
 

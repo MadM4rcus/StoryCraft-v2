@@ -52,6 +52,11 @@ const RollFeed = () => {
     // OU se a ação original tinha apenas um componente 'skillRoll'.
     const isSimpleCheckRoll = roll.acertoResult && (!roll.results || roll.results.length === 0 || (roll.components?.length === 1 && roll.components[0].type === 'skillRoll'));
 
+    // --- CORREÇÃO FINAL ---
+    // Determina se é uma ação puramente descritiva (sem acerto e sem resultados de dados).
+    const isDescriptiveAction = !roll.acertoResult && (!roll.results || roll.results.length === 0);
+
+
     const formula = roll.results.map((r, index) => (
       <React.Fragment key={index}>
         {index > 0 && ' + '}
@@ -73,8 +78,14 @@ const RollFeed = () => {
         {/* Nome da Ação */}
         <p className="font-semibold text-lg text-textPrimary">{roll.rollName || 'Rolagem de Dados'}</p>
         
-        {/* --- NOVO: Bloco para Rolagem de Atributo ou Perícia Simples --- */}
-        {isSimpleCheckRoll ? (
+        {/* --- NOVO: Bloco para Ações Descritivas (sem rolagens) --- */}
+        {isDescriptiveAction ? (
+          // Não renderiza nada extra além do nome, descrição e custo.
+          // A descrição e o custo são renderizados no final do componente.
+          null
+        )
+        /* --- Bloco para Rolagem de Atributo ou Perícia Simples --- */
+        : isSimpleCheckRoll ? (
           <div className="mt-2 pt-2 border-t border-bgInput/50">
             {/* Linha 1: Resultado: 12 */}
             <p className={`font-semibold text-textPrimary/90`}>
@@ -148,6 +159,13 @@ const RollFeed = () => {
         {/* O Bloco de Críticos antigo foi removido pois foi fundido com o Dano/Resultado */}
         
         {roll.discordText && <p className="text-xs italic text-textSecondary mt-2">"{roll.discordText}"</p>}
+
+        {/* --- NOVO: Exibição do Custo da Ação --- */}
+        {roll.costText && (
+            <p className="text-xs font-semibold text-purple-400 mt-2 border-t border-bgInput/50 pt-1">
+                {roll.costText}
+            </p>
+        )}
       </div>
     );
   };
