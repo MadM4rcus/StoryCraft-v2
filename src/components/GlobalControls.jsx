@@ -19,17 +19,17 @@ const NavButton = ({ href, title, children }) => (
 // Constantes movidas do FloatingNav
 const V1_SECTIONS = [
     { href: '#info', title: 'Informações', icon: '👤' },
-    { href: '#main-attributes', title: 'Atributos Principais', icon: '❤️' },
-    { href: '#actions', title: 'Ações', icon: '⚔️' },
+    { href: '#main-attributes', title: 'Atributos', icon: '❤️' },
+    { href: '#actions', title: 'Ação rápida', icon: '⚔️' },
     { href: '#buffs', title: 'Buffs', icon: '✨' },
+    { href: '#specializations', title: 'Pericias', icon: '📜' },
+    { href: '#perks', title: 'Vantagens', icon: '🌟' },
     { href: '#wallet', title: 'Carteira', icon: '💰' },
     { href: '#inventory', title: 'Inventário', icon: '🎒' },
-    { href: '#equipped', title: 'Equipados', icon: '🛡️' },
-    { href: '#perks', title: 'Vantagens', icon: '🌟' },
+    { href: '#equipped', title: 'Itens Equipados', icon: '🛡️' },
     { href: '#skills', title: 'Habilidades', icon: '🎯' },
-    { href: '#specializations', title: 'Especializações', icon: '📜' },
+    { href: '#notes', title: 'Notas', icon: '📝' },
     { href: '#story', title: 'História', icon: '📖' },
-    { href: '#notes', title: 'Anotações', icon: '📝' },
     { href: '#discord', title: 'Discord', icon: '💬' },
 ];
 const DICE_TYPES = [2, 3, 4, 6, 8, 10, 12, 20, 50, 100];

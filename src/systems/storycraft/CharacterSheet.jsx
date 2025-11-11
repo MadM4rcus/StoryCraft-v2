@@ -598,23 +598,19 @@ const handleExecuteFormulaAction = async (action) => {
           {/* O botão de voltar foi movido para o GlobalControls */}
 
       <div id="info"><CharacterInfo character={character} onUpdate={updateCharacterField} isMaster={isMaster} isEditMode={isEditMode} isCollapsed={character.collapsedStates?.info} toggleSection={() => toggleSection('info')} /></div>
-      <div id="main-attributes"><MainAttributes character={character} onUpdate={updateCharacterField} isMaster={isMaster} isEditMode={isEditMode} buffModifiers={buffModifiers.attributes} isCollapsed={character.collapsedStates?.main} toggleSection={() => toggleSection('main')} onAttributeRoll={handleAttributeClick} onMapUpdate={setTotalAttributesMap} /></div>      
-      
+      <div id="main-attributes"><MainAttributes character={character} onUpdate={updateCharacterField} isMaster={isMaster} isEditMode={isEditMode} buffModifiers={buffModifiers.attributes} isCollapsed={character.collapsedStates?.main} toggleSection={() => toggleSection('main')} onAttributeRoll={handleAttributeClick} onMapUpdate={setTotalAttributesMap} /></div>
       <div id="actions"><ActionsSection character={character} isMaster={isMaster} isCollapsed={character.collapsedStates?.actions} toggleSection={() => toggleSection('actions')} allAttributes={allAttributes} onUpdate={updateCharacterField} onExecuteFormula={handleExecuteFormulaAction} isEditMode={isEditMode} /></div>
       <div id="buffs"><BuffsSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} allAttributes={allAttributes} isCollapsed={character.collapsedStates?.buffs} toggleSection={() => toggleSection('buffs')} isEditMode={isEditMode} /></div>
-      <div id="wallet"><Wallet character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.wallet} toggleSection={() => toggleSection('wallet')} isEditMode={isEditMode} /></div>
-      
-      <div id="inventory"><InventoryList character={character} onUpdate={updateCharacterField} isMaster={isMaster} onShowDiscord={handleShowOnDiscord} isCollapsed={character.collapsedStates?.inventory} toggleSection={() => toggleSection('inventory')} isEditMode={isEditMode} /></div>
-      <div id="equipped"><EquippedItemsList character={character} onUpdate={updateCharacterField} isMaster={isMaster} onShowDiscord={handleShowOnDiscord} isCollapsed={character.collapsedStates?.equipped} toggleSection={() => toggleSection('equipped')} isEditMode={isEditMode} /></div>
-      <div id="perks"><PerksList character={character} onUpdate={updateCharacterField} onShowDiscord={handleShowOnDiscord} isCollapsed={character.collapsedStates?.perks} toggleSection={() => toggleSection('perks')} isEditMode={isEditMode} /></div>
-      {/* SkillsList é a seção de HABILIDADES e deve ser mantida. */}
-      <div id="skills"><SkillsList character={character} onUpdate={updateCharacterField} isMaster={isMaster} onShowDiscord={handleShowOnDiscord} isCollapsed={character.collapsedStates?.skills} toggleSection={() => toggleSection('skills')} isEditMode={isEditMode} /></div>
       {/* SpecializationsList foi refatorado para ser a nova seção de PERÍCIAS. Passamos o mapa de atributos totais. */}
       <div id="specializations"><SpecializationsList character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.specializations} toggleSection={() => toggleSection('specializations')} onExecuteFormula={handleExecuteFormulaAction} isEditMode={isEditMode} totalAttributesMap={totalAttributesMap} buffModifiers={buffModifiers.attributes} /></div>
-
-      <div id="story"><Story character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.story} toggleSection={() => toggleSection('story')} isEditMode={isEditMode} /></div>
+      <div id="perks"><PerksList character={character} onUpdate={updateCharacterField} onShowDiscord={handleShowOnDiscord} isCollapsed={character.collapsedStates?.perks} toggleSection={() => toggleSection('perks')} isEditMode={isEditMode} /></div>
+      <div id="wallet"><Wallet character={character} isMaster={isMaster} onUpdate={updateCharacterField} isCollapsed={character.collapsedStates?.wallet} toggleSection={() => toggleSection('wallet')} isEditMode={isEditMode} /></div>
+      <div id="inventory"><InventoryList character={character} onUpdate={updateCharacterField} isMaster={isMaster} onShowDiscord={handleShowOnDiscord} isCollapsed={character.collapsedStates?.inventory} toggleSection={() => toggleSection('inventory')} isEditMode={isEditMode} /></div>
+      <div id="equipped"><EquippedItemsList character={character} onUpdate={updateCharacterField} isMaster={isMaster} onShowDiscord={handleShowOnDiscord} isCollapsed={character.collapsedStates?.equipped} toggleSection={() => toggleSection('equipped')} isEditMode={isEditMode} /></div>
+      {/* SkillsList é a seção de HABILIDADES e deve ser mantida. */}
+      <div id="skills"><SkillsList character={character} onUpdate={updateCharacterField} isMaster={isMaster} onShowDiscord={handleShowOnDiscord} isCollapsed={character.collapsedStates?.skills} toggleSection={() => toggleSection('skills')} isEditMode={isEditMode} /></div>
       <div id="notes"><Notes character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.notes} toggleSection={() => toggleSection('notes')} isEditMode={isEditMode} /></div>
-      
+      <div id="story"><Story character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.story} toggleSection={() => toggleSection('story')} isEditMode={isEditMode} /></div>
       <div id="discord"><DiscordIntegration character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.discord} toggleSection={() => toggleSection('discord')} isEditMode={isEditMode} /></div>
       
       {/* Os botões de Exportar e Resetar foram removidos daqui. */}
