@@ -55,13 +55,7 @@ Aqui é onde podemos rastrear as próximas grandes tarefas.
 
 Nova prioridade: 
 
-agora vamos fazer o seguinte. eu vou adicionar botoes no controle. controles que são globais. não apenas referentes a v1. eles vão funcionar na v2, e até fora de nenhuma ficha, nos menús de seleção etec.
-
-então queria criar um componente "pai" que seria global em um nivel de hierarquia muito maior. quando eu estivesse em uma das fichas do v1 ai sim ele carregaria o floatingNav dentro dele sabe?
-
-mas o visual seria o mesmo, aquela caixinha que parece um controle remoto e aparece em todo canto do aplicativo depois da tela de login. fora de alguma ficha do v1. ele pode ter apenas o botão que ativa o "iseditmode" por enquanto. e quando abrir uma ficha da v1 deve mostrar esse e todos os outros botões que já são da v1.
-
-inclusive que essa caixinha com controles possa ser minimizavel, ficando apenas um iconezinho.
+Consertar açoes e atributos bugados
 
 
 file tree
@@ -70,7 +64,7 @@ file tree
 ┣ 📂src
 ┃ ┣ 📂components
 ┃ ┃ ┣ 📜ChatInput.jsx
-┃ ┃ ┣ 📜GlobalControlls.jsx
+┃ ┃ ┣ 📜GlobalControls.jsx
 ┃ ┃ ┣ 📜Login.jsx
 ┃ ┃ ┣ 📜LoginScreen.jsx
 ┃ ┃ ┣ 📜ModalManager.jsx
@@ -80,9 +74,11 @@ file tree
 ┃ ┃ ┗ 📜ThemeEditor.jsx
 ┃ ┣ 📂context
 ┃ ┃ ┣ 📜AuthContext.jsx
+┃ ┃ ┣ 📜GlobalControlsContext.jsx
 ┃ ┃ ┣ 📜PartyHealthContext.jsx
 ┃ ┃ ┣ 📜RollFeedContext.jsx
-┃ ┃ ┗ 📜SystemContext.jsx
+┃ ┃ ┣ 📜SystemContext.jsx
+┃ ┃ ┗ 📜UIStateContext.jsx
 ┃ ┣ 📂hooks
 ┃ ┃ ┣ 📜useAuth.js
 ┃ ┃ ┗ 📜useCharacter.js

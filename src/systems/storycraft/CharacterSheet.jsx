@@ -286,7 +286,8 @@ const handleExecuteFormulaAction = async (action) => {
         const d20Roll = Math.floor(Math.random() * 20) + 1;
         const skillBonus = calculateTotalBonus(skillRollComp.skill, character);
         const totalAcerto = d20Roll + skillBonus;
-        const isCrit = d20Roll === 20; // Um 20 natural é sempre um crítico para perícias
+        // O crítico agora é d20 >= critMin (padrão 20 se não definido)
+        const isCrit = d20Roll >= (parseInt(skillRollComp.critMin, 10) || 20);
         const isCritFail = d20Roll === 1;
 
         acertoResult = {
@@ -352,33 +353,7 @@ const handleExecuteFormulaAction = async (action) => {
                 const attrValue = getAttributeValue(attrName);
                 totalResult += attrValue;
                 rollResultsForFeed.push({ type: 'attribute', value: attrValue, displayValue: `${attrName}(${attrValue})` });
-            } else if (comp.type === 'critDice') {
-                const match = String(comp.value || '').match(/(\d+)d(\d+)/i);
-                if (match) {
-                    const numDice = parseInt(match[1], 10);
-                    const numSides = parseInt(match[2], 10);
-                    let rolls = [];
-                    let diceRollResult = 0;
-                    for (let d = 0; d < numDice; d++) {
-                        const roll = Math.floor(Math.random() * numSides) + 1;
-                        rolls.push(roll);
-                        diceRollResult += roll;
-
-                        if (roll >= (comp.critValue || numSides)) {
-                            const bonusAttributeValue = getAttributeValue(comp.critBonusAttribute);
-                            const totalBonus = bonusAttributeValue * (comp.critBonusMultiplier || 1);
-                            diceRollResult += totalBonus;
-                            criticals.push(`Crítico no ${roll}! Adiciona ${comp.critBonusAttribute} (${totalBonus})`);
-                        }
-                    }
-                    totalResult += diceRollResult;
-                    rollResultsForFeed.push({ type: 'dice', value: diceRollResult, displayValue: `${comp.value}(${rolls.join('+')})` });
-                } else {
-                    const num = parseInt(comp.value, 10) || 0;
-                    totalResult += num;
-                    rollResultsForFeed.push({ type: 'number', value: num, displayValue: `${num}` });
-                }
-            } else if (comp.type === 'dice') {
+            }  else if (comp.type === 'dice') {
                 const match = String(comp.value || '').match(/(\d+)d(\d+)/i);
                 if (match) {
                     const numDice = parseInt(match[1], 10);

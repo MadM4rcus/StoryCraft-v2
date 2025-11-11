@@ -69,8 +69,6 @@ const ActionsSection = ({
             newComponent = { id: crypto.randomUUID(), type, value: '1d6' };
         } else if (type === 'attribute') {
             newComponent = { id: crypto.randomUUID(), type, value: '' };
-        } else if (type === 'critDice') {
-            newComponent = { id: crypto.randomUUID(), type, value: '1d6', critValue: 6, critBonusAttribute: '', critBonusMultiplier: 1 };
         } else if (type === 'skillRoll') {
             newComponent = { id: crypto.randomUUID(), type, skill: '', critMin: 19, critFormula: '' };
         }
@@ -194,55 +192,6 @@ const ActionsSection = ({
                                                                 <div className="text-textSecondary flex-shrink-0">Atributo</div>
                                                                 {canEdit && isEditMode && (<button onClick={() => handleRemoveActionComponent(action.id, comp.id)} className="w-6 h-6 bg-red-600 text-white text-xs rounded-full flex items-center justify-center font-bold flex-shrink-0">-</button>)}
                                                             </div>
-                                                        ) : comp.type === 'critDice' ? (
-                                                            <div className="flex flex-col gap-2">
-                                                                <div className="flex items-center gap-2">
-                                                                    <input
-                                                                        type="text"
-                                                                        placeholder="1d6"
-                                                                        value={comp.value}
-                                                                        onChange={(e) => handleLocalComponentChange(action.id, comp.id, 'value', e.target.value)}
-                                                                        onBlur={() => handleSaveComponentChange(action.id, comp.id, 'value')}
-                                                                        className="flex-grow p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary"
-                                                                        disabled={!canEdit || !isEditMode}
-                                                                    />
-                                                                    <div className="text-textSecondary flex-shrink-0">Dado Crítico</div>
-                                                                    {canEdit && isEditMode && (<button onClick={() => handleRemoveActionComponent(action.id, comp.id)} className="w-6 h-6 bg-red-600 text-white text-xs rounded-full flex items-center justify-center font-bold flex-shrink-0">-</button>)}
-                                                                </div>
-                                                                <div className="flex items-center gap-2 text-sm text-textSecondary">
-                                                                    <span className="flex-shrink-0">Crit. ≥</span>
-                                                                    <input
-                                                                        type="number"
-                                                                        placeholder="6"
-                                                                        value={comp.critValue || ''}
-                                                                        onChange={(e) => handleLocalComponentChange(action.id, comp.id, 'critValue', e.target.value)}
-                                                                        onBlur={() => handleSaveComponentChange(action.id, comp.id, 'critValue')}
-                                                                        className="w-12 p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary"
-                                                                        disabled={!canEdit || !isEditMode}
-                                                                    />
-                                                                    <span className="flex-shrink-0">Bônus:</span>
-                                                                    <select
-                                                                        value={comp.critBonusAttribute || ''}
-                                                                        onChange={(e) => handleLocalComponentChange(action.id, comp.id, 'critBonusAttribute', e.target.value)}
-                                                                        onBlur={() => handleSaveComponentChange(action.id, comp.id, 'critBonusAttribute')}
-                                                                        className="flex-grow p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary"
-                                                                        disabled={!canEdit || !isEditMode}
-                                                                    >
-                                                                        <option value="">Nenhum</option>
-                                                                        {allAttributes.map(attr => <option key={attr} value={attr}>{attr}</option>)}
-                                                                    </select>
-                                                                    <span className="flex-shrink-0">x</span>
-                                                                    <input
-                                                                        type="number"
-                                                                        placeholder="1"
-                                                                        value={comp.critBonusMultiplier || ''}
-                                                                        onChange={(e) => handleLocalComponentChange(action.id, comp.id, 'critBonusMultiplier', e.target.value)}
-                                                                        onBlur={() => handleSaveComponentChange(action.id, comp.id, 'critBonusMultiplier')}
-                                                                        className="w-12 p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary"
-                                                                        disabled={!canEdit || !isEditMode}
-                                                                    />
-                                                                </div>
-                                                            </div>
                                                         ) : comp.type === 'skillRoll' ? (
                                                             // --- INÍCIO DO NOVO BLOCO ---
                                                             <div className="flex flex-col gap-2">
@@ -294,8 +243,7 @@ const ActionsSection = ({
                                                 <div className="flex gap-2 flex-wrap">
                                                     <button onClick={() => handleAddActionComponent(action.id, 'dice')} className="px-2 py-1 text-xs bg-btnHighlightBg text-btnHighlightText rounded-md">+ Dado/Nº</button>
                                                     <button onClick={() => handleAddActionComponent(action.id, 'attribute')} className="px-2 py-1 text-xs bg-btnHighlightBg text-btnHighlightText rounded-md">+ Atributo</button>
-                                                    <button onClick={() => handleAddActionComponent(action.id, 'critDice')} className="px-2 py-1 text-xs bg-purple-600 text-white rounded-md">+ Dado Crítico</button>
-                                                    <button onClick={() => handleAddActionComponent(action.id, 'skillRoll')} className="px-2 py-1 text-xs bg-purple-600 text-white rounded-md">+ Rolagem de Perícia</button>
+                                                    <button onClick={() => handleAddActionComponent(action.id, 'skillRoll')} className="px-2 py-1 text-xs bg-btnHighlightBg text-btnHighlightText rounded-md">+ Rolagem de Perícia</button>
                                                 </div>
                                             )}
                                         </div>
