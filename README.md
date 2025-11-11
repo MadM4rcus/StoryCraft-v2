@@ -70,6 +70,7 @@ file tree
 ┣ 📂src
 ┃ ┣ 📂components
 ┃ ┃ ┣ 📜ChatInput.jsx
+┃ ┃ ┣ 📜GlobalControlls.jsx
 ┃ ┃ ┣ 📜Login.jsx
 ┃ ┃ ┣ 📜LoginScreen.jsx
 ┃ ┃ ┣ 📜ModalManager.jsx
