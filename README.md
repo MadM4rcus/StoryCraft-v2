@@ -104,7 +104,6 @@ file tree
 ┃ ┃ ┃ ┣ 📜Dashboard.jsx
 ┃ ┃ ┃ ┣ 📜FloatingNav.jsx
 ┃ ┃ ┃ ┣ 📜ListSections.jsx
-┃ ┃ ┃ ┣ 📜QuickRoll.jsx
 ┃ ┃ ┃ ┣ 📜SheetSkin.jsx
 ┃ ┃ ┃ ┗ 📜Specializations.jsx
 ┃ ┃ ┗ 📂storycraft_classic
