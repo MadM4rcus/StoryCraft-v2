@@ -5,6 +5,7 @@ import {
   query,
   orderBy,
   onSnapshot,
+  limit, // 1. Importar a função 'limit' do Firestore
 } from "firebase/firestore";
 import { db } from "./firebase"; // Assuming you export 'db' from firebase.js
 
@@ -36,6 +37,26 @@ export const subscribeToFeed = (sessionPath, callback) => {
     callback(feedItems);
   }, (error) => {
     console.error("Error subscribing to feed:", error);
+    // Adicione um tratamento de erro mais robusto se necessário
+  });
+};
+
+// 2. Criar e exportar a nova função com limite
+export const subscribeToFeedWithLimit = (sessionPath, feedLimit, callback) => {
+  console.log(`[DIAGNÓSTICO FIRESTORE] Assinando coleção com limite(${feedLimit}):`, sessionPath);
+  const feedCollectionRef = collection(db, sessionPath, "feed");
+  // Adiciona o 'limit(feedLimit)' à consulta do Firestore
+  const q = query(feedCollectionRef, orderBy("timestamp", "desc"), limit(feedLimit));
+
+  return onSnapshot(q, (querySnapshot) => {
+    const feedItems = [];
+    querySnapshot.forEach((doc) => {
+      feedItems.push({ id: doc.id, ...doc.data() });
+    });
+    // O feed já vem na ordem correta (mais novo primeiro) e o CSS o inverte.
+    callback(feedItems);
+  }, (error) => {
+    console.error("Error subscribing to feed with limit:", error);
     // Adicione um tratamento de erro mais robusto se necessário
   });
 };

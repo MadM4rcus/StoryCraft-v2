@@ -2,7 +2,7 @@
 
 import React from 'react';
 
-const CharacterList = ({ user, onSelectCharacter, handleCreateClick, handleImportClick, handleDeleteClick, characters, isMaster, viewingAll, onToggleView }) => {
+const CharacterList = ({ user, onSelectCharacter, handleCreateClick, handleImportClick, handleDeleteClick, characters, isMaster, viewingAll, onToggleView, onExportClick }) => {
   return (
     <div className="bg-bgSurface/80 backdrop-blur-sm p-6 rounded-lg shadow-lg border border-bgElement w-full">
       <h2 className="text-2xl font-bold text-textAccent mb-4 border-b-2 border-borderAccent pb-2">
@@ -37,6 +37,9 @@ const CharacterList = ({ user, onSelectCharacter, handleCreateClick, handleImpor
               <div className="flex justify-end gap-2 mt-4">
                 <button onClick={() => onSelectCharacter(char)} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg">
                   Ver/Editar
+                </button>
+                <button onClick={() => onExportClick(char)} className="px-4 py-2 bg-bgElement hover:bg-opacity-80 text-textPrimary text-sm font-bold rounded-lg">
+                  Exportar JSON
                 </button>
                 {(user && (user.uid === char.ownerUid || isMaster)) && (
                     <button onClick={() => handleDeleteClick(char)} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-lg">

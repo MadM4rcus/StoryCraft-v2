@@ -17,14 +17,6 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
   const { character, loading, updateCharacterField, toggleSection } = useCharacter(initialCharacter.id, initialCharacter.ownerUid);
   const { addRollToFeed, addMessageToFeed } = useRollFeed();
   const { user } = useAuth();
-  const { setActiveCharacter } = useSystem();
-
-  // Define este personagem como ativo quando a ficha é montada
-  // e limpa quando é desmontada.
-  useEffect(() => {
-    setActiveCharacter(character);
-    return () => setActiveCharacter(null);
-  }, [character, setActiveCharacter]);
 
   // 2. Usa o estado de edição do contexto global
   const { isEditMode } = useGlobalControls();
@@ -574,12 +566,7 @@ const handleExecuteFormulaAction = async (action) => {
   return (
     <div className="w-full max-w-4xl mx-auto p-4">
           <ModalManager modalState={modalState} closeModal={closeModal} />
-          
-          <div className="flex justify-between items-center mb-4">
-              <button onClick={onBack} className="px-4 py-2 bg-bgSurface hover:opacity-80 text-textPrimary font-bold rounded-lg">
-                  ← Voltar para a Lista
-              </button> 
-          </div>
+          {/* O botão de voltar foi movido para o GlobalControls */}
 
       <div id="info"><CharacterInfo character={character} onUpdate={updateCharacterField} isMaster={isMaster} isEditMode={isEditMode} isCollapsed={character.collapsedStates?.info} toggleSection={() => toggleSection('info')} /></div>
       <div id="main-attributes"><MainAttributes character={character} onUpdate={updateCharacterField} isMaster={isMaster} isEditMode={isEditMode} buffModifiers={buffModifiers.attributes} isCollapsed={character.collapsedStates?.main} toggleSection={() => toggleSection('main')} onAttributeRoll={handleAttributeClick} onMapUpdate={setTotalAttributesMap} /></div>      
@@ -601,22 +588,8 @@ const handleExecuteFormulaAction = async (action) => {
       
       <div id="discord"><DiscordIntegration character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.discord} toggleSection={() => toggleSection('discord')} isEditMode={isEditMode} /></div>
       
-      <div className="flex flex-wrap justify-center gap-4 mt-8 p-4 bg-bgSurface/80 backdrop-blur-sm rounded-xl border border-bgElement">
-          <button 
-              onClick={handleExportJson} 
-              className="px-6 py-3 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText font-bold rounded-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={!character}
-          >
-              Exportar Ficha (JSON)
-          </button>
-          <button 
-              onClick={handleReset} 
-              className="px-8 py-3 bg-red-700 hover:bg-red-800 text-white font-bold rounded-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={!character}
-          >
-              Resetar Ficha
-          </button>
-      </div>
+      {/* Os botões de Exportar e Resetar foram removidos daqui. */}
+      {/* A exportação agora é feita na lista de personagens. */}
     </div>
   );
 };

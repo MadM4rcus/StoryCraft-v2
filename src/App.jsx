@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './hooks/useAuth';
+import { useUIState } from './context/UIStateContext'; // Importar o contexto de UI
 import SystemRouter from './components/SystemRouter';
 import LoginScreen from './components/LoginScreen';
 import GlobalControls from './components/GlobalControls'; // 1. Importamos o novo componente
@@ -51,6 +52,7 @@ const applyThemeStyles = (styles) => {
 function App() {
   const { user, loading } = useAuth();
   const [activeTheme, setActiveTheme] = useState(null);
+  const { isRollFeedVisible } = useUIState(); // Pega o estado de visibilidade do RollFeed
   const [previewTheme, setPreviewTheme] = useState(null);
 
   useEffect(() => {
@@ -73,7 +75,7 @@ function App() {
         <>
           <SystemRouter activeTheme={activeTheme} setActiveTheme={setActiveTheme} previewTheme={previewTheme} setPreviewTheme={setPreviewTheme} />
           <GlobalControls /> {/* 2. Adicionamos o componente aqui */}
-          <RollFeed /> {/* RollFeed é um overlay global, pode ficar aqui */}
+          {isRollFeedVisible && <RollFeed />} {/* Renderiza o RollFeed condicionalmente */}
         </>
       ) : <LoginScreen />} {/* Se não estiver logado, mostra a tela de login */}
     </div>

@@ -8,27 +8,29 @@ import ThemeEditor from '@/components/ThemeEditor';
 import PartyHealthMonitor from '@/components/PartyHealthMonitor';
 import { useAuth } from '@/hooks/useAuth';
 import { useSystem } from '@/context/SystemContext';
+import { useUIState } from '@/context/UIStateContext'; // Importar o contexto de UI
+import { useGlobalControls } from '@/context/GlobalControlsContext'; // 1. Importar o contexto dos controles
 import { getCharactersForUser, createNewCharacter, deleteCharacter } from '@/services/firestoreService';
 import { getThemeById } from '@/services/themeService';
 import { doc, setDoc, collection, onSnapshot } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 
 const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
-  const { user, googleSignOut, isMaster } = useAuth();
-  const [selectedCharacter, setSelectedCharacter] = useState(null);
+  const { user, googleSignOut, isMaster } = useAuth();  
   const [characters, setCharacters] = useState([]);
   const fileInputRef = useRef(null);
-  const [viewingAll, setViewingAll] = useState(false);
-  const [isThemeEditorOpen, setIsThemeEditorOpen] = useState(false);
+  const [viewingAll, setViewingAll] = useState(false);  
+  const { isPartyHealthMonitorVisible } = useUIState(); // Pega o estado de visibilidade
+  const { isThemeEditorOpen, setIsThemeEditorOpen } = useGlobalControls(); // 2. Usar o estado global
 
-  const { currentSystem, setCurrentSystem, characterDataCollectionRoot, GLOBAL_APP_IDENTIFIER } = useSystem();
+  const { currentSystem, setCurrentSystem, characterDataCollectionRoot, activeCharacter, setActiveCharacter } = useSystem();
   const [modalState, setModalState] = useState({ type: null, props: {} });
   const closeModal = () => setModalState({ type: null, props: {} });
 
   useEffect(() => {
-    if (selectedCharacter?.id && selectedCharacter?.ownerUid) {
+    if (activeCharacter?.id && activeCharacter?.ownerUid) {
         // CORREÇÃO: O characterDataCollectionRoot já contém o caminho completo.
-        const unsubscribe = onSnapshot(doc(db, `${characterDataCollectionRoot}/users/${selectedCharacter.ownerUid}/characterSheets/${selectedCharacter.id}`), async (docSnap) => {
+        const unsubscribe = onSnapshot(doc(db, `${characterDataCollectionRoot}/users/${activeCharacter.ownerUid}/characterSheets/${activeCharacter.id}`), async (docSnap) => {
             if (docSnap.exists()) {
                 const characterData = docSnap.data();
                 if (characterData.activeThemeId) {
@@ -41,17 +43,17 @@ const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
         });
         return () => unsubscribe();
     } else {
-      setActiveTheme(null);
+      setActiveTheme(null); // Limpa o tema se não houver personagem ativo
     }
-  }, [selectedCharacter, setActiveTheme, characterDataCollectionRoot, db]);
+  }, [activeCharacter, setActiveTheme, characterDataCollectionRoot, db]);
 
   const handleCloseEditor = () => {
     setIsThemeEditorOpen(false);
-    setPreviewTheme(null);
+    setPreviewTheme(null); // Limpa a pré-visualização ao fechar
   };
 
   const handleCharacterClickFromMonitor = (character) => {
-    setSelectedCharacter(character);
+    setActiveCharacter(character);
   };
 
   const fetchCharacters = async () => {
@@ -130,21 +132,28 @@ const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
     });
   };
 
-  const partyMonitor = <PartyHealthMonitor onCharacterClick={handleCharacterClickFromMonitor} />;
+  const handleExportClick = (charToExport) => {
+    const { collapsedStates, ...exportData } = charToExport;
+    const jsonString = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${charToExport.name || 'ficha'}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  };
+
+  const partyMonitor = isPartyHealthMonitorVisible ? <PartyHealthMonitor onCharacterClick={handleCharacterClickFromMonitor} /> : null;
 
   return (
     <>
-      {partyMonitor}
-      <button 
-        onClick={() => setIsThemeEditorOpen(true)} 
-        className="fixed top-4 right-4 z-[60] px-4 py-2 bg-btnHighlightBg text-btnHighlightText font-bold rounded-lg shadow-lg"
-      >
-        Editor de Temas
-      </button>
-      {isThemeEditorOpen && <ThemeEditor character={selectedCharacter} originalTheme={activeTheme} setPreviewTheme={setPreviewTheme} onClose={handleCloseEditor} />}
+      {partyMonitor} {/* Renderiza o monitor condicionalmente */}
+      {isThemeEditorOpen && <ThemeEditor character={activeCharacter} originalTheme={activeTheme} setPreviewTheme={setPreviewTheme} onClose={handleCloseEditor} />}
 
-      {selectedCharacter ? (
-        <CharacterSheet character={selectedCharacter} onBack={() => setSelectedCharacter(null)} isMaster={isMaster} />
+      {activeCharacter ? (
+        <CharacterSheet character={activeCharacter} onBack={() => setActiveCharacter(null)} isMaster={isMaster} />
       ) : (
     <div className="w-full max-w-5xl mx-auto p-4 md:p-8">
       <ModalManager modalState={modalState} closeModal={closeModal} />
@@ -167,7 +176,7 @@ const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
         </div>
       </header>
       <main>
-        <CharacterList user={user} onSelectCharacter={setSelectedCharacter} handleImportClick={handleImportClick} handleDeleteClick={handleDeleteClick} handleCreateClick={handleCreateClick} characters={characters} isMaster={isMaster} viewingAll={viewingAll} onToggleView={setViewingAll} />
+        <CharacterList user={user} onSelectCharacter={setActiveCharacter} handleImportClick={handleImportClick} handleDeleteClick={handleDeleteClick} handleCreateClick={handleCreateClick} characters={characters} isMaster={isMaster} viewingAll={viewingAll} onToggleView={setViewingAll} onExportClick={handleExportClick} />
       </main>
     </div>
       )}

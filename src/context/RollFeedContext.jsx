@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useCallback, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSystem } from '@/context/SystemContext';
-import { addItemToFeed, subscribeToFeed } from '@/services/sessionService';
+import { addItemToFeed, subscribeToFeedWithLimit } from '@/services/sessionService'; // Alterado para a função com limite
 
 const RollFeedContext = createContext();
 
@@ -22,8 +22,9 @@ export const RollFeedProvider = ({ children }) => {
 
     setIsLoading(true);
     console.log("[DIAGNÓSTICO ROLLFEED] Assinando feed global:", GLOBAL_SESSION_PATH);
-    // Passa o caminho global para a função de inscrição
-    const unsubscribe = subscribeToFeed(GLOBAL_SESSION_PATH, (items) => {
+    
+    // ALTERADO: Usando a função que limita os resultados para 50.
+    const unsubscribe = subscribeToFeedWithLimit(GLOBAL_SESSION_PATH, 50, (items) => {
       setFeedItems(items);
       setIsLoading(false);
       console.log("[DIAGNÓSTICO ROLLFEED] Feed atualizado. Total de itens:", items.length);

@@ -7,7 +7,6 @@ import { usePartyHealth } from '@/context/PartyHealthContext';
 const PartyHealthMonitor = ({ onCharacterClick }) => {
   const { isMaster } = useAuth();
   const { allCharacters, selectedCharIds, partyHealthData, toggleCharacterSelection } = usePartyHealth();
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [showSelector, setShowSelector] = useState(false);
 
     const handleCharacterClick = (char) => {
@@ -38,24 +37,9 @@ const PartyHealthMonitor = ({ onCharacterClick }) => {
     );
   };
 
-  if (isCollapsed) {
-    return (
-      <div 
-        className="fixed top-4 left-4 bg-btnHighlightBg text-btnHighlightText p-3 rounded-full shadow-lg cursor-pointer hover:opacity-90 z-50"
-        onClick={() => setIsCollapsed(false)}
-        title="Expandir Monitor de Grupo"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-5M3 4h5V9" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 16l-4-4M3 8l4 4" />
-        </svg>
-      </div>
-    );
-  }
-
   return (
     <div className="fixed top-4 left-4 w-full max-w-xs bg-bgSurface/90 backdrop-blur-md rounded-lg shadow-2xl border border-bgElement flex flex-col z-50">
-      <div className="flex justify-between items-center p-3 bg-bgElement cursor-pointer" onClick={() => setIsCollapsed(true)}>
+      <div className="flex justify-between items-center p-3 bg-bgElement">
         <h3 className="font-bold text-textAccent">Monitor de Grupo</h3>
         <div className="flex items-center">
           <button 
@@ -64,9 +48,6 @@ const PartyHealthMonitor = ({ onCharacterClick }) => {
             title="Selecionar Personagens"
           >
             ⚙️
-          </button>
-          <button className="text-textSecondary hover:text-textPrimary" title="Recolher">
-            —
           </button>
         </div>
       </div>
