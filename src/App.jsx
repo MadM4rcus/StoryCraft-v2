@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from './hooks/useAuth';
 import SystemRouter from './components/SystemRouter';
 import LoginScreen from './components/LoginScreen';
+import GlobalControls from './components/GlobalControls'; // 1. Importamos o novo componente
 import RollFeed from './components/RollFeed'; // RollFeed é um overlay global, pode ser renderizado aqui
 
 function hexToRgb(hex) {
@@ -71,6 +72,7 @@ function App() {
       {user ? ( // Se o usuário estiver logado, mostra o roteador de sistema e o RollFeed
         <>
           <SystemRouter activeTheme={activeTheme} setActiveTheme={setActiveTheme} previewTheme={previewTheme} setPreviewTheme={setPreviewTheme} />
+          <GlobalControls /> {/* 2. Adicionamos o componente aqui */}
           <RollFeed /> {/* RollFeed é um overlay global, pode ficar aqui */}
         </>
       ) : <LoginScreen />} {/* Se não estiver logado, mostra a tela de login */}

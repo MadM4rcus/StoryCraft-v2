@@ -2,9 +2,9 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useCharacter } from '@/hooks/useCharacter';
 import { useAuth } from '@/hooks/useAuth';
 import { useRollFeed } from '@/context/RollFeedContext';
+import { useGlobalControls } from '@/context/GlobalControlsContext'; // 1. Importa o hook do novo contexto
 import { useSystem } from '@/context/SystemContext';
 import ModalManager from '@/components/ModalManager';
-import FloatingNav from './FloatingNav'; 
 import { CharacterInfo, MainAttributes, Wallet, DiscordIntegration } from './CorePanels';
 import { InventoryList, EquippedItemsList, SkillsList, PerksList } from './ListSections';
 import SpecializationsList, { PREDEFINED_SKILLS, ATTR_MAP } from './Specializations';
@@ -26,12 +26,10 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
     return () => setActiveCharacter(null);
   }, [character, setActiveCharacter]);
 
-  // Novo estado para controlar o modo de edição vs. modo de jogo
-  const [isEditMode, setIsEditMode] = useState(false);
+  // 2. Usa o estado de edição do contexto global
+  const { isEditMode } = useGlobalControls();
   // Novo estado para armazenar o mapa de atributos totais vindo do CorePanels
   const [totalAttributesMap, setTotalAttributesMap] = useState({});
-
-  const canToggleEditMode = isMaster || (user && user.uid === character?.ownerUid);
 
   const [modalState, setModalState] = useState({ type: null, props: {} });
   const closeModal = () => setModalState({ type: null, props: {} });
@@ -576,17 +574,11 @@ const handleExecuteFormulaAction = async (action) => {
   return (
     <div className="w-full max-w-4xl mx-auto p-4">
           <ModalManager modalState={modalState} closeModal={closeModal} />
-          <FloatingNav character={character} />
           
           <div className="flex justify-between items-center mb-4">
               <button onClick={onBack} className="px-4 py-2 bg-bgSurface hover:opacity-80 text-textPrimary font-bold rounded-lg">
                   ← Voltar para a Lista
-              </button>
-              {canToggleEditMode && (
-                  <button onClick={() => setIsEditMode(!isEditMode)} className="px-4 py-2 bg-btnHighlightBg text-btnHighlightText font-bold rounded-lg shadow-lg">
-                      {isEditMode ? '🔒 Sair do Modo Edição' : '✏️ Entrar no Modo Edição'}
-                  </button>
-              )}
+              </button> 
           </div>
 
       <div id="info"><CharacterInfo character={character} onUpdate={updateCharacterField} isMaster={isMaster} isEditMode={isEditMode} isCollapsed={character.collapsedStates?.info} toggleSection={() => toggleSection('info')} /></div>
