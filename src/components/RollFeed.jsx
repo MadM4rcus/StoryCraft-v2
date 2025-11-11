@@ -1,11 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRollFeed } from '@/context/RollFeedContext';
+import { useUIState } from '@/context/UIStateContext';
 import { useAuth } from '@/hooks/useAuth';
 import ChatInput from '@/components/ChatInput';
 
 const RollFeed = () => {
   const { feedItems, isLoading } = useRollFeed();
+  const { layout, updateLayout } = useUIState();
 
+  const togglePosition = () => {
+    updateLayout({ rollFeed: layout.rollFeed === 'bottom-left' ? 'top-right' : 'bottom-left' });
+  };
+  
   const formatTimestamp = (timestamp) => {
     // O timestamp do Firebase pode ser null (enquanto está sendo setado) ou um objeto com toDate()
     if (!timestamp || typeof timestamp.toDate !== 'function') return '';
@@ -191,15 +197,36 @@ const RollFeed = () => {
     }
   }, [feedItems]);
 
+  // Define as classes de posicionamento e tamanho com base no layout
+  const getPositionClasses = () => {
+    const { partyMonitor, rollFeed } = layout;
+
+    if (rollFeed === 'top-right') {
+      return 'top-4 right-4 w-full max-w-sm h-[60vh]';
+    }
+
+    // Padrão: bottom-left
+    if (partyMonitor === 'top-left') {
+      return 'bottom-4 left-4 w-full max-w-sm h-[calc(100vh-8rem-100px)]'; // Altura ajustada se o monitor estiver acima
+    }
+    return 'bottom-4 left-4 w-full max-w-sm h-[calc(100vh-8rem)]'; // Altura maior se o monitor não estiver acima
+  };
+
   return (
-    <div className="fixed bottom-4 left-4 w-full max-w-sm h-[60vh] bg-bgSurface/90 backdrop-blur-md rounded-lg shadow-2xl border border-bgElement flex flex-col z-50">
+    <div className={`fixed ${getPositionClasses()} bg-bgSurface/90 backdrop-blur-md rounded-lg shadow-2xl border border-bgElement flex flex-col z-40`}>
       <div 
         className="flex justify-between items-center p-3 bg-bgElement cursor-pointer"
         // O botão de recolher foi movido para o GlobalControls
       >
         <h3 className="font-bold text-textAccent">Feed de Rolagens</h3>
-        <button className="text-textSecondary hover:text-textPrimary">
-          —
+        <button
+          onClick={togglePosition}
+          className="text-textSecondary hover:text-textPrimary"
+          title={layout.rollFeed === 'bottom-left' ? 'Mover para o canto superior direito' : 'Mover para o canto inferior esquerdo'}
+        >
+          <span className="text-xl">
+            🔃
+          </span>
         </button>
       </div>
       <div ref={feedRef} className="flex-grow p-3 overflow-y-auto flex flex-col-reverse">

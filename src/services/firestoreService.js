@@ -97,12 +97,12 @@ export const deleteCharacter = async (basePath, userId, characterId) => {
  * @returns {Promise<object|null>} As configurações do usuário ou null se não encontradas.
  */
 export const getUserSettings = async (basePath, userId) => {
-  if (!userId || !basePath) return null;
-  // CORRIGIDO: Usa o basePath dinâmico em vez de "storycraft"
-  const settingsDocRef = doc(db, `${basePath}/users/${userId}`); 
   try {
-    const docSnap = await getDoc(settingsDocRef);
-    return docSnap.exists() ? docSnap.data() : null;
+    if (!userId || !basePath) return null;
+    const userDocRef = doc(db, `${basePath}/users/${userId}`);
+    const docSnap = await getDoc(userDocRef);
+    // Retorna apenas o campo 'settings' do documento do usuário.
+    return docSnap.exists() ? docSnap.data().settings : null;
   } catch (error) {
     console.error("Erro ao buscar configurações do usuário:", error);
     return null;
@@ -116,10 +116,14 @@ export const getUserSettings = async (basePath, userId) => {
  * @param {object} settings - O objeto de configurações a ser salvo.
  */
 export const saveUserSettings = async (basePath, userId, settings) => {
-  if (!userId || !basePath) return;
-  // CORRIGIDO: Usa o basePath dinâmico em vez de "storycraft"
-  const settingsDocRef = doc(db, `${basePath}/users/${userId}`); 
-  await setDoc(settingsDocRef, settings, { merge: true });
+  if (!userId || !basePath || !settings) return;
+  const userDocRef = doc(db, `${basePath}/users/${userId}`);
+  try {
+    // Salva as configurações dentro de um campo 'settings' no documento do usuário.
+    await setDoc(userDocRef, { settings: settings }, { merge: true });
+  } catch (error) {
+    console.error("Erro ao salvar configurações do usuário:", error);
+  }
 };
 
 

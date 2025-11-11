@@ -38,7 +38,7 @@ const GlobalControls = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isRollPanelOpen, setIsRollPanelOpen] = useState(false);
   const { isEditMode, setIsEditMode, setIsThemeEditorOpen } = useGlobalControls();
-  const { isRollFeedVisible, setIsRollFeedVisible, isPartyHealthMonitorVisible, setIsPartyHealthMonitorVisible } = useUIState(); // 2. Usar o estado de visibilidade
+  const { isRollFeedVisible, setIsRollFeedVisible, isPartyHealthMonitorVisible, setIsPartyHealthMonitorVisible, layout, updateLayout } = useUIState(); // 2. Usar o estado de visibilidade
   const { user, isMaster } = useAuth();
   const { activeCharacter, setActiveCharacter } = useSystem(); // 3. Pega o personagem ativo e o setter
   const { addRollToFeed } = useRollFeed();
@@ -83,6 +83,10 @@ const GlobalControls = () => {
     });
   };
 
+  const toggleRollFeedPosition = () => {
+    updateLayout({ rollFeed: layout.rollFeed === 'bottom-left' ? 'top-right' : 'bottom-left' });
+  };
+
   if (isCollapsed) {
     return (
       <div
@@ -96,7 +100,7 @@ const GlobalControls = () => {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-40 bg-bgSurface/90 backdrop-blur-md p-2 rounded-xl shadow-2xl border border-bgElement flex flex-col">
+    <div className="fixed bottom-4 right-4 z-50 bg-bgSurface/90 backdrop-blur-md p-2 rounded-xl shadow-2xl border border-bgElement flex flex-col">
       <div 
         className="flex justify-between items-center pb-2 mb-2 border-b border-bgElement cursor-pointer"
         onClick={() => setIsCollapsed(true)}
@@ -107,36 +111,38 @@ const GlobalControls = () => {
         </button>
       </div>
 
-      <div className="p-2 flex flex-col space-y-2 max-h-[70vh] overflow-y-auto">
+      {/* Container principal dos botões, agora com grid */}
+      <div className="p-1">
         {/* Botões de visibilidade de painéis (sempre visíveis quando expandido) */}
-        <button
-          onClick={() => setIsRollFeedVisible(!isRollFeedVisible)}
-          className="w-full px-3 py-2 text-sm font-bold rounded-md shadow-md transition-colors bg-bgElement text-textPrimary hover:bg-opacity-80"
-          title="Mostrar/Ocultar o painel de Chat e Rolagens."
-        >
-          {isRollFeedVisible ? 'Ocultar Chat' : 'Mostrar Chat'}
-        </button>
-        <button
-          onClick={() => setIsPartyHealthMonitorVisible(!isPartyHealthMonitorVisible)}
-          className="w-full px-3 py-2 text-sm font-bold rounded-md shadow-md transition-colors bg-bgElement text-textPrimary hover:bg-opacity-80"
-          title="Mostrar/Ocultar o painel de Monitor de Grupo."
-        >
-          {isPartyHealthMonitorVisible ? 'Ocultar Grupo' : 'Mostrar Grupo'}
-        </button>
-
-        {/* Divisor para separar os tipos de botões */}
-        {(!activeCharacter || activeCharacter) && <hr className="border-bgElement my-2" />}
-
+        <div className="grid grid-cols-2 gap-2 mb-2">
+          <button
+            onClick={() => setIsRollFeedVisible(!isRollFeedVisible)}
+            className="px-3 py-2 text-sm font-bold rounded-md shadow-md transition-colors bg-bgElement text-textPrimary hover:bg-opacity-80"
+            title="Mostrar/Ocultar o painel de Chat e Rolagens."
+          >
+            {isRollFeedVisible ? 'Ocultar Chat' : 'Mostrar Chat'}
+          </button>
+          <button
+            onClick={() => setIsPartyHealthMonitorVisible(!isPartyHealthMonitorVisible)}
+            className="px-3 py-2 text-sm font-bold rounded-md shadow-md transition-colors bg-bgElement text-textPrimary hover:bg-opacity-80"
+            title="Mostrar/Ocultar o painel de Monitor de Grupo."
+          >
+            {isPartyHealthMonitorVisible ? 'Ocultar Grupo' : 'Mostrar Grupo'}
+          </button>
+        </div>
 
         {/* Botões que aparecem quando NÃO há ficha ativa (no Dashboard) */}
         {!activeCharacter && (
-          <button
-            onClick={() => setIsThemeEditorOpen(true)}
-            className="w-full px-3 py-2 text-sm font-bold rounded-md shadow-md transition-colors bg-bgElement text-textPrimary hover:bg-opacity-80"
-            title="Abrir o editor de temas visuais para a aplicação."
-          >
-            🎨 Editor de Temas
-          </button>
+          <>
+            <hr className="border-bgElement my-2" />
+            <button
+              onClick={() => setIsThemeEditorOpen(true)}
+              className="w-full px-3 py-2 text-sm font-bold rounded-md shadow-md transition-colors bg-bgElement text-textPrimary hover:bg-opacity-80"
+              title="Abrir o editor de temas visuais para a aplicação."
+            >
+              🎨 Editor de Temas
+            </button>
+          </>
         )}
 
         {/* Botões que aparecem QUANDO uma ficha V1 está ativa */}
@@ -149,22 +155,31 @@ const GlobalControls = () => {
             >
               ← Voltar para a Lista
             </button>
-            {canToggleEditMode && (
-            <button 
-              onClick={() => setIsEditMode(!isEditMode)} 
-              className={`w-full px-3 py-2 text-sm font-bold rounded-md shadow-md transition-colors ${isEditMode ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-bgElement text-textPrimary hover:bg-opacity-80'}`}
-              title="Ativa/Desativa a edição em todas as seções da ficha."
-            >
-              {isEditMode ? '🔒 Sair Edição' : '✏️ Modo Edição'}
-            </button>
-            )}
             <hr className="border-bgElement my-2" />
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2 mb-2">
+              {canToggleEditMode && (
+              <button 
+                onClick={() => setIsEditMode(!isEditMode)} 
+                className={`w-full px-3 py-2 text-sm font-bold rounded-md shadow-md transition-colors ${isEditMode ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-bgElement text-textPrimary hover:bg-opacity-80'}`}
+                title="Ativa/Desativa a edição em todas as seções da ficha."
+              >
+                {isEditMode ? '🔒 Sair Edição' : '✏️ Modo Edição'}
+              </button>
+              )}
+            </div>
+            <div className="grid grid-cols-5 gap-2">
               {V1_SECTIONS.map(section => (
                 <NavButton key={section.href} href={section.href} title={section.title}>
                   {section.icon}
                 </NavButton>
               ))}
+              {/* Botão para abrir o editor de temas */}
+              <NavButton
+                href="#"
+                title="Editor de Temas"
+              >
+                <span onClick={(e) => { e.preventDefault(); setIsThemeEditorOpen(true); }}>🎨</span>
+              </NavButton>
               {/* Lógica do QuickRoll Integrada */}
               <div className="relative col-span-1">
                 <button

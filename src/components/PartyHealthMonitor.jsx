@@ -2,12 +2,18 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useUIState } from '@/context/UIStateContext';
 import { usePartyHealth } from '@/context/PartyHealthContext';
 
 const PartyHealthMonitor = ({ onCharacterClick }) => {
   const { isMaster } = useAuth();
+  const { layout, updateLayout } = useUIState();
   const { allCharacters, selectedCharIds, partyHealthData, toggleCharacterSelection } = usePartyHealth();
   const [showSelector, setShowSelector] = useState(false);
+
+  const togglePosition = () => {
+    updateLayout({ partyMonitor: layout.partyMonitor === 'top-left' ? 'top-right' : 'top-left' });
+  };
 
     const handleCharacterClick = (char) => {
     if (onCharacterClick) {
@@ -37,11 +43,20 @@ const PartyHealthMonitor = ({ onCharacterClick }) => {
     );
   };
 
+  const positionClass = layout.partyMonitor === 'top-left' ? 'left-4' : 'right-4';
+
   return (
-    <div className="fixed top-4 left-4 w-full max-w-xs bg-bgSurface/90 backdrop-blur-md rounded-lg shadow-2xl border border-bgElement flex flex-col z-50">
+    <div className={`fixed top-4 ${positionClass} w-full max-w-xs bg-bgSurface/90 backdrop-blur-md rounded-lg shadow-2xl border border-bgElement flex flex-col z-40`}>
       <div className="flex justify-between items-center p-3 bg-bgElement">
         <h3 className="font-bold text-textAccent">Monitor de Grupo</h3>
         <div className="flex items-center">
+          <button
+            className="text-textSecondary hover:text-textPrimary mr-2"
+            onClick={togglePosition}
+            title={layout.partyMonitor === 'top-left' ? 'Mover para a direita' : 'Mover para a esquerda'}
+          >
+            <span className="text-xl">🔃</span>
+          </button>
           <button 
             className="text-textSecondary hover:text-textPrimary mr-2"
             onClick={(e) => { e.stopPropagation(); setShowSelector(!showSelector); }}
@@ -70,7 +85,7 @@ const PartyHealthMonitor = ({ onCharacterClick }) => {
         </div>
       )}
 
-      <div className="flex-grow p-3 overflow-y-auto space-y-2 max-h-[60vh]">
+      <div className="flex-grow p-3 overflow-y-auto space-y-2 max-h-[calc(100vh-150px)]">
         {partyHealthData.length > 0 ? (
           partyHealthData.map(renderCharacterHealth)
         ) : (

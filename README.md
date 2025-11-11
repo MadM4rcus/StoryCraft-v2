@@ -55,8 +55,28 @@ Aqui é onde podemos rastrear as próximas grandes tarefas.
 
 Nova prioridade: 
 
-Consertar açoes e atributos bugados
+quero fazer o chat ser ajustavel. o monitor de grupo tbm. 
 
+na verdade to pensando aqui. 
+
+o monitor de grupo fica no topo da tela. e ai a pessoa poderia escolher se quer que fique no canto esquerdo ou direito superior. 
+
+
+já o chat, que fica no canto esquerdo inferior, caso a pessoa decida jogar o monitor de grupo para a direita, o chat teria todo aquele espaço da esquerda disponivel. 
+
+ou no caso do mestre do jogo que tem que lidar com muitas fichas no monitor de grupo ele pode deixar o monitor na parte esquerda e jogar o chat para a parte direita. ai o chat ficaria na parte direita superior
+
+na parte direita inferior fica o controle. 
+
+na parte esquerda superior fica o monitor de grupo que pode ser expandido até em baixo caso tenha muitas e muitas fichas. 
+caso o a tela não tenha espaço suficiente para encaixar tantas fichas no monitor de grupo, ele deve  reconhecer que está grande de mais, e ser possiver dar scroll, dentro do monitor para rolar entre as fichas. 
+
+
+todo esse layout e setup deve ser salvo nas informaçoes do usuario. o estado que deixou. etec. nesse caminho aqui: 
+
+/artifacts2/storycraft/users/U9tnzrHslUPJPRh5z3XJaEpRXqm2
+
+esse é o exemplo do meu usuario. mas considere o mesmo para cada usuario diferente.
 
 file tree
 
