@@ -1,4 +1,4 @@
-// src/components/ListSections.jsx
+// src/systems/storycraft/ListSections.jsx
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
@@ -38,7 +38,7 @@ const CompactWallet = ({ wallet, totalWeight, onToggleManage, canEdit }) => {
                         <div key={tier.name} className="flex items-baseline" title={`Florim de ${tier.name}`}>
                             {/* Busca o valor (que será 0 no caso padrão "0 FB") */}
                             <span className={`font-bold text-lg ${tier.color}`}>{wallet?.[tier.name] || 0}</span>
-                            <span className="text-sm text-textSecondary ml-1">F{tier.name[0]}</span> 
+                            <span className="text-sm text-textSecondary ml-1">F{tier.name[0]}</span>
                         </div>
                     ))}
                 </div>
@@ -53,7 +53,7 @@ const CompactWallet = ({ wallet, totalWeight, onToggleManage, canEdit }) => {
                         }
                     </span>
                     {canEdit && (<button
-                        onClick={onToggleManage} // O botão de gerenciar só aparece se puder editar, mas não precisa do modo edição.
+                        onClick={onToggleManage} // O botão de gerenciar só aparece se puder editar.
                         className="px-3 py-1 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText text-sm font-bold rounded-md whitespace-nowrap"
                     >
                         Gerenciar Carteira
@@ -64,7 +64,7 @@ const CompactWallet = ({ wallet, totalWeight, onToggleManage, canEdit }) => {
     );
 };
 
-// --- NOVO: Componente de Resumo da Carteira (VERSÃO "OVER 9000") ---
+// --- NOVO: Componente de Resumo da Carteira (VERSÃO "LOJA STORYCRAFT") ---
 const WalletSummaryCard = ({ totalGoldValue, totalCoinWeight }) => {
     
     // --- Helper para pegar uma piada aleatória ---
@@ -76,65 +76,56 @@ const WalletSummaryCard = ({ totalGoldValue, totalCoinWeight }) => {
             return pickRandom([
                 "0 FO. Literalmente. Chora pro mestre te dar uma esmolinha.",
                 "Sua carteira tem teias de aranha. Que pobrinho!",
-                "Até um mendigo tem mais que você. Vergonhoso.",
                 "Sua carteira ecoa com o som do... nada.",
-                "Poeira e uma mosca morta. É tudo que tem aqui.",
-                "Você é a definição de 'capital inicial negativo'."
             ]);
         }
         if (goldValue < 1) { // Menos de 1 Ouro (ex: 10 Bronze = 0.1 FO)
             return pickRandom([
-                `Você tem apenas ${Math.floor(goldValue * 100)} Bronze? Isso é o bastante pra se alimentar hoje?`,
+                `Você tem apenas ${Math.floor(goldValue * 100)} Bronze? Isso não paga nem uma Refeição Simples (0.5 FO)!`,
                 "Isso mal paga uma cerveja aguada na pior taverna da cidade.",
-                "Parabéns, você pode comprar *meia* caneca de cerveja.",
-                "Isso não compra nem um pão mofado.",
                 `Sério? ${Math.floor(goldValue * 100)} Bronze? O rato do porão tem mais.`
             ]);
         }
         if (goldValue < 20) {
             return pickRandom([
-                "Dinheiro de bolso. Suficiente para alguns suprimentos e uma boa noite na estalagem.",
-                "Não esbanje. Isso é o bastante para o básico, e só.",
-                "Você é 'economicamente funcional'. Que chato.",
-                "Ok, você não vai morrer de fome hoje. Talvez.",
-                "Dinheiro para o 'pão e circo'. No seu caso, só o pão."
+                "Dinheiro de bolso. Suficiente para o básico.",
+                "Já dá pra comprar uma Espada Longa (15 FO) e ainda sobra troco!",
+                "Quase um Kit de Ladrão (25 FO). Quase...",
             ]);
         }
         if (goldValue < 100) {
             return pickRandom([
                 "Uma bolsa respeitável. Você não é um zé-ninguém.",
-                "Opa! Já dá pra impressionar o taverneiro e pedir a cerveja 'premium'.",
-                "Você está acima da linha da pobreza. Bem-vindo ao clube.",
-                "Já dá pra começar a pensar em comprar um equipamento de aço. Usado, claro.",
-                "Olha só, o 'quase-rico' chegou."
+                "Opa! Dá pra comprar uma Roupa Nobre (50 FO) e impressionar o Duque.",
+                "Tá sonhando com aquele Arco Longo (100 FO)? Falta pouco!",
             ]);
         }
         if (goldValue < 500) {
             return pickRandom([
                 "Nossa, o ferreiro vai ficar feliz quando te ver!",
-                "Dá pra comprar um cavalo decente... ou 50 galinhas. Você decide.",
                 "Isso é mais do que um guarda da cidade ganha em um ano.",
-                "Cheiro de equipamento novo no ar.",
-                "O ferreiro está esfregando as mãos esperando sua visita."
+                "Dá pra comprar um cavalo decente (75 FO)... ou 150 Refeições Simples (0.5 FO).",
             ]);
         }
         if (goldValue < 2000) {
             return pickRandom([
-                "Quanto dinheiro! Já olhou o manual da loja StoryCraft? Aposto que tem como gastar um pouco disso lá.",
-                "Você podia contratar um pequeno exército de mercenários... por um dia.",
-                "Você está oficialmente 'rico'. Tente não ser assaltado.",
-                "Você é o 1% da cidade. Parabéns, seu capitalista.",
-                "O Mestre podia jogar uns 3 ladrões em você agora mesmo..."
+                "Isso é dinheiro de Mosquete (500 FO)! Vai começar uma guerra?",
+                "Você podia comprar um Grifo (1.500 FO) e sair voando por aí!",
+                "Cheiro de equipamento novo no ar. Que tal uma Couraça (500 FO)?",
             ]);
         }
-        // Mais de 2000 Ouro
+        if (goldValue < 10000) {
+            return pickRandom([
+                "Você podia comprar um DRAGÃO JOVEM (5.000 FO)?! Que nível é essa campanha?!",
+                "Tá na hora de comprar um Encantamento Lendário (5.000 FO), hein?",
+                "Com essa grana, você podia ajudar uns camponeses. Ou comprar uma Poção Rúnica de Cura (3.000 FO).",
+            ]);
+        }
+        // Mais de 10000 Ouro
         return pickRandom([
-            "Você podia comprar uma pequena vila. Está na hora de ajudar uns camponeses!",
-            "Com esse dinheiro, você podia subornar o capitão da guarda... ou o prefeito.",
-            "Você tem o bastante para se aposentar. Mas quem quer isso quando se pode comprar itens mágicos, não é?",
-            "Você podia comprar uma casa. Ou um barão falido.",
-            "Seu dinheiro tem dinheiro.",
-            "Você está a um passo de virar o vilão da campanha. O Tio Patinhas."
+            "Você tem dinheiro pra um Encantamento Titânico (20.000 FO)?!",
+            "Você é o 1% da cidade. Parabéns, seu capitalista.",
+            "Já pensou em comprar um Navio Voador (30.000 FO)? Só digo isso.",
         ]);
     };
 
@@ -152,58 +143,54 @@ const WalletSummaryCard = ({ totalGoldValue, totalCoinWeight }) => {
             return pickRandom([
                 "Alguns trocados no bolso. Você nem sente o peso.",
                 "Trocadinhos. Nem faz volume.",
-                "Peso de 3 penas e meia."
             ]);
         }
-        if (weightInGrams < 500) {
+        if (weightInGrams < 500) { // Menos de 0.5kg
             return pickRandom([
                 "Já dá pra fazer 'jingle jingle'. Começando a ficar divertido.",
-                "Peso de um cantil cheio. Já dá pra sentir o tilintar.",
-                "Nada que um cinto forte não segure."
+                "Isso é o peso de uma Adaga (0,5 kg).",
             ]);
         }
         if (weightInGrams < 1000) { // Menos de 1kg
             return pickRandom([
                 "Quase 1kg de metal. Sua bolsa está começando a pesar no cinto.",
-                "Isso é o peso de uma adaga. Cuidado para as calças não caírem.",
-                "Peso de uma garrafa de vinho. Prioridades, eu entendo."
+                "Isso é o peso de uma Espada Curta (1 kg).",
+                "Peso de uma garrafa de vinho. Prioridades, eu entendo.",
             ]);
         }
         if (weightInGrams < 2500) { // 1kg - 2.5kg
             return pickRandom([
                 "Isso é o peso de um abacaxi! 🍍",
-                "Você está sentindo o 'treino de perna'? Suas moedas contam como carga.",
-                "Sua bolsa de moedas virou uma arma de arremesso. +1 de dano de concussão."
+                "Você está carregando uma Espada Longa (1,5 kg) só em moedas.",
+                "Sua bolsa de moedas virou uma arma de arremesso."
             ]);
         }
         if (weightInGrams < 5000) { // 2.5kg - 5kg
             return pickRandom([
                 "Você está carregando o peso de um gato doméstico gordo em moedas! 🐈",
                 "Você é um cofrinho humano.",
-                "O Mestre devia te dar Desvantagem em Furtividade com esse barulho todo."
+                "Isso é mais pesado que uma Besta Pesada (4,5 kg)!",
             ]);
         }
-        if (weightInGGrams < 10000) { // 5kg - 10kg
+        if (weightInGrams < 10000) { // 5kg - 10kg
             return pickRandom([
                 "Isso é o peso de uma bola de boliche! 🎳 Você está maluco?",
                 "Qualquer um pode te ouvir chegando a um quilômetro de distância.",
-                "Sua coluna vai se aposentar mais cedo que você.",
-                "Procure uma casa de câmbio. Ou um quiroprata."
+                "Isso é o peso de uma Armadura de Couro (5 kg) inteira!",
             ]);
         }
          // Mais de 10kg
         return pickRandom([
             "Mais de 10kg! Você está carregando o peso de um cachorro pequeno! 🐶",
             "Você não é um aventureiro, é uma mula de carga. Vá a um banco!",
-            "Por que você está fazendo isso? Compre gemas! Barras de ouro! Qualquer coisa!",
-            "O ferreiro podia derreter isso e fazer um escudo. Literalmente."
+            "Você está carregando o peso de uma Tenda Grande (10 kg) em moedas.",
         ]);
     };
 
     const weightInGrams = totalCoinWeight;
     // Pega emprestada a lógica de g/kg do CompactWallet
-    const weightDisplay = weightInGrams >= 1000 
-        ? `${(weightInGrams / 1000).toFixed(2)}kg` 
+    const weightDisplay = weightInGrams >= 1000
+        ? `${(weightInGrams / 1000).toFixed(2)}kg`
         : `${weightInGrams}g`;
 
     return (
@@ -229,7 +216,8 @@ const WalletSummaryCard = ({ totalGoldValue, totalCoinWeight }) => {
         </div>
     );
 };
-// --- NOVO: Componente da Carteira de Florins ---
+
+// --- Constante das Moedas ---
 const CURRENCY_TIERS = [
     { name: 'Bronze', color: 'text-yellow-600', value: 1 },
     { name: 'Prata', color: 'text-gray-400', value: 10 },
@@ -240,10 +228,10 @@ const CURRENCY_TIERS = [
     { name: 'Etherium', color: 'text-purple-400', value: 1000000 },
 ];
 
+// --- Componente da Carteira de Florins (Gerenciamento) ---
 const FlorinWallet = ({ wallet, onUpdate, canEdit, onClose, totalCoinWeight }) => {
     const [amounts, setAmounts] = useState({});
 
-    // --- ADICIONE ESTE BLOCO useMemo ABAIXO DO useState ---
     // Calcula o valor total de todas as moedas, convertido para Ouro
     const totalGoldValue = useMemo(() => {
         // Encontra o valor base do Ouro (que é 100)
@@ -308,7 +296,6 @@ const FlorinWallet = ({ wallet, onUpdate, canEdit, onClose, totalCoinWeight }) =
         <div className="mt-6 p-4 bg-bgInput rounded-lg border border-bgElement">
             <div className="flex justify-between items-center mb-3">
                 <h4 className="text-xl font-semibold text-textAccent">Gerenciar Carteira de Florins</h4>
-                {/* --- ADICIONE ESTE BOTÃO --- */}
                 <button
                     onClick={onClose}
                     className="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white text-sm font-bold rounded-md"
@@ -318,52 +305,47 @@ const FlorinWallet = ({ wallet, onUpdate, canEdit, onClose, totalCoinWeight }) =
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {CURRENCY_TIERS.map((tier, index) => (
+                    // Card da moeda (sem o col-span no último item)
                     <div key={tier.name} className={`flex flex-col p-2 bg-bgElement rounded-md`}>
                         <span className={`font-bold text-lg ${tier.color}`}>Florim de {tier.name}: {wallet?.[tier.name] || 0}</span>
                         
-                        {/* --- MUDANÇA 1: INPUT E BOTÕES "ADICIONAR/REMOVER" --- */}
+                        {/* Input e botões "Adicionar/Remover" */}
                         <div className="flex items-center gap-1 mt-2">
                             <input
                                 type="number"
                                 value={amounts[tier.name] || ''}
                                 onChange={(e) => setAmounts(prev => ({ ...prev, [tier.name]: e.target.value }))}
-                                // O input agora tem uma largura fixa para não quebrar o layout
-                                className="w-16 p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary text-center" 
+                                className="w-16 p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary text-center"
                                 placeholder="Valor"
                                 disabled={!canEdit}
                             />
-                            {/* O botão de "+" agora é "Adicionar" e usa o valor do input */}
                             <button onClick={() => handleUpdateCurrency(tier.name, 'add')} className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white font-bold rounded-md text-sm" disabled={!canEdit}>Adicionar</button>
-                            {/* O botão de "-" agora é "Remover" e usa o valor do input */}
                             <button onClick={() => handleUpdateCurrency(tier.name, 'remove')} className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white font-bold rounded-md text-sm" disabled={!canEdit}>Remover</button>
                         </div>
 
-                        {/* --- MUDANÇA 2: NOVOS BOTÕES +1 / -1 --- */}
+                        {/* Botões +1 / -1 */}
                         <div className="flex items-center gap-1 mt-1 justify-end">
-                            {/* Botões que usam a nova função handleUpdateCurrencyOne */}
                             <button onClick={() => handleUpdateCurrencyOne(tier.name, 'add')} className="w-8 h-6 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-md text-xs" disabled={!canEdit}>+1</button>
                             <button onClick={() => handleUpdateCurrencyOne(tier.name, 'remove')} className="w-8 h-6 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-md text-xs" disabled={!canEdit}>-1</button>
                         </div>
 
-                        {/* --- MUDANÇA 3: BOTÕES DE CONVERSÃO MAIS CLAROS --- */}
+                        {/* Botões de Conversão */}
                         <div className="flex justify-between mt-2 text-xs border-t border-bgInput pt-2">
                             {index > 0 && (
-                                // O "▼" virou "1 🡒 10" (Converter 1 desta para 10 da anterior)
                                 <button 
-                                    onClick={() => handleConvert(index, index - 1)} 
-                                    className="text-gray-400 hover:text-white disabled:opacity-50 font-mono" 
-                                    title={`Converter 1 ${tier.name} para 10 ${CURRENCY_TIERS[index - 1].name}`} 
+                                    onClick={() => handleConvert(index, index - 1)}
+                                    className="text-gray-400 hover:text-white disabled:opacity-50 font-mono"
+                                    title={`Converter 1 ${tier.name} para 10 ${CURRENCY_TIERS[index - 1].name}`}
                                     disabled={!canEdit}
                                 >
                                     1 🡒 10
                                 </button>
                             )}
                             {index < CURRENCY_TIERS.length - 1 && (
-                                // O "▲" virou "10 🡒 1" (Converter 10 desta para 1 da próxima)
                                 <button 
-                                    onClick={() => handleConvert(index, index + 1)} 
-                                    className="text-gray-400 hover:text-white ml-auto disabled:opacity-50 font-mono" 
-                                    title={`Converter 10 ${tier.name} para 1 ${CURRENCY_TIERS[index + 1].name}`} 
+                                    onClick={() => handleConvert(index, index + 1)}
+                                    className="text-gray-400 hover:text-white ml-auto disabled:opacity-50 font-mono"
+                                    title={`Converter 10 ${tier.name} para 1 ${CURRENCY_TIERS[index + 1].name}`}
                                     disabled={!canEdit}
                                 >
                                     10 🡒 1
@@ -372,6 +354,13 @@ const FlorinWallet = ({ wallet, onUpdate, canEdit, onClose, totalCoinWeight }) =
                         </div>
                     </div>
                 ))}
+
+                {/* --- PAINEL DE CURIOSIDADES --- */}
+                <WalletSummaryCard 
+                    totalGoldValue={totalGoldValue} 
+                    totalCoinWeight={totalCoinWeight} 
+                />
+
             </div>
         </div>
     );
@@ -439,11 +428,12 @@ const InventoryList = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
                     onUpdate={onUpdate}
                     canEdit={canEdit}
                     onClose={() => setIsWalletOpen(false)}
-                    totalCoinWeight={totalCoinWeight} // Adicione esta linha
+                    totalCoinWeight={totalCoinWeight} // Passando o peso para o painel
                 />
             )}
             {/* --- FIM DA LÓGICA DA CARTEIRA --- */}
-            {/* Adicionei um margin-top (mt-6) para separar a carteira dos itens */}
+            
+            {/* Grid de Itens */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-6">
                 {(localInventory || []).map(item => {
                     const isItemCollapsed = item.isCollapsed !== false;
@@ -468,7 +458,7 @@ const InventoryList = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
                                 placeholder="Nome do Item"
                                 disabled={!canEdit}
                             />
-                            <AutoResizingTextarea // O modo de edição dos itens já é controlado pelo canEdit
+                            <AutoResizingTextarea
                                 name="description"
                                 value={item.description}
                                 onChange={(e) => handleLocalChange(item.id, 'description', e.target.value)}
@@ -480,7 +470,7 @@ const InventoryList = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
                             {canEdit && (
                                 <div className="flex justify-end mt-2 pt-2 border-t border-bgInput/50">
                                     <button 
-                                        onClick={() => handleRemoveItem(item.id)} 
+                                        onClick={() => handleRemoveItem(item.id)}
                                         className="p-2 rounded-md text-textSecondary hover:bg-red-600/50 hover:text-white"
                                         title="Remover Item"
                                     ><span role="img" aria-label="Remover" className="text-xl">🗑️</span></button>
@@ -491,6 +481,7 @@ const InventoryList = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
                 })}
             </div>
             {(localInventory || []).length === 0 && <p className="text-textSecondary italic mt-4">Nenhum item no inventário.</p>}
+            {/* O botão de adicionar item só aparece se puder editar E estiver em modo de edição */}
             {canEdit && isEditMode && <div className="flex justify-center mt-4"><button onClick={handleAddItem} className="w-10 h-10 bg-green-600 hover:bg-green-700 text-white text-2xl font-bold rounded-full shadow-lg flex items-center justify-center">+</button></div>}
         </SheetSkin>
     );
@@ -568,7 +559,7 @@ const EquippedItemsList = ({ character, isMaster, onUpdate, onShowDiscord, isCol
                             {canEdit && (
                                 <div className="flex justify-end mt-2 pt-2 border-t border-bgInput/50">
                                     <button 
-                                        onClick={() => handleRemoveItem(item.id)} 
+                                        onClick={() => handleRemoveItem(item.id)}
                                         className="p-2 rounded-md text-textSecondary hover:bg-red-600/50 hover:text-white"
                                         title="Remover Item"
                                     ><span role="img" aria-label="Remover" className="text-xl">🗑️</span></button>
@@ -650,7 +641,7 @@ const SkillsList = ({ character, isMaster, onUpdate, isCollapsed, toggleSection,
                             {canEdit && (
                                 <div className="flex justify-end mt-2 pt-2 border-t border-bgInput/50">
                                     <button 
-                                        onClick={() => handleRemoveAbility(ability.id)} 
+                                        onClick={() => handleRemoveAbility(ability.id)}
                                         className="p-2 rounded-md text-textSecondary hover:bg-red-600/50 hover:text-white"
                                         title="Remover Habilidade"
                                     ><span role="img" aria-label="Remover" className="text-xl">🗑️</span></button>
@@ -771,7 +762,7 @@ const PerkItem = ({ perk, type, canEdit, onRemove, onChange, onOriginChange, onT
                 {canEdit && (
                     <div className="flex justify-end mt-2 pt-2 border-t border-bgInput/50">
                         <button 
-                            onClick={() => onRemove(type, perk.id)} 
+                            onClick={() => onRemove(type, perk.id)}
                             className="p-2 rounded-md text-textSecondary hover:bg-red-600/50 hover:text-white"
                             title={`Remover ${type === 'advantages' ? 'Vantagem' : 'Desvantagem'}`}
                         ><span role="img" aria-label="Remover" className="text-xl">🗑️</span></button>
