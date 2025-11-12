@@ -27,25 +27,32 @@ const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
   const [modalState, setModalState] = useState({ type: null, props: {} });
   const closeModal = () => setModalState({ type: null, props: {} });
 
+  // Otimização: Armazena o ID do tema ativo em um estado local
+  const [activeThemeId, setActiveThemeId] = useState(null);
+
   useEffect(() => {
     if (activeCharacter?.id && activeCharacter?.ownerUid) {
-        // CORREÇÃO: O characterDataCollectionRoot já contém o caminho completo.
-        const unsubscribe = onSnapshot(doc(db, `${characterDataCollectionRoot}/users/${activeCharacter.ownerUid}/characterSheets/${activeCharacter.id}`), async (docSnap) => {
-            if (docSnap.exists()) {
-                const characterData = docSnap.data();
-                if (characterData.activeThemeId) {
-                    const theme = await getThemeById(characterData.activeThemeId);
-                    setActiveTheme(theme);
-                } else {
-                    setActiveTheme(null);
-                }
-            }
-        });
-        return () => unsubscribe();
+      // Este listener apenas atualiza o ID do tema ativo, sem buscar o tema completo.
+      // Isso evita leituras no Firestore a cada mudança na ficha.
+      const unsubscribe = onSnapshot(doc(db, `${characterDataCollectionRoot}/users/${activeCharacter.ownerUid}/characterSheets/${activeCharacter.id}`), (docSnap) => {
+        setActiveThemeId(docSnap.exists() ? docSnap.data().activeThemeId : null);
+      });
+      return () => unsubscribe();
     } else {
+      // Limpa o ID e o tema se não houver personagem ativo.
+      setActiveThemeId(null);
       setActiveTheme(null); // Limpa o tema se não houver personagem ativo
     }
-  }, [activeCharacter, setActiveTheme, characterDataCollectionRoot, db]);
+  }, [activeCharacter, characterDataCollectionRoot]);
+
+  // Este novo useEffect só executa a busca do tema quando o ID do tema mudar.
+  useEffect(() => {
+    if (activeThemeId) {
+      getThemeById(activeThemeId).then(setActiveTheme);
+    } else {
+      setActiveTheme(null);
+    }
+  }, [activeThemeId, setActiveTheme]);
 
   const handleCloseEditor = () => {
     setIsThemeEditorOpen(false);

@@ -102,7 +102,6 @@ const ThemeEditor = ({ character, setPreviewTheme, onClose }) => {
       setModalState({ type: 'info', props: { message: 'Precisa ter uma ficha selecionada e um tema salvo para aplicar.', onConfirm: closeModal } });
       return;
     }
-    await saveTheme(selectedTheme);
     await applyThemeToCharacter(character.ownerUid, character.id, selectedTheme.id, characterDataCollectionRoot); // Passa characterDataCollectionRoot
     setModalState({ type: 'info', props: { message: `Tema "${selectedTheme.name}" aplicado!`, onConfirm: () => { closeModal(); onClose(); } }});
   };

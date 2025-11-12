@@ -13,8 +13,7 @@ export const getThemesForUser = async (userId) => {
   if (!userId) return [];
   try {
     const themesRef = collection(db, 'themes');
-    const q = query(themesRef, where("ownerUid", "==", userId));
-    const querySnapshot = await getDocs(q);
+    const querySnapshot = await getDocs(themesRef); // Remove o filtro por 'ownerUid'
     const themes = [];
     querySnapshot.forEach((doc) => {
       themes.push({ id: doc.id, ...doc.data() });
@@ -119,9 +118,9 @@ export const saveUserSettings = async (userId, settingsData) => {
 export const applyThemeToCharacter = async (ownerUid, characterId, themeId, characterDataCollectionRoot) => {
   if (!ownerUid || !characterId) return;
   try {
-    const charRef = doc(db, `${characterDataCollectionRoot}/${GLOBAL_APP_IDENTIFIER}/users/${ownerUid}/characterSheets/${characterId}`);
+    const charRef = doc(db, `${characterDataCollectionRoot}/users/${ownerUid}/characterSheets/${characterId}`);
     await setDoc(charRef, { activeThemeId: themeId }, { merge: true });
   } catch (error) {
-    console.error("Erro ao aplicar tema ao personagem:", error);
+    console.error("Erro ao aplicar tema ao personagem:", error); // O erro acontece aqui
   }
 };
