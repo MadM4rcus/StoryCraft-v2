@@ -264,7 +264,7 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
     }
 
     // Avalia a expressão matemática final de forma segura
-    const total = new Function('return ' + expressionForEval.replace(/[^0-9+\-*/().]/g, ''))();
+    const total = Math.floor(new Function('return ' + expressionForEval.replace(/[^0-9+\-*/().]/g, ''))());
     return { total, details };
   };
 

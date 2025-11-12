@@ -1,19 +1,30 @@
 import { useState, useEffect, useCallback } from 'react';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
-import { db } from '../services/firebase';
 
-const appId = "1:727724875985:web:97411448885c68c289e5f0";
+// Importa ambos os serviços
+import { doc as firestoreDoc, onSnapshot as firestoreOnSnapshot, setDoc as firestoreSetDoc } from 'firebase/firestore';
+import { db } from '../services/firebase';
+import * as localStore from '../services/localStoreService';
+
+import { useSystem } from '../context/SystemContext'; // 1. Importa o hook do SystemContext
 
 export const useCharacter = (characterId, ownerUid) => {
   const [character, setCharacter] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [collapsedStates, setCollapsedStates] = useState({});
+  const { characterDataCollectionRoot, dataSource } = useSystem(); // Obtém o dataSource
 
   useEffect(() => {
-    if (!characterId || !ownerUid) {
+    if (!characterId || !ownerUid || !characterDataCollectionRoot) {
       setLoading(false);
       return;
     }
-    const docRef = doc(db, `artifacts2/${appId}/users/${ownerUid}/characterSheets/${characterId}`);
+
+    // Escolhe as funções corretas com base na fonte de dados
+    const onSnapshot = dataSource === 'local' ? localStore.onSnapshot : firestoreOnSnapshot;
+    const doc = dataSource === 'local' ? localStore.doc : firestoreDoc;
+
+    const docPath = `${characterDataCollectionRoot}/users/${ownerUid}/characterSheets/${characterId}`;
+    const docRef = doc(dataSource === 'local' ? null : db, docPath); // 'db' só é necessário para o firestore
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
@@ -23,6 +34,7 @@ export const useCharacter = (characterId, ownerUid) => {
             try { deserializedData[key] = JSON.parse(deserializedData[key]); } catch (e) { /* Ignora */ }
           }
         });
+        setCollapsedStates(deserializedData.collapsedStates || {});
         setCharacter({ id: docSnap.id, ...deserializedData });
       } else {
         console.error("Personagem não encontrado!");
@@ -34,30 +46,34 @@ export const useCharacter = (characterId, ownerUid) => {
       setLoading(false);
     });
     return () => unsubscribe();
-  }, [characterId, ownerUid]);
+  }, [characterId, ownerUid, characterDataCollectionRoot, dataSource]); // Adiciona dataSource às dependências
 
   const updateCharacterField = useCallback(async (field, value) => {
-    if (!characterId || !ownerUid) return;
-    const docRef = doc(db, `artifacts2/${appId}/users/${ownerUid}/characterSheets/${characterId}`);
+    if (!characterId || !ownerUid || !characterDataCollectionRoot) return;
+
+    // Escolhe as funções corretas
+    const setDoc = dataSource === 'local' ? localStore.setDoc : firestoreSetDoc;
+    const doc = dataSource === 'local' ? localStore.doc : firestoreDoc;
+
+    const docRef = doc(dataSource === 'local' ? null : db, `${characterDataCollectionRoot}/users/${ownerUid}/characterSheets/${characterId}`);
     const valueToSave = typeof value === 'object' && value !== null ? JSON.stringify(value) : value;
     try {
       await setDoc(docRef, { [field]: valueToSave }, { merge: true });
     } catch (error) {
       console.error(`Erro ao atualizar o campo ${field}:`, error);
     }
-  }, [characterId, ownerUid]);
+  }, [characterId, ownerUid, characterDataCollectionRoot, dataSource]); // Adiciona dataSource
   
-  // NOVA FUNÇÃO PARA SALVAR O ESTADO COLAPSÁVEL
   const toggleSection = useCallback((sectionName) => {
-      if (character) {
-          const currentCollapsedState = character.collapsedStates?.[sectionName] ?? false;
-          const newCollapsedStates = {
-              ...character.collapsedStates,
-              [sectionName]: !currentCollapsedState
-          };
-          updateCharacterField('collapsedStates', newCollapsedStates);
-      }
-  }, [character, updateCharacterField]);
+    const newCollapsedStates = {
+      ...collapsedStates,
+      [sectionName]: !collapsedStates[sectionName]
+    };
+    // Atualiza o estado local imediatamente para uma UI responsiva
+    setCollapsedStates(newCollapsedStates);
+    // Envia a atualização para o Firestore
+    updateCharacterField('collapsedStates', newCollapsedStates);
+  }, [collapsedStates, updateCharacterField]);
 
 
   return { character, loading, updateCharacterField, toggleSection };

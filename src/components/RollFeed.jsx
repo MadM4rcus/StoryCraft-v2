@@ -62,18 +62,6 @@ const RollFeed = () => {
     // Determina se é uma ação puramente descritiva (sem acerto e sem resultados de dados).
     const isDescriptiveAction = !roll.acertoResult && (!roll.results || roll.results.length === 0);
 
-
-    const formula = roll.results.map((r, index) => (
-      <React.Fragment key={index}>
-        {index > 0 && ' + '}
-        {r.value === 1 && r.dice === 'd20' ? (
-          <span className="text-red-500 font-bold">{r.displayValue}</span>
-        ) : (
-          r.displayValue
-        )}
-      </React.Fragment>
-    ));
-
     return (
       <div key={roll.id} className="p-3 bg-bgElement rounded-md border border-bgInput mb-2">
         <div className="flex justify-between items-center text-xs text-textSecondary mb-1">
@@ -132,7 +120,7 @@ const RollFeed = () => {
         )}
         
             {/* Bloco de Dano/Resultado (Layout 2.0) */}
-            {(formula || !roll.acertoResult || (roll.criticals && roll.criticals.length > 0)) && (
+            {(roll.detailsText || !roll.acertoResult || (roll.criticals && roll.criticals.length > 0)) && (
           <div className="mt-2 pt-2 border-t border-bgInput/50">
             
             {/* Linha 1: Dano: 668 */}
@@ -144,9 +132,9 @@ const RollFeed = () => {
             </p>
             
             {/* Linha 2: <dados da magia normalmente> */}
-            {formula && (
+            {roll.detailsText && (
                 <p className="text-sm text-textSecondary break-words mt-2">
-                  {formula}
+                  {roll.detailsText}
                 </p>
             )}
             

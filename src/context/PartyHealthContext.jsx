@@ -1,10 +1,10 @@
 // src/context/PartyHealthContext.jsx
 
 import React, { createContext, useState, useContext, useCallback, useEffect, useMemo, useRef } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { useSystem } from '@/context/SystemContext'; // Import useSystem
+import { useAuth } from '@/hooks/useAuth'; // Corrigido para usar o hook
+import { useSystem } from '@/context/SystemContext';
 import { db } from '@/services/firebase';
-import { collection, onSnapshot, query } from 'firebase/firestore';
+import { collection, onSnapshot, query, collectionGroup } from 'firebase/firestore'; // 1. Importar collectionGroup
 import { getUserSettings, saveUserSettings } from '@/services/firestoreService';
 import debounce from 'lodash/debounce';
 
@@ -14,7 +14,7 @@ export const usePartyHealth = () => useContext(PartyHealthContext);
 
 export const PartyHealthProvider = ({ children }) => {
   const { user, isMaster } = useAuth();
-  const { characterDataCollectionRoot, GLOBAL_SESSION_PATH } = useSystem(); // Use SystemContext
+  const { characterDataCollectionRoot } = useSystem(); // Removido GLOBAL_SESSION_PATH que não é usado aqui
   const [allCharacters, setAllCharacters] = useState([]);
   const [selectedCharIds, setSelectedCharIds] = useState(() => {
     // Tenta carregar do localStorage como valor inicial para evitar piscar
@@ -27,7 +27,7 @@ export const PartyHealthProvider = ({ children }) => {
   });
   const [isLoading, setIsLoading] = useState(true); 
 
-  // Efeito para buscar as configurações do usuário APENAS quando o usuário ou o caminho da sessão mudam.
+  // Efeito para buscar as configurações do usuário APENAS quando o usuário ou o caminho da coleção mudam.
   useEffect(() => {
     if (!user || !characterDataCollectionRoot) { // <-- ADICIONADO: Espera o root da coleção
       return;
@@ -44,81 +44,58 @@ export const PartyHealthProvider = ({ children }) => {
     fetchSettings();
   }, [user, characterDataCollectionRoot]); // <-- ADICIONADO: Depende do root da coleção
 
+  // Otimização Principal: Centraliza a lógica de inscrição do Firestore
   useEffect(() => {
-    if (!user || !characterDataCollectionRoot) { 
+    if (!user || !characterDataCollectionRoot) {
       setAllCharacters([]);
       setIsLoading(false);
       return;
     }
 
-    // ... (resto da função sem alteração) ...
-    setAllCharacters([]);
     setIsLoading(true);
-    const charMap = new Map();
-    const processSnapshot = (snapshot, userId) => {
-      let hasChanges = false;
-      snapshot.docChanges().forEach(change => {
-        const rawCharData = change.doc.data();
-        let mainAttributes = rawCharData.mainAttributes;
-        if (typeof mainAttributes === 'string') {
-          try {
-            mainAttributes = JSON.parse(mainAttributes);
-          } catch (e) {
-            console.error(`Erro ao parsear mainAttributes para o personagem ${change.doc.id}:`, e);
+
+    let q;
+    // 2. Lógica de consulta otimizada
+    // ALTERADO: A lógica agora aponta para uma coleção 'partyStatus' dedicada.
+    // Esta é uma preparação para uma futura otimização com Cloud Functions.
+    if (isMaster) {
+      // O Mestre agora ouve uma coleção de alto nível 'partyStatus' que conteria
+      // apenas os dados essenciais (HP, MP, Nome) de cada personagem.
+      // Esta coleção seria atualizada por uma Cloud Function.
+      const collectionPath = `${characterDataCollectionRoot}/partyStatus`;
+      q = query(collection(db, collectionPath));
+    } else {
+      // Para o Jogador: A consulta também pode ser otimizada para ouvir um documento
+      // específico em 'partyStatus', mas por enquanto, mantemos a busca nas suas fichas.
+      const collectionPath = `${characterDataCollectionRoot}/users/${user.uid}/characterSheets`;
+      q = query(collection(db, collectionPath));
+    }
+
+    // O ouvinte agora usa a consulta otimizada 'q'
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const charactersData = [];
+      snapshot.forEach(doc => {
+        const charData = doc.data();
+        // Garante que mainAttributes seja um objeto para evitar erros
+        if (typeof charData.mainAttributes === 'string') {
+          try { 
+            charData.mainAttributes = JSON.parse(charData.mainAttributes);
+          } catch {
+            charData.mainAttributes = {};
           }
         }
-        const charData = { id: change.doc.id, ownerUid: userId, ...rawCharData, mainAttributes: mainAttributes };
-        if (change.type === "added" || change.type === "modified") {
-          charMap.set(charData.id, charData);
-          hasChanges = true;
-        } else if (change.type === "removed") {
-          charMap.delete(charData.id);
-          hasChanges = true;
-        }
+        // 3. Adiciona a ficha à lista. O ownerUid já vem no documento da ficha.
+        charactersData.push({ id: doc.id, ...charData });
       });
-      if (hasChanges) {
-        const newChars = Array.from(charMap.values());
-        setAllCharacters(newChars);
-      }
+
+      setAllCharacters(charactersData);
       setIsLoading(false);
-    };
-    if (isMaster) {
-      let sheetUnsubscribers = [];
-      const usersRef = collection(db, `${characterDataCollectionRoot}/users`);
-      const unsubscribeUsers = onSnapshot(usersRef, (usersSnapshot) => {
-        sheetUnsubscribers.forEach(unsub => unsub());
-        sheetUnsubscribers = [];
-        if (usersSnapshot.empty) {
-          charMap.clear();
-          setAllCharacters([]);
-          setIsLoading(false);
-          return;
-        }
-        usersSnapshot.docs.forEach(userDoc => {
-          const userId = userDoc.id;
-          const sheetsRef = collection(db, `${characterDataCollectionRoot}/users/${userId}/characterSheets`);
-          const unsubscribeSheets = onSnapshot(sheetsRef, (snapshot) => processSnapshot(snapshot, userId), (error) => {
-            console.error(`Erro ao ouvir fichas do usuário ${userId}:`, error);
-            setIsLoading(false);
-          });
-          sheetUnsubscribers.push(unsubscribeSheets);
-        });
-      }, (error) => {
-        console.error("Erro ao ouvir coleção de usuários:", error);
-        setIsLoading(false);
-      });
-      return () => {
-        unsubscribeUsers();
-        sheetUnsubscribers.forEach(unsub => unsub());
-      };
-    } else {
-      const sheetsRef = collection(db, `${characterDataCollectionRoot}/users/${user.uid}/characterSheets`);
-      const unsubscribe = onSnapshot(sheetsRef, (snapshot) => processSnapshot(snapshot, user.uid), (error) => {
-        console.error(`Erro ao ouvir as próprias fichas:`, error);
-        setIsLoading(false);
-      });
-      return () => unsubscribe();
-    }
+    }, (error) => {
+      console.error("Erro ao ouvir coleção de personagens:", error);
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
   }, [user, isMaster, characterDataCollectionRoot]);
 
   // Debounce para salvar as alterações no Firestore e no localStorage

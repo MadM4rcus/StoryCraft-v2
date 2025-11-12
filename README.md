@@ -46,20 +46,18 @@ Uma visão geral da arquitetura de pastas do src/:
 
 Aqui é onde podemos rastrear as próximas grandes tarefas.
 
--   [x] Implementar a ferramenta `ClassicSheetAdjuster` para mapeamento de layout.
--   [x] Migrar o `sheet_layout.json` de um arquivo estático para um documento no Firestore.
--   [x] Criar as funções `getLayout` e `saveLayout` no `firestoreService.js`.
--   [x] Conectar o `ClassicSheetAdjuster` para salvar o layout no Firestore.
--   [ ] Conectar o `ClassicSheet` para carregar o layout do Firestore em tempo real.
--   [ ] Implementar a lógica de rolagem (`rollable`) nos elementos da ficha.
+### Prioridade Atual: Otimização e Redução de Custos
 
-Nova prioridade: 
+-   [x] **Otimizar Leituras do Firestore:** Identificar e corrigir componentes que causam consumo excessivo de leituras no banco de dados. O objetivo é garantir que a aplicação seja sustentável e não ultrapasse os limites do plano gratuito.
+-   [ ] **Migrar Chat/Feed para o Discord:** Desenvolver um bot do Discord para atuar como backend para o feed de rolagens e chat. Isso removerá completamente a carga de leitura/escrita do Firestore para essa funcionalidade.
+-   [ ] **Implementar Comunicação em Tempo Real com o Bot:** Usar WebSockets para que o bot possa enviar as mensagens do Discord para o aplicativo em tempo real, mantendo a experiência integrada.
 
-otimizar o aplicativo. alguma coisa está gerando muitas leituras no banco de dados. são 50 mil leituras por dia, e batemos 63 mil leituras apenas hoje. 
+### Em Pausa
 
-file tree
+-   **Desenvolvimento da Skin V2 (`storycraft_classic`):** O trabalho no sistema de layout dinâmico está em pausa até que as otimizações de performance e a nova arquitetura do chat sejam concluídas.
 
 📦STORYCRAFT-V2
+┣ 📂functions
 ┣ 📂src
 ┃ ┣ 📂components
 ┃ ┃ ┣ 📜ChatInput.jsx
@@ -87,6 +85,7 @@ file tree
 ┃ ┃ ┣ 📜firebase.js
 ┃ ┃ ┣ 📜firestoreService.js
 ┃ ┃ ┣ 📜index.js
+┃ ┃ ┣ 📜localStoreService.js
 ┃ ┃ ┣ 📜sessionService.js
 ┃ ┃ ┗ 📜themeService.js
 ┃ ┣ 📂systems

@@ -25,10 +25,12 @@ const ChatInput = () => {
    * @returns {{results: Array, totalResult: number, finalExpression: string}}
    */
   const parseAndRoll = (rawFormula) => {
+    // 1. Mantém a fórmula original para exibição e cria uma cópia para avaliação.
+    let expressionToDisplay = rawFormula;
+    let expressionForEval = rawFormula;
     const rollResultsForFeed = [];
-    let expressionForEval = rawFormula.replace(/\s/g, '');
 
-    // Regex to find all dice notations (e.g., 1d20, 4d6)
+    // 2. Encontra todas as notações de dados (ex: "1d20", "2d6") na fórmula.
     const diceRegex = /(\d+d\d+)/gi;
     const diceMatches = rawFormula.match(diceRegex);
 
@@ -40,63 +42,89 @@ const ChatInput = () => {
 
         if (isNaN(numSides) || numSides <= 0) return;
 
-        let rolls = [];
+        const rolls = [];
         let diceRollResult = 0;
         for (let d = 0; d < numDice; d++) {
-          const roll = Math.floor(Math.random() * numSides) + 1;
-          rolls.push(roll);
-          diceRollResult += roll;
+            const roll = Math.floor(Math.random() * numSides) + 1;
+            rolls.push(roll);
+            diceRollResult += roll;
         }
-
-        // Add to the feed display
-        rollResultsForFeed.push({
-          type: 'dice',
-          value: diceRollResult,
-          displayValue: `${diceString}(${rolls.join('+')})`
-        });
-
-        // Replace the first occurrence of the dice string in the expression with its result
+        
+        // 3. Substitui o dado pelo seu resultado em ambas as strings.
+        // Apenas a primeira ocorrência é substituída para lidar com dados repetidos.
         expressionForEval = expressionForEval.replace(diceString, `(${diceRollResult})`);
-      });
-    }
+        expressionToDisplay = expressionToDisplay.replace(diceString, `${diceString}[${rolls.join('+')}]`);
+
+        // Adiciona ao feed para exibição interna.
+        rollResultsForFeed.push({
+            type: 'dice',
+            value: diceRollResult,
+            displayValue: `${diceString}(${rolls.join('+')})`
+        });
+      }
+    )};
 
     // Sanitize the expression to only allow numbers, operators, and parentheses
-    const sanitizedExpression = expressionForEval.replace(/[^0-9+\-*/().]/g, '');
+    const detailsText = expressionToDisplay; // A expressão para exibição é a que contém os detalhes
+    let sanitizedExpression = expressionForEval.replace(/[^0-9+\-*/().\s]/g, '');
 
     let totalResult = 0;
     try {
-      // Safely evaluate the final mathematical expression
-      totalResult = evil(sanitizedExpression);
+      // Avalia a expressão e arredonda o resultado para baixo.
+      totalResult = Math.floor(evil(sanitizedExpression));
       if (isNaN(totalResult)) {
         throw new Error("Invalid mathematical expression.");
       }
     } catch (error) {
       console.error("Error evaluating roll expression:", error);
-      return { results: [], totalResult: 0, finalExpression: "Erro na fórmula" };
+      return { results: [], totalResult: 0, finalExpression: "Erro na fórmula", detailsText: "Inválido" };
     }
 
-    return { results: rollResultsForFeed, totalResult, finalExpression: sanitizedExpression };
+    return { results: rollResultsForFeed, totalResult, finalExpression: rawFormula, detailsText };
   };
 
-  const handleSendMessage = (e) => {
+  const handleSendMessage = (e) => { // Removido async, pois não é mais necessário
     e.preventDefault();
     const trimmedMessage = message.trim();
     if (trimmedMessage === '') return;
 
     if (trimmedMessage.toLowerCase().startsWith('r ')) {
       const formula = trimmedMessage.substring(2);
-      // Apenas executa a rolagem se a fórmula não estiver vazia
       if (formula.trim()) {
-        const { results, totalResult, finalExpression } = parseAndRoll(formula);
+        const { results, totalResult, finalExpression, detailsText } = parseAndRoll(formula);
+        // ADICIONADO: Envia a rolagem para o feed local primeiro.
         addRollToFeed({
           characterName: activeCharacter?.name || user.displayName || 'Usuário',
           rollName: `Rolagem: ${finalExpression || formula}`,
           results,
           totalResult,
+          detailsText, // Adiciona o texto de detalhes para o feed local
           ownerUid: user.uid,
         });
+        
+        // Lógica de envio para o Discord, similar ao GlobalControls
+        const characterName = activeCharacter?.name || user.displayName || 'Usuário';
+        const rollName = `Rolagem: ${finalExpression || formula}`;
+        const resultText = `**Resultado: ${totalResult}**`;
+
+        const embed = {
+          author: { name: characterName, icon_url: activeCharacter?.photoUrl || '' },
+          title: rollName,
+          // Usa blocos de código (```) para formatar a fórmula no Discord
+          description: `${resultText}\n\n**Detalhes:**\n\`\`\`\n${detailsText}\n\`\`\``,
+          color: 7506394,
+        };
+
+        if (activeCharacter?.discordWebhookUrl) {
+          // Removido o 'await' para não bloquear a UI. A mensagem é enviada em segundo plano.
+          fetch(activeCharacter.discordWebhookUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ embeds: [embed] })
+            })
+            .catch(error => console.error('Falha ao enviar rolagem para o Discord:', error));
+        }
       } else {
-        // Se for apenas "r ", envia como mensagem normal
         addMessageToFeed({
           characterName: activeCharacter?.name || user.displayName || 'Usuário',
           text: message,

@@ -1,49 +1,39 @@
 import React, { createContext, useState, useContext, useCallback, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useSystem } from '@/context/SystemContext';
-import { addItemToFeed, subscribeToFeedWithLimit } from '@/services/sessionService'; // Alterado para a função com limite
 
 const RollFeedContext = createContext();
 
 export const useRollFeed = () => useContext(RollFeedContext);
 
 export const RollFeedProvider = ({ children }) => {
-  const { user } = useAuth();
-  const { GLOBAL_SESSION_PATH } = useSystem();
+  const { user } = useAuth(); // Ainda precisamos do usuário para identificar quem está enviando
   const [feedItems, setFeedItems] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // O feed não carrega mais nada
 
+  // Efeito foi esvaziado. Não há mais conexão com Firestore ou simulação de WebSocket.
   useEffect(() => {
-    if (!user) {
-      setFeedItems([]);
-      setIsLoading(false);
-      return;
+    // Adiciona uma mensagem inicial para explicar o novo comportamento.
+    if (user) {
+      setFeedItems([{
+        id: 'local-feed-welcome',
+        type: 'message',
+        characterName: 'Sistema',
+        text: 'O feed agora funciona localmente para sua conveniência. As rolagens ainda são enviadas para o Discord.',
+        timestamp: { toDate: () => new Date() }
+      }]);
     }
+  }, [user]);
 
-    setIsLoading(true);
-    console.log("[DIAGNÓSTICO ROLLFEED] Assinando feed global:", GLOBAL_SESSION_PATH);
-    
-    // ALTERADO: Usando a função que limita os resultados para 50.
-    const unsubscribe = subscribeToFeedWithLimit(GLOBAL_SESSION_PATH, 50, (items) => {
-      setFeedItems(items);
-      setIsLoading(false);
-      console.log("[DIAGNÓSTICO ROLLFEED] Feed atualizado. Total de itens:", items.length);
-    });
-
-    return () => unsubscribe();
-  }, [user, GLOBAL_SESSION_PATH]);
-
+  // As funções agora não fazem nada, apenas existem para não quebrar os componentes que as chamam.
   const addRollToFeed = useCallback((newRoll) => {
-    if (!user) { console.warn("[DIAGNÓSTICO ROLLFEED] Tentativa de adicionar rolagem sem usuário logado."); return; }
-    console.log("[DIAGNÓSTICO ROLLFEED] Adicionando rolagem ao feed global:", GLOBAL_SESSION_PATH, newRoll);
-    addItemToFeed(GLOBAL_SESSION_PATH, { ...newRoll, type: 'roll' });
-  }, [user, GLOBAL_SESSION_PATH]);
+    if (!user) return;
+    setFeedItems(prev => [{ ...newRoll, id: crypto.randomUUID(), type: 'roll', timestamp: { toDate: () => new Date() } }, ...prev]);
+  }, [user]);
 
   const addMessageToFeed = useCallback((newMessage) => {
-    if (!user) { console.warn("[DIAGNÓSTICO ROLLFEED] Tentativa de adicionar mensagem sem usuário logado."); return; }
-    console.log("[DIAGNÓSTICO ROLLFEED] Adicionando mensagem ao feed global:", GLOBAL_SESSION_PATH, newMessage);
-    addItemToFeed(GLOBAL_SESSION_PATH, { ...newMessage, type: 'message' });
-  }, [user, GLOBAL_SESSION_PATH]);
+    if (!user) return;
+    setFeedItems(prev => [{ ...newMessage, id: crypto.randomUUID(), type: 'message', timestamp: { toDate: () => new Date() } }, ...prev]);
+  }, [user]);
 
   const value = {
     feedItems,

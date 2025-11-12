@@ -48,13 +48,18 @@ service cloud.firestore {
       allow read, write, delete: if request.auth != null && (request.auth.uid == userId || request.auth.token.isMaster == true);
     }
 
+    // --- NOVA REGRA: Para a coleção de status otimizada do Party Monitor ---
+    match /artifacts2/{appId}/partyStatus/{statusId} {
+      // Qualquer usuário logado pode ler os status (contém apenas HP/MP/Nome).
+      allow read: if request.auth != null;
+      // Ninguém pode escrever diretamente. Apenas o backend (Cloud Function) poderá atualizar.
+      allow write: if false;
+    }
+
     // =====================================================================
     // REGRAS PARA DADOS DE SESSÃO (CHAT/FEED E CONFIGS) - NOVO
     // =====================================================================
-    match /storycraft-v2/{appId}/feed/{messageId} {
-      allow read, create: if request.auth != null;
-      allow update, delete: if false; 
-    }
+    // A regra para 'feed' foi removida, pois a funcionalidade será migrada para o Discord.
 
     // --- REGRA PARA OS LAYOUTS DE FICHA (SKINS) ---
     match /storycraft-v2/{appId}/layouts/{systemId} {
