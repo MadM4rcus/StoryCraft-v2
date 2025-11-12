@@ -114,6 +114,7 @@ const TextBlock = ({ block, canEdit, updateBlock }) => {
         setLocalValue(block.value || '');
     }, [block.value]);
 
+    // A função de salvar agora compara o valor local com o valor original antes de salvar.
     const handleSave = useCallback(() => {
         if (localValue !== block.value) {
             updateBlock(block.id, 'value', localValue);

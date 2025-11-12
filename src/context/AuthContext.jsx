@@ -1,8 +1,8 @@
 import React, { createContext, useEffect, useState } from "react";
-import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
+import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut, getIdTokenResult } from "firebase/auth";
 import { auth, db } from "../services/firebase.js";
-import { doc, setDoc, onSnapshot } from "firebase/firestore";
-import { useSystem } from "./SystemContext.jsx"; // Importar o hook useSystem
+import { doc, setDoc, getDoc } from "firebase/firestore"; // Removido onSnapshot, adicionado getDoc
+import { useSystem } from "./SystemContext.jsx";
 
 export const AuthContext = createContext();
 
@@ -10,55 +10,48 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isMaster, setIsMaster] = useState(false);
   const [loading, setLoading] = useState(true);
-  const { GLOBAL_APP_IDENTIFIER } = useSystem(); // Obter a constante do SystemContext
+  const { GLOBAL_APP_IDENTIFIER } = useSystem();
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (!currentUser) {
         setLoading(false);
         setIsMaster(false);
+        return;
+      }
+
+      // OTIMIZAÇÃO: Em vez de um listener (onSnapshot), verificamos o token do usuário uma vez.
+      // Isso não custa leituras no Firestore.
+      try {
+        // Força a atualização do token para pegar os claims mais recentes.
+        const idTokenResult = await currentUser.getIdTokenResult(true);
+        // A flag 'isMaster' é um "Custom Claim" que deve ser definido no backend.
+        const isUserMaster = idTokenResult.claims.isMaster === true;
+        setIsMaster(isUserMaster);
+        console.log('%c[DIAGNÓSTICO AUTH]', 'color: #00A8E8; font-weight: bold;', { isMaster: isUserMaster, claims: idTokenResult.claims });
+
+        // Lógica para garantir que o documento do usuário exista no Firestore.
+        // Isso só executa uma escrita se o usuário for novo.
+        const userDocRef = doc(db, `artifacts2/${GLOBAL_APP_IDENTIFIER}/users/${currentUser.uid}`);
+        const docSnap = await getDoc(userDocRef); // Usa getDoc em vez de onSnapshot
+        if (!docSnap.exists()) {
+          await setDoc(userDocRef, {
+            displayName: currentUser.displayName,
+            email: currentUser.email,
+            isMaster: false, // O padrão é sempre false no DB. A promoção é feita manualmente.
+          }, { merge: true });
+        }
+      } catch (error) {
+        console.error("Erro ao verificar claims do usuário:", error);
+        setIsMaster(false);
+      } finally {
+        setLoading(false);
       }
     });
 
     return () => unsubscribeAuth();
-  }, []);
-
-  useEffect(() => {
-    if (user && GLOBAL_APP_IDENTIFIER) { // Garantir que a constante foi carregada
-      // A informação de 'isMaster' é buscada do caminho original do StoryCraft V1,
-      // que é considerado o local central para essa flag.
-      const userDocRef = doc(db, `artifacts2/${GLOBAL_APP_IDENTIFIER}/users/${user.uid}`);
-      
-      const unsubscribeFirestore = onSnapshot(userDocRef, async (docSnap) => {
-        if (!docSnap.exists()) {
-          try {
-            await setDoc(userDocRef, {
-              displayName: user.displayName,
-              email: user.email,
-              isMaster: false,
-            });
-            setIsMaster(false);
-          } catch (error) {
-            console.error("Erro ao criar o documento do utilizador:", error);
-          }
-        } else {
-          const isUserMaster = docSnap.data().isMaster === true;
-          setIsMaster(isUserMaster);
-          // FERRAMENTA DE DIAGNÓSTICO
-          console.log('%c[DIAGNÓSTICO AUTH]', 'color: #00A8E8; font-weight: bold;', { isMaster: isUserMaster, userData: docSnap.data() });
-        }
-        setLoading(false);
-      }, (error) => {
-        console.error("Erro ao escutar documento do utilizador:", error);
-        setLoading(false);
-      });
-
-      return () => unsubscribeFirestore();
-    }
-    // Se não houver usuário, resetamos o estado.
-    setIsMaster(false);
-  }, [user, GLOBAL_APP_IDENTIFIER]);
+  }, [GLOBAL_APP_IDENTIFIER]); // Roda quando o app carrega ou o usuário muda.
 
   const googleSignIn = () => {
     const provider = new GoogleAuthProvider();

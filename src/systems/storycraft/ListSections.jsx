@@ -336,7 +336,7 @@ const PerkItem = ({ perk, type, canEdit, onRemove, onChange, onOriginChange, onT
                 <div className="flex items-center gap-2 mb-2">
                     <input
                         type="text"
-                        name="name"
+                        name="name" // O nome do campo corresponde ao estado
                         value={localPerk.name}
                         onChange={handleLocalChange}
                         onBlur={() => handleSave('name')}
@@ -346,7 +346,7 @@ const PerkItem = ({ perk, type, canEdit, onRemove, onChange, onOriginChange, onT
                     />
                     <input
                         type="number"
-                        name="value"
+                        name="value" // O nome do campo corresponde ao estado
                         value={localPerk.value === 0 ? '' : localPerk.value}
                         onChange={handleLocalChange}
                         onBlur={() => handleSave('value')}
@@ -356,7 +356,7 @@ const PerkItem = ({ perk, type, canEdit, onRemove, onChange, onOriginChange, onT
                     />
                 </div>
                 <AutoResizingTextarea
-                    name="description"
+                    name="description" // O nome do campo corresponde ao estado
                     value={localPerk.description}
                     onChange={handleLocalChange}
                     onBlur={() => handleSave('description')}
