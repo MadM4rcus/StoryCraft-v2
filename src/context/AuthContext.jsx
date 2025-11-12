@@ -20,6 +20,7 @@ export const AuthProvider = ({ children }) => {
         setIsMaster(false);
       }
     });
+
     return () => unsubscribeAuth();
   }, []);
 

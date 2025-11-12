@@ -9,24 +9,19 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/artifacts2/$(appId)/users/$(request.auth.uid)).data.isMaster == true;
     }
 
-    function isMasterV1(appId) {
-      return get(/databases/$(database)/documents/artifacts/$(appId)/users/$(request.auth.uid)).data.isMaster == true;
-    }
-
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
     // =====================================================================
     // REGRAS PARA STORYCRAFT V1 (LEGADO - artifacts)
     // =====================================================================
     match /artifacts/{appId}/users/{userId}/characterSheets/{documentId} {
+      // Para o legado, vamos assumir que apenas o dono pode editar por enquanto.
+      // A lógica de mestre V1 precisaria ser migrada para claims também se ainda for usada.
       allow write: if isSignedIn() && (request.auth.uid == userId || isMasterV1(appId));
       allow read: if isSignedIn() && (request.auth.uid == userId || isMasterV1(appId));
       allow delete: if isSignedIn() && (request.auth.uid == userId || isMasterV1(appId));
     }
 
     match /artifacts/{appId}/users/{userId} {
+      // Simplificando regras legadas
       allow read: if isSignedIn() && (request.auth.uid == userId || isMasterV1(appId));
       allow write: if isSignedIn() && (request.auth.uid == userId || isMasterV1(appId));
     }

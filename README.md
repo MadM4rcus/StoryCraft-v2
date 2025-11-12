@@ -55,7 +55,7 @@ Aqui é onde podemos rastrear as próximas grandes tarefas.
 
 Nova prioridade: 
 
-nada ainda.
+otimizar o aplicativo. alguma coisa está gerando muitas leituras no banco de dados. são 50 mil leituras por dia, e batemos 63 mil leituras apenas hoje. 
 
 file tree
 
