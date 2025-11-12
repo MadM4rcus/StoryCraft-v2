@@ -24,7 +24,6 @@ const V1_SECTIONS = [
     { href: '#buffs', title: 'Buffs', icon: '✨' },
     { href: '#specializations', title: 'Pericias', icon: '📜' },
     { href: '#perks', title: 'Vantagens', icon: '🌟' },
-    { href: '#wallet', title: 'Carteira', icon: '💰' },
     { href: '#inventory', title: 'Inventário', icon: '🎒' },
     { href: '#equipped', title: 'Itens Equipados', icon: '🛡️' },
     { href: '#skills', title: 'Habilidades', icon: '🎯' },

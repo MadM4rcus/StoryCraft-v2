@@ -463,52 +463,6 @@ a                                         ria-label={`${key}
     );
 };
 
-
-// --- Sub-componente: Wallet ---
-const Wallet = ({ character, isMaster, onUpdate, isCollapsed, toggleSection, isEditMode }) => {
-    const { user } = useAuth();
-    const [zeniAmount, setZeniAmount] = useState(0);
-
-    const currentZeni = character.wallet?.zeni || 0;
-    const currentInspiration = character.wallet?.inspiration || 0;
-    const canEdit = user && (user.uid === character.ownerUid || isMaster);
-
-    const handleUpdateWallet = (field, newValue) => {
-        const newWallet = { ...character.wallet, [field]: Math.max(0, newValue) };
-        onUpdate('wallet', newWallet);
-    };
-
-    const handleAddZeni = () => { handleUpdateWallet('zeni', currentZeni + zeniAmount); setZeniAmount(0); };
-    const handleRemoveZeni = () => { handleUpdateWallet('zeni', currentZeni - zeniAmount); setZeniAmount(0); };
-    const handleAddInspiration = () => handleUpdateWallet('inspiration', currentInspiration + 1);
-    const handleRemoveInspiration = () => handleUpdateWallet('inspiration', currentInspiration - 1);
-
-    const walletTitle = (
-        <div className="flex justify-between items-center w-full">
-            <span>Zeni: {currentZeni}</span>
-            <span className="text-textPrimary text-base">Inspiração: {currentInspiration}</span>
-        </div>
-    );
-
-    return (
-        <SheetSkin title={walletTitle} isCollapsed={isCollapsed} toggleSection={toggleSection} isComplexTitle={true}>
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-6">
-                <div className="flex items-center gap-2">
-                    <span className="hidden sm:inline font-semibold text-textSecondary">Zeni:</span>
-                    <input type="number" value={zeniAmount === 0 ? '' : zeniAmount} onChange={(e) => setZeniAmount(parseInt(e.target.value, 10) || 0)} className="w-24 p-2 bg-bgInput border border-bgElement rounded-md text-textPrimary text-lg" placeholder="Valor" disabled={!canEdit} />
-                    <button onClick={handleAddZeni} className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg text-sm" disabled={!canEdit}>+</button>
-                    <button onClick={handleRemoveZeni} className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-sm" disabled={!canEdit}>-</button>
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="hidden sm:inline font-semibold text-textSecondary">Inspiração:</span>
-                    <button onClick={handleAddInspiration} className="px-3 py-2 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText font-bold rounded-lg text-sm" disabled={!canEdit}>+1</button>
-                    <button onClick={handleRemoveInspiration} className="px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg text-sm" disabled={!canEdit}>-1</button>
-                </div>
-            </div>
-        </SheetSkin>
-    );
-};
-
 // --- Sub-componente: DiscordIntegration ---
 const DiscordIntegration = ({ character, onUpdate, isMaster, isCollapsed, toggleSection, isEditMode }) => {
     const { user } = useAuth();
@@ -555,4 +509,4 @@ const DiscordIntegration = ({ character, onUpdate, isMaster, isCollapsed, toggle
 
 
 // Exporta cada componente individualmente para que o CharacterSheet possa controlá-los
-export { CharacterInfo, Wallet, DiscordIntegration };
+export { CharacterInfo, DiscordIntegration };

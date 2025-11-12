@@ -38,7 +38,7 @@ Uma visão geral da arquitetura de pastas do src/:
 * `vite.config.js`: Configuração do ambiente de desenvolvimento Vite, incluindo aliases de caminho como `@` e `@systems`.
 * `tailwind.config.js`: Define o tema do Tailwind CSS, incluindo cores customizadas (`bgPage`, `textPrimary`, etc.) que são povoadas por variáveis CSS, permitindo a tematização dinâmica.
 * `firebase.json`: Configura o deploy para o Firebase Hosting, definindo o diretório público como `dist` e configurando reescritas para suportar roteamento de single-page application (SPA).
-* `firestore.rules`: Define as regras de segurança para o banco de dados Cloud Firestore, essencial para proteger os dados dos usuários e garantir que apenas pessoas autorizadas (jogadores e mestres) possam acessar ou modificar as fichas.
+* `mirror_firestore_rules.md`: Cópia das regras de segurança para o banco de dados Cloud Firestore, essencial para proteger os dados dos usuários e garantir que apenas pessoas autorizadas (jogadores e mestres) possam acessar ou modificar as fichas.
 
 
 🎯 Próximos Passos (Roadmap)
@@ -57,7 +57,6 @@ Aqui é onde podemos rastrear as próximas grandes tarefas.
 -   **Desenvolvimento da Skin V2 (`storycraft_classic`):** O trabalho no sistema de layout dinâmico está em pausa até que as otimizações de performance e a nova arquitetura do chat sejam concluídas.
 
 📦STORYCRAFT-V2
-┣ 📂functions
 ┣ 📂src
 ┃ ┣ 📂components
 ┃ ┃ ┣ 📜ChatInput.jsx
