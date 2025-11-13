@@ -13,8 +13,10 @@ const RollFeed = () => {
   };
   
   const formatTimestamp = (timestamp) => {
-    // O timestamp do Firebase pode ser null (enquanto está sendo setado) ou um objeto com toDate()
-    if (!timestamp || typeof timestamp.toDate !== 'function') return '';
+    // O timestamp do RTDB pode não existir ou não ser um objeto com toDate()
+    // A lógica no context agora garante que ele seja um objeto compatível.
+    if (!timestamp || typeof timestamp.toDate !== 'function') return ''; // Mantém a checagem por segurança
+
     const date = timestamp.toDate();
     return date.toLocaleTimeString('pt-BR', {
       hour: '2-digit',
@@ -217,7 +219,7 @@ const RollFeed = () => {
           </span>
         </button>
       </div>
-      <div ref={feedRef} className="flex-grow p-3 overflow-y-auto flex flex-col-reverse">
+      <div ref={feedRef} className="flex-grow p-3 overflow-y-auto">
         {isLoading && <p className="text-textSecondary italic">Carregando feed...</p>}
         {!isLoading && feedItems.length === 0 && (
           <p className="text-textSecondary italic">Nenhuma rolagem ou mensagem ainda...</p>
