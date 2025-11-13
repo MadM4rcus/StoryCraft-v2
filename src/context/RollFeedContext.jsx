@@ -39,7 +39,9 @@ export const RollFeedProvider = ({ children }) => {
           // Converte o timestamp do RTDB para um objeto compatível com a função formatTimestamp
           timestamp: { toDate: () => new Date(data[key].timestamp) }
         }));
-        setFeedItems(itemsList.reverse()); // Inverte para mostrar o mais novo primeiro
+        // CORREÇÃO: Remove o .reverse(). A ordem natural (mais antigo primeiro) é a correta
+        // para que novos itens apareçam no final do feed, como um chat.
+        setFeedItems(itemsList);
       } else {
         setFeedItems([]);
       }

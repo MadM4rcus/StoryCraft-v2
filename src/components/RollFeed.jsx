@@ -219,7 +219,10 @@ const RollFeed = () => {
           </span>
         </button>
       </div>
-      <div ref={feedRef} className="flex-grow p-3 overflow-y-auto">
+      {/* CORREÇÃO: A classe `flex-col-reverse` foi removida.
+          O scroll automático para o final já é feito via `useEffect`,
+          garantindo que o comportamento seja o de um chat padrão. */}
+      <div ref={feedRef} className="flex-grow p-3 overflow-y-auto space-y-2">
         {isLoading && <p className="text-textSecondary italic">Carregando feed...</p>}
         {!isLoading && feedItems.length === 0 && (
           <p className="text-textSecondary italic">Nenhuma rolagem ou mensagem ainda...</p>

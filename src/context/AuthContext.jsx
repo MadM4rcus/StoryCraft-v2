@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }) => {
         const isUserMaster = idTokenResult.claims.isMaster === true;
         setIsMaster(isUserMaster);
         console.log('%c[DIAGNÓSTICO AUTH]', 'color: #00A8E8; font-weight: bold;', { isMaster: isUserMaster, claims: idTokenResult.claims });
-
+        
         // Lógica para garantir que o documento do usuário exista no Firestore.
         // Isso só executa uma escrita se o usuário for novo.
         const userDocRef = doc(db, `artifacts2/${GLOBAL_APP_IDENTIFIER}/users/${currentUser.uid}`);
@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }) => {
     });
 
     return () => unsubscribeAuth();
-  }, [GLOBAL_APP_IDENTIFIER]); // Roda quando o app carrega ou o usuário muda.
+  }, [GLOBAL_APP_IDENTIFIER]); // Roda apenas uma vez quando o contexto é montado.
 
   const googleSignIn = () => {
     const provider = new GoogleAuthProvider();

@@ -48,6 +48,13 @@ service cloud.firestore {
       allow read, write, delete: if request.auth != null && (request.auth.uid == userId || request.auth.token.isMaster == true);
     }
 
+    // --- NOVA REGRA: Permite que Mestres listem TODAS as fichas de uma vez ---
+    // Esta regra é necessária para a consulta `collectionGroup` usada no PartyHealthMonitor.
+    // IMPORTANTE: Esta regra requer um índice composto no Firestore.
+    match /{path=**}/characterSheets/{sheetId} {
+      allow read: if request.auth != null && request.auth.token.isMaster == true;
+    }
+
     // --- NOVA REGRA: Para a coleção de status otimizada do Party Monitor ---
     match /artifacts2/{appId}/partyStatus/{statusId} {
       // Qualquer usuário logado pode ler os status (contém apenas HP/MP/Nome).

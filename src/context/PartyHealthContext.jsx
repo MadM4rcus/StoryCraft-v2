@@ -56,17 +56,12 @@ export const PartyHealthProvider = ({ children }) => {
 
     let q;
     // 2. Lógica de consulta otimizada
-    // ALTERADO: A lógica agora aponta para uma coleção 'partyStatus' dedicada.
-    // Esta é uma preparação para uma futura otimização com Cloud Functions.
     if (isMaster) {
-      // O Mestre agora ouve uma coleção de alto nível 'partyStatus' que conteria
-      // apenas os dados essenciais (HP, MP, Nome) de cada personagem.
-      // Esta coleção seria atualizada por uma Cloud Function.
-      const collectionPath = `${characterDataCollectionRoot}/partyStatus`;
-      q = query(collection(db, collectionPath));
+      // CORREÇÃO: Se for mestre, usa uma consulta collectionGroup para buscar
+      // todas as 'characterSheets' de todos os usuários.
+      q = query(collectionGroup(db, 'characterSheets'));
     } else {
-      // Para o Jogador: A consulta também pode ser otimizada para ouvir um documento
-      // específico em 'partyStatus', mas por enquanto, mantemos a busca nas suas fichas.
+      // Se for um jogador comum, busca apenas as suas próprias fichas.
       const collectionPath = `${characterDataCollectionRoot}/users/${user.uid}/characterSheets`;
       q = query(collection(db, collectionPath));
     }

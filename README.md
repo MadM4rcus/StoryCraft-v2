@@ -20,6 +20,38 @@ A plataforma utiliza o Firebase Firestore para sincronização de dados em tempo
 * **Layout Dinâmico (Skin V2)**: O visual v2 não possui um layout fixo. Sua estrutura é carregada de um documento no Firestore, permitindo que a aparência da ficha seja alterada sem a necessidade de um novo deploy.
 * **Ferramenta de Ajuste (GM-Only)**: Uma ferramenta interna (`ClassicSheetAdjuster`) permite que o Mestre mova, redimensione e salve as posições dos elementos do visual V2 diretamente no banco de dados.
 
+⚙️ Gerenciando Permissões de Mestre
+==================================
+
+A permissão de Mestre (`isMaster`) é controlada por "Custom Claims" do Firebase Authentication para otimizar a performance e reduzir custos de leitura do Firestore. Para modificar essas permissões, você precisa usar scripts Node.js que interagem com o Firebase Admin SDK.
+
+**Passo 1: Obter a Chave de Conta de Serviço**
+
+1.  Vá para o seu **Console do Firebase**.
+2.  Clique na engrenagem (⚙️) e selecione **Configurações do projeto**.
+3.  Vá para a aba **Contas de serviço**.
+4.  Clique em **Gerar nova chave privada**.
+5.  Renomeie o arquivo JSON baixado para `serviceAccountKey.json` e coloque-o na raiz do projeto.
+    *   **Atenção:** Este arquivo é confidencial. Ele já está no `.gitignore` para evitar que seja enviado para o repositório.
+
+**Passo 2: Promover um Usuário a Mestre**
+
+1.  Encontre o UID do usuário no Console do Firebase > Authentication.
+2.  Execute o seguinte comando no terminal, na raiz do projeto:
+
+    ```bash
+    node set-master-claim.cjs <UID_DO_USUARIO>
+    ```
+
+**Passo 3: Remover a Permissão de Mestre**
+
+1.  Encontre o UID do usuário no Console do Firebase > Authentication.
+2.  Execute o seguinte comando no terminal:
+
+    ```bash
+    node remove-master-claim.cjs <UID_DO_USUARIO>
+    ```
+
 📁 Estrutura do Projeto
 ======================
 
@@ -49,8 +81,6 @@ Aqui é onde podemos rastrear as próximas grandes tarefas.
 ### Prioridade Atual: Otimização e Redução de Custos
 
 -   [x] **Otimizar Leituras do Firestore:** Identificar e corrigir componentes que causam consumo excessivo de leituras no banco de dados. O objetivo é garantir que a aplicação seja sustentável e não ultrapasse os limites do plano gratuito.
--   [ ] **Migrar Chat/Feed para o Discord:** Desenvolver um bot do Discord para atuar como backend para o feed de rolagens e chat. Isso removerá completamente a carga de leitura/escrita do Firestore para essa funcionalidade.
--   [ ] **Implementar Comunicação em Tempo Real com o Bot:** Usar WebSockets para que o bot possa enviar as mensagens do Discord para o aplicativo em tempo real, mantendo a experiência integrada.
 
 ### Em Pausa
 
