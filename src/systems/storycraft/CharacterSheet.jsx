@@ -174,17 +174,14 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
     // 1. Rola o d20 para obter o resultado do dado.
     const d20Roll = Math.floor(Math.random() * 20) + 1;
     const isCrit = d20Roll === 20;
-    const isCritFail = d20Roll === 1;
-    const total = isCritFail ? 1 : d20Roll + totalBonus; // Falha crítica sempre resulta em 1.
+    const isCritFail = d20Roll === 1; // Falha crítica sempre resulta em 1.
+    const total = isCritFail ? 1 : d20Roll + totalBonus;
 
     // 2. Monta um objeto de ação SIMPLIFICADO.
-    // A lógica de execução principal (`handleExecuteFormulaAction`) foi ajustada
-    // para entender esta estrutura mais simples e não a tratar como um ataque.
+    // CORREÇÃO: Removemos `totalResult` para que não seja interpretado como dano.
     const action = {
         name: `Rolagem de ${attributeName}`,
         // Não há 'components' para não serem processados como dano.
-        // O resultado total já é calculado aqui.
-        totalResult: total,
         acertoResult: {
             roll: d20Roll,
             bonus: totalBonus,
@@ -387,11 +384,9 @@ const handleExecuteFormulaAction = async (action) => {
     }
 
     // --- Lógica de Dano / Resultado Principal ---
-    // Define se a ação é uma rolagem de perícia pura (sem outros componentes de resultado)
-    const isPureSkillRoll = skillRollComp && (action.components || []).length === 1;
-
-    // Apenas processa os componentes se a ação não for uma rolagem simples de atributo (que já tem totalResult)
-    if (action.totalResult === undefined && !isPureSkillRoll) {
+    // CORREÇÃO: O cálculo de dano/resultado agora acontece independentemente da rolagem de acerto.
+    // Apenas pulamos se a ação for uma rolagem de atributo simples que já vem com um `totalResult` pré-calculado.
+    if (action.totalResult === undefined) {
         for (let i = 0; i < (multiplier || 1); i++) {
             for (const comp of (action.components || [])) {
                 if (comp.type === 'attribute') {
@@ -504,14 +499,20 @@ const handleExecuteFormulaAction = async (action) => {
     }
 
     let detailsString = rollResultsForFeed.map(r => r.displayValue).join(' + ');
+    // --- CORREÇÃO: Garante que o detailsText seja sempre gerado para o feed do app ---
+    const detailsTextForFeed = detailsString;
     let discordDescription;
 
     // Se for uma rolagem de atributo simples, a descrição é diferente.
     if (acertoResult && action.totalResult !== undefined && !action.components?.some(c => c.type === 'skillRoll')) {
-        discordDescription = `${descriptionText}\n\n**Resultado: ${acertoResult.total}**`;
+        // --- CORREÇÃO: Adiciona a indicação de crítico na linha de resultado do Discord ---
+        const critText = acertoResult.isCrit ? ' 🎯 CRÍTICO!' : acertoResult.isCritFail ? ' 💥 FALHA CRÍTICA!' : '';
+        discordDescription = `${descriptionText}\n\n**Resultado: ${acertoResult.total}**${critText}`;
         detailsString = `1d20(${acertoResult.roll}) ${acertoResult.bonus >= 0 ? '+' : '-'} ${Math.abs(acertoResult.bonus)}`;
     } else if (acertoResult) { // Rolagem de perícia/ataque
-        const acertoString = `**Teste de ${acertoResult.skillName}:** ${acertoResult.total} (d20:${acertoResult.roll} + Bônus:${acertoResult.bonus || 0})`;
+        // --- CORREÇÃO: Adiciona a indicação de crítico na linha de acerto do Discord ---
+        const critText = acertoResult.isCrit ? ' 🎯 CRÍTICO!' : acertoResult.isCritFail ? ' 💥 FALHA CRÍTICA!' : '';
+        const acertoString = `**Teste de ${acertoResult.skillName}:** ${acertoResult.total} (d20:${acertoResult.roll} + Bônus:${acertoResult.bonus || 0})${critText}`;
         discordDescription = `${descriptionText}\n${acertoString}\n\n**Dano/Resultado: ${totalResult}**`;
     } else { // Rolagem sem acerto (ex: cura)
         discordDescription = `${descriptionText}\n\n**Resultado Final: ${totalResult}**`;
@@ -545,10 +546,12 @@ const handleExecuteFormulaAction = async (action) => {
         results: rollResultsForFeed,
         totalResult: totalResult,     // O resultado numérico final
         acertoResult: acertoResult,   // O objeto de acerto (ou null)
+        detailsText: detailsTextForFeed, // <-- ADICIONADO: Passa os detalhes do cálculo para o feed
         criticals: criticals,         // O array de strings de críticos
         discordText: descriptionText,
-        costText: footerText,         // <-- ADICIONADO: Passa o texto do custo para o feed
-        components: action.components,  // <-- ADICIONADO: Passa os componentes para o feed
+        costText: footerText,
+        // CORREÇÃO: Garante que 'components' seja sempre um array para evitar erros no Firebase.
+        components: action.components || [],
     });
 };
 

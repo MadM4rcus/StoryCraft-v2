@@ -54,11 +54,11 @@ const RollFeed = () => {
     const total = roll.totalResult;
     const isCrit = (roll.acertoResult && roll.acertoResult.isCrit) || (roll.criticals && roll.criticals.length > 0);
 
-    // --- CORREÇÃO APRIMORADA ---
-    // Determina se é uma rolagem simples (atributo ou perícia pura).
-    // Isso acontece se houver um 'acertoResult', mas nenhum componente de 'dano/resultado' (roll.results)
-    // OU se a ação original tinha apenas um componente 'skillRoll'.
-    const isSimpleCheckRoll = roll.acertoResult && (!roll.results || roll.results.length === 0 || (roll.components?.length === 1 && roll.components[0].type === 'skillRoll'));
+    // --- CORREÇÃO FINAL ---
+    // Determina se é uma rolagem de perícia ou atributo puro (sem dano).
+    // Isso acontece se houver um 'acertoResult', mas nenhum 'totalResult' de dano.
+    const isSimpleCheckRoll = roll.acertoResult && (roll.totalResult === undefined || roll.totalResult === 0);
+
 
     // --- CORREÇÃO FINAL ---
     // Determina se é uma ação puramente descritiva (sem acerto e sem resultados de dados).
@@ -122,7 +122,7 @@ const RollFeed = () => {
         )}
         
             {/* Bloco de Dano/Resultado (Layout 2.0) */}
-            {(roll.detailsText || !roll.acertoResult || (roll.criticals && roll.criticals.length > 0)) && (
+            {(roll.detailsText || (roll.acertoResult && roll.totalResult > 0)) && (
           <div className="mt-2 pt-2 border-t border-bgInput/50">
             
             {/* Linha 1: Dano: 668 */}
@@ -134,8 +134,9 @@ const RollFeed = () => {
             </p>
             
             {/* Linha 2: <dados da magia normalmente> */}
+            {/* --- CORREÇÃO: Usa o `detailsText` para mostrar o cálculo do dano base --- */}
             {roll.detailsText && (
-                <p className="text-sm text-textSecondary break-words mt-2">
+                <p className="text-sm text-textSecondary break-words mt-1">
                   {roll.detailsText}
                 </p>
             )}
