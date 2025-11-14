@@ -29,8 +29,11 @@ const PartyHealthMonitor = ({ onCharacterClick }) => {
     const hp = char.mainAttributes?.hp || { current: '?', max: '?', temp: 0 };
     const mp = char.mainAttributes?.mp || { current: '?', max: '?' };
 
-    const shouldBlur = isMaster && !isSpoilerMode && char.flags?.spoiler;
-    const nameClasses = `font-bold text-textPrimary truncate ${shouldBlur ? 'blur-sm' : ''}`;
+    // CORREÇÃO: A ficha só deve ser borrada se tiver a flag de spoiler E NÃO estiver selecionada.
+    // Se o mestre a selecionou, ele quer vê-la.
+    const isSpoilerAndNotSelected = isMaster && !isSpoilerMode && char.flags?.spoiler && !selectedCharIds.includes(char.id);
+
+    const nameClasses = `font-bold text-textPrimary truncate ${isSpoilerAndNotSelected ? 'blur-sm' : ''}`;
 
     return (
       <div 
@@ -76,18 +79,24 @@ const PartyHealthMonitor = ({ onCharacterClick }) => {
       {showSelector && (
         <div className="p-3 border-b border-bgElement max-h-48 overflow-y-auto">
           <h4 className="text-sm font-semibold text-textSecondary mb-2">Selecionar Personagens</h4>
-          {allCharacters.length > 0 ? allCharacters.map(char => (
-            <div key={char.id} className="flex items-center">
-              <input
-                type="checkbox"
-                id={`char-select-${char.id}`}
-                checked={selectedCharIds.includes(char.id)}
-                onChange={() => toggleCharacterSelection(char.id)}
-                className="form-checkbox h-4 w-4 text-btnHighlightBg bg-bgInput border-bgElement rounded"
-              />
-              <label htmlFor={`char-select-${char.id}`} className="ml-2 text-textPrimary text-sm truncate">{char.name}</label>
-            </div>
-          )) : <p className="text-xs text-textSecondary italic">Nenhuma ficha encontrada.</p>}
+          {allCharacters.length > 0 ? allCharacters.map(char => {
+            // CORREÇÃO: Aplica o blur na lista de seleção também.
+            const shouldBlurInSelector = isMaster && !isSpoilerMode && char.flags?.spoiler;
+            const labelClasses = `ml-2 text-textPrimary text-sm truncate ${shouldBlurInSelector ? 'blur-sm' : ''}`;
+
+            return (
+              <div key={char.id} className="flex items-center">
+                <input
+                  type="checkbox"
+                  id={`char-select-${char.id}`}
+                  checked={selectedCharIds.includes(char.id)}
+                  onChange={() => toggleCharacterSelection(char.id)}
+                  className="form-checkbox h-4 w-4 text-btnHighlightBg bg-bgInput border-bgElement rounded"
+                />
+                <label htmlFor={`char-select-${char.id}`} className={labelClasses}>{char.name}</label>
+              </div>
+            );
+          }) : <p className="text-xs text-textSecondary italic">Nenhuma ficha encontrada.</p>}
         </div>
       )}
 
