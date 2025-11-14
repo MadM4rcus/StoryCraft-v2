@@ -79,8 +79,13 @@ export const PartyHealthProvider = ({ children }) => {
             charData.mainAttributes = {};
           }
         }
-        // 3. Adiciona a ficha à lista. O ownerUid já vem no documento da ficha.
-        charactersData.push({ id: doc.id, ...charData });
+        // Garante que 'flags' seja sempre um objeto e adiciona a ficha à lista.
+        // O ownerUid já vem no documento da ficha.
+        charactersData.push({ 
+          id: doc.id, 
+          ...charData,
+          flags: charData.flags || {} 
+        });
       });
 
       setAllCharacters(charactersData);

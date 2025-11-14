@@ -145,8 +145,11 @@ Aqui é onde podemos rastrear as próximas grandes tarefas.
 ┣ 📜index.html
 ┣ 📜jsconfig.json
 ┣ 📜mirror_firestore_rules.md
+┣ 📜mirror_realtime_rules.md
 ┣ 📜package.json
 ┣ 📜postcss.config.js
 ┣ 📜README.md
+┣ 📜remove-master-claim.cjs
+┣ 📜set-master-claim.cjs
 ┣ 📜tailwind.config.js
 ┗ 📜vite.config.js

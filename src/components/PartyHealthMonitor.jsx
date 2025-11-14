@@ -2,11 +2,13 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useGlobalControls } from '@/context/GlobalControlsContext';
 import { useUIState } from '@/context/UIStateContext';
 import { usePartyHealth } from '@/context/PartyHealthContext';
 
 const PartyHealthMonitor = ({ onCharacterClick }) => {
   const { isMaster } = useAuth();
+  const { isSpoilerMode } = useGlobalControls();
   const { layout, updateLayout } = useUIState();
   const { allCharacters, selectedCharIds, partyHealthData, toggleCharacterSelection } = usePartyHealth();
   const [showSelector, setShowSelector] = useState(false);
@@ -27,14 +29,18 @@ const PartyHealthMonitor = ({ onCharacterClick }) => {
     const hp = char.mainAttributes?.hp || { current: '?', max: '?', temp: 0 };
     const mp = char.mainAttributes?.mp || { current: '?', max: '?' };
 
+    const shouldBlur = isMaster && !isSpoilerMode && char.flags?.spoiler;
+    const nameClasses = `font-bold text-textPrimary truncate ${shouldBlur ? 'blur-sm' : ''}`;
+
     return (
       <div 
-        key={char.id} 
+        // CORREÇÃO: Adiciona as flags à chave para forçar a re-renderização quando elas mudam.
+        key={`${char.id}-${JSON.stringify(char.flags)}`} 
         className="p-2 bg-bgElement rounded-md border border-bgInput cursor-pointer hover:border-btnHighlightBg"
         onClick={() => handleCharacterClick(char)}
         title={`Clique para ir para a ficha de ${char.name}`}
       >
-        <p className="font-bold text-textPrimary truncate">{char.name}</p>
+        <p className={nameClasses}>{char.name}</p>
         <div className="text-sm flex justify-between">
           <span className="text-red-400">HP: {hp.current}/{hp.max} {hp.temp > 0 ? `(+${hp.temp})` : ''}</span>
           <span className="text-blue-400">MP: {mp.current}/{mp.max}</span>

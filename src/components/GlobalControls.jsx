@@ -36,7 +36,7 @@ const DICE_TYPES = [2, 3, 4, 6, 8, 10, 12, 20, 50, 100];
 const GlobalControls = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isRollPanelOpen, setIsRollPanelOpen] = useState(false);
-  const { isEditMode, setIsEditMode, setIsThemeEditorOpen } = useGlobalControls();
+  const { isEditMode, setIsEditMode, isThemeEditorOpen, setIsThemeEditorOpen, isSpoilerMode, setIsSpoilerMode } = useGlobalControls();
   const { isRollFeedVisible, setIsRollFeedVisible, isPartyHealthMonitorVisible, setIsPartyHealthMonitorVisible, layout, updateLayout } = useUIState(); // 2. Usar o estado de visibilidade
   const { user, isMaster } = useAuth();
   const { activeCharacter, setActiveCharacter } = useSystem(); // 3. Pega o personagem ativo e o setter
@@ -144,6 +144,32 @@ const GlobalControls = () => {
           </>
         )}
 
+        {/* Controles do Mestre (sempre visíveis se for mestre) */}
+        {isMaster && (
+          <>
+            <hr className="border-bgElement my-2" />
+            <div className="grid grid-cols-2 gap-2 mb-2">
+              {/* O modo de edição só faz sentido com uma ficha ativa */}
+              {activeCharacter && canToggleEditMode && (
+              <button 
+                onClick={() => setIsEditMode(!isEditMode)} 
+                className={`w-full px-3 py-2 text-sm font-bold rounded-md shadow-md transition-colors ${isEditMode ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-bgElement text-textPrimary hover:bg-opacity-80'}`}
+                title="Ativa/Desativa a edição em todas as seções da ficha."
+              >
+                {isEditMode ? '🔒 Sair Edição' : '✏️ Modo Edição'}
+              </button>
+              )}
+              <button
+                onClick={() => setIsSpoilerMode(!isSpoilerMode)}
+                className={`w-full px-3 py-2 text-sm font-bold rounded-md shadow-md transition-colors ${!isSpoilerMode ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-bgElement text-textPrimary hover:bg-opacity-80'}`}
+                title="Ativa/Desativa a visualização de spoilers."
+              >
+                {isSpoilerMode ? '🙈 Ocultar Spoilers' : '🐵 Ver Spoilers'}
+              </button>
+            </div>
+          </>
+        )}
+
         {/* Botões que aparecem QUANDO uma ficha V1 está ativa */}
         {activeCharacter && (
           <>
@@ -155,17 +181,6 @@ const GlobalControls = () => {
               ← Voltar para a Lista
             </button>
             <hr className="border-bgElement my-2" />
-            <div className="grid grid-cols-2 gap-2 mb-2">
-              {canToggleEditMode && (
-              <button 
-                onClick={() => setIsEditMode(!isEditMode)} 
-                className={`w-full px-3 py-2 text-sm font-bold rounded-md shadow-md transition-colors ${isEditMode ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-bgElement text-textPrimary hover:bg-opacity-80'}`}
-                title="Ativa/Desativa a edição em todas as seções da ficha."
-              >
-                {isEditMode ? '🔒 Sair Edição' : '✏️ Modo Edição'}
-              </button>
-              )}
-            </div>
             <div className="grid grid-cols-5 gap-2">
               {V1_SECTIONS.map(section => (
                 <NavButton key={section.href} href={section.href} title={section.title}>

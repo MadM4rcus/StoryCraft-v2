@@ -29,7 +29,6 @@ export const AuthProvider = ({ children }) => {
         // A flag 'isMaster' é um "Custom Claim" que deve ser definido no backend.
         const isUserMaster = idTokenResult.claims.isMaster === true;
         setIsMaster(isUserMaster);
-        console.log('%c[DIAGNÓSTICO AUTH]', 'color: #00A8E8; font-weight: bold;', { isMaster: isUserMaster, claims: idTokenResult.claims });
         
         // Lógica para garantir que o documento do usuário exista no Firestore.
         // Isso só executa uma escrita se o usuário for novo.

@@ -1,18 +1,18 @@
 // src/systems/storycraft/Dashboard.jsx
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import CharacterList from './CharacterList';
 import CharacterSheet from './CharacterSheet';
 import ModalManager from '@/components/ModalManager';
 import ThemeEditor from '@/components/ThemeEditor';
-import PartyHealthMonitor from '@/components/PartyHealthMonitor';
+import PartyHealthMonitor from '@/components/PartyHealthMonitor'; // Já está sendo usado
 import { useAuth } from '@/hooks/useAuth';
 import { useSystem } from '@/context/SystemContext';
-import { useUIState } from '@/context/UIStateContext'; // Importar o contexto de UI
+import { useUIState } from '@/context/UIStateContext';
 import { useGlobalControls } from '@/context/GlobalControlsContext'; // 1. Importar o contexto dos controles
 import { getCharactersForUser, createNewCharacter, deleteCharacter } from '@/services/firestoreService';
 import { getThemeById } from '@/services/themeService';
-import { doc, setDoc, collection, onSnapshot } from 'firebase/firestore';
+import { doc, setDoc, collection, onSnapshot, updateDoc, deleteField } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 
 const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
@@ -20,8 +20,10 @@ const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
   const [characters, setCharacters] = useState([]);
   const fileInputRef = useRef(null);
   const [viewingAll, setViewingAll] = useState(false);  
-  const { isPartyHealthMonitorVisible } = useUIState(); // Pega o estado de visibilidade
-  const { isThemeEditorOpen, setIsThemeEditorOpen } = useGlobalControls(); // 2. Usar o estado global
+  const { isPartyHealthMonitorVisible } = useUIState();
+  const { isThemeEditorOpen, setIsThemeEditorOpen, isSpoilerMode } = useGlobalControls();
+  const [activeFilters, setActiveFilters] = useState([]); // NOVO: Estado para os filtros de flag ativos
+  const [sortOrder, setSortOrder] = useState('creationDate'); // 'creationDate', 'name', 'flags'
 
   const { currentSystem, setCurrentSystem, characterDataCollectionRoot, activeCharacter, setActiveCharacter } = useSystem();
   const [modalState, setModalState] = useState({ type: null, props: {} });
@@ -65,8 +67,6 @@ const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
 
   const fetchCharacters = async () => {
     if (user) {
-      // FERRAMENTA DE DIAGNÓSTICO
-      console.log('%c[DIAGNÓSTICO DASHBOARD]', 'color: #00A8E8; font-weight: bold;', `Buscando fichas. isMaster: ${isMaster}, viewingAll: ${viewingAll}`);
       const userCharacters = await getCharactersForUser(characterDataCollectionRoot, user.uid, isMaster && viewingAll);
       setCharacters(userCharacters);
     }
@@ -152,6 +152,87 @@ const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
     URL.revokeObjectURL(a.href);
   };
 
+  // Coleta todas as flags customizadas de todos os personagens para sugestão
+  const allCustomFlags = useMemo(() => {
+    const flagSet = new Set();
+    characters.forEach(char => {
+      if (char.flags) {
+        Object.keys(char.flags).forEach(flag => {
+          if (flag !== 'spoiler') flagSet.add(flag);
+        });
+      }
+    });
+    return Array.from(flagSet).sort();
+  }, [characters]);
+
+  const handleToggleFlag = async (char, flagName, isAdding) => {
+    const ownerId = char.ownerUid || user.uid;
+
+    const newFlags = { ...(char.flags || {}) };
+    if (isAdding) newFlags[flagName] = true;
+    else delete newFlags[flagName];
+
+    try {
+      const charRef = doc(db, `${characterDataCollectionRoot}/users/${ownerId}/characterSheets`, char.id);
+      if (Object.keys(newFlags).length === 0) {
+        await updateDoc(charRef, { flags: deleteField() });
+      } else {
+        await updateDoc(charRef, { flags: newFlags });
+      }
+      setCharacters(prev => prev.map(c => c.id === char.id ? { ...c, flags: newFlags } : c));
+    } catch (error) {
+      console.error("Erro ao atualizar a flag:", error);
+      alert(`Não foi possível atualizar a flag "${flagName}".`);
+    }
+  };
+
+  const handleFilterToggle = (flagName) => {
+    setActiveFilters(prev =>
+      prev.includes(flagName)
+        ? prev.filter(f => f !== flagName)
+        : [...prev, flagName]
+    );
+  };
+
+  // Lógica de Filtragem e Ordenação combinada
+  const filteredAndSortedCharacters = useMemo(() => {
+    const filtered = characters.filter(char => {
+      if (activeFilters.length === 0) return true;
+      // Mostra apenas personagens que possuem TODAS as flags ativas no filtro
+      return activeFilters.every(filter => char.flags && char.flags[filter]);
+    });
+
+    return [...filtered].sort((a, b) => {
+      if (sortOrder === 'name') {
+        return a.name.localeCompare(b.name);
+      }
+      if (sortOrder === 'flags') {
+        const getFlagsString = (char) => {
+          if (!char.flags) return '';
+          return Object.keys(char.flags)
+            .filter(flag => flag !== 'spoiler')
+            .sort()
+            .join(',');
+        };
+
+        const flagsA = getFlagsString(a);
+        const flagsB = getFlagsString(b);
+
+        // CORREÇÃO: Fichas sem flags customizadas devem ir para o final.
+        if (flagsA && !flagsB) return -1; // 'a' tem flags, 'b' não tem -> 'a' vem primeiro.
+        if (!flagsA && flagsB) return 1;  // 'b' tem flags, 'a' não tem -> 'b' vem primeiro.
+
+        // Se ambas têm (ou não têm) flags, ordena pela string de flags.
+        if (flagsA !== flagsB) return flagsA.localeCompare(flagsB);
+        // Se as flags forem idênticas, ordena por nome como desempate.
+        return a.name.localeCompare(b.name);
+      }
+      const timeA = a.createdAt && typeof a.createdAt.toMillis === 'function' ? a.createdAt.toMillis() : 0;
+      const timeB = b.createdAt && typeof b.createdAt.toMillis === 'function' ? b.createdAt.toMillis() : 0;
+      return timeB - timeA; // Ordena do mais novo para o mais antigo
+    });
+  });
+
   const partyMonitor = isPartyHealthMonitorVisible ? <PartyHealthMonitor onCharacterClick={handleCharacterClickFromMonitor} /> : null;
 
   return (
@@ -183,7 +264,57 @@ const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
         </div>
       </header>
       <main>
-        <CharacterList user={user} onSelectCharacter={setActiveCharacter} handleImportClick={handleImportClick} handleDeleteClick={handleDeleteClick} handleCreateClick={handleCreateClick} characters={characters} isMaster={isMaster} viewingAll={viewingAll} onToggleView={setViewingAll} onExportClick={handleExportClick} />
+        {/* --- NOVA SEÇÃO DE FILTROS E ORDENAÇÃO --- */}
+        {isMaster && (
+          <div className="bg-bgElement/50 p-4 rounded-lg mb-6 border border-bgInput">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Controles de Filtro */}
+              <div>
+                <h4 className="text-sm font-semibold text-textSecondary mb-2">Filtrar por Flags</h4>
+                {allCustomFlags.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {allCustomFlags.map(flag => (
+                      <button
+                        key={flag}
+                        onClick={() => handleFilterToggle(flag)}
+                        className={`px-3 py-1 text-sm font-medium rounded-full transition-colors ${activeFilters.includes(flag) ? 'bg-blue-600 text-white' : 'bg-bgSurface text-textPrimary hover:bg-opacity-80'}`}
+                      >
+                        {flag}
+                      </button>
+                    ))}
+                    {activeFilters.length > 0 && (
+                      <button onClick={() => setActiveFilters([])} className="px-3 py-1 text-sm font-medium text-red-400 hover:text-red-300">Limpar</button>
+                    )}
+                  </div>
+                ) : <p className="text-xs text-textSecondary italic">Nenhuma flag customizada foi criada ainda.</p>}
+              </div>
+              {/* Controles de Ordenação */}
+              <div>
+                <h4 className="text-sm font-semibold text-textSecondary mb-2">Ordenar por</h4>
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={() => setSortOrder('creationDate')} className={`px-3 py-1 text-sm font-medium rounded-full transition-colors ${sortOrder === 'creationDate' ? 'bg-blue-600 text-white' : 'bg-bgSurface text-textPrimary hover:bg-opacity-80'}`}>Data</button>
+                  <button onClick={() => setSortOrder('name')} className={`px-3 py-1 text-sm font-medium rounded-full transition-colors ${sortOrder === 'name' ? 'bg-blue-600 text-white' : 'bg-bgSurface text-textPrimary hover:bg-opacity-80'}`}>Nome</button>
+                  <button onClick={() => setSortOrder('flags')} className={`px-3 py-1 text-sm font-medium rounded-full transition-colors ${sortOrder === 'flags' ? 'bg-blue-600 text-white' : 'bg-bgSurface text-textPrimary hover:bg-opacity-80'}`}>Flags</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        <CharacterList 
+          user={user} 
+          onSelectCharacter={setActiveCharacter} 
+          handleImportClick={handleImportClick} 
+          handleDeleteClick={handleDeleteClick} 
+          handleCreateClick={handleCreateClick} 
+          characters={filteredAndSortedCharacters} // Usa a lista filtrada e ordenada
+          isMaster={isMaster} 
+          viewingAll={viewingAll} 
+          onToggleView={setViewingAll} 
+          onExportClick={handleExportClick}
+          onToggleFlag={handleToggleFlag} // Passa a nova função genérica
+          isSpoilerMode={isSpoilerMode} // Passa o modo spoiler
+          allCustomFlags={allCustomFlags} // Passa a lista de flags existentes
+        />
       </main>
     </div>
       )}
