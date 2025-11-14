@@ -36,8 +36,8 @@ const DICE_TYPES = [2, 3, 4, 6, 8, 10, 12, 20, 50, 100];
 const GlobalControls = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isRollPanelOpen, setIsRollPanelOpen] = useState(false);
-  const { isEditMode, setIsEditMode, isThemeEditorOpen, setIsThemeEditorOpen, isSpoilerMode, setIsSpoilerMode } = useGlobalControls();
-  const { isRollFeedVisible, setIsRollFeedVisible, isPartyHealthMonitorVisible, setIsPartyHealthMonitorVisible, layout, updateLayout } = useUIState(); // 2. Usar o estado de visibilidade
+  const { isEditMode, setIsEditMode, isThemeEditorOpen, setIsThemeEditorOpen } = useGlobalControls();
+  const { isRollFeedVisible, setIsRollFeedVisible, isPartyHealthMonitorVisible, setIsPartyHealthMonitorVisible, isSpoilerMode, setIsSpoilerMode, layout, updateLayout } = useUIState();
   const { user, isMaster } = useAuth();
   const { activeCharacter, setActiveCharacter } = useSystem(); // 3. Pega o personagem ativo e o setter
   const { addRollToFeed } = useRollFeed();
@@ -144,42 +144,38 @@ const GlobalControls = () => {
           </>
         )}
 
-        {/* Controles do Mestre (sempre visíveis se for mestre) */}
-        {isMaster && (
+        {/* Controles do Mestre e de Navegação Geral */}
+        {(isMaster || activeCharacter) && (
           <>
             <hr className="border-bgElement my-2" />
-            <div className="grid grid-cols-2 gap-2 mb-2">
-              {/* O modo de edição só faz sentido com uma ficha ativa */}
-              {activeCharacter && canToggleEditMode && (
-              <button 
-                onClick={() => setIsEditMode(!isEditMode)} 
-                className={`w-full px-3 py-2 text-sm font-bold rounded-md shadow-md transition-colors ${isEditMode ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-bgElement text-textPrimary hover:bg-opacity-80'}`}
-                title="Ativa/Desativa a edição em todas as seções da ficha."
-              >
-                {isEditMode ? '🔒 Sair Edição' : '✏️ Modo Edição'}
-              </button>
+            <div className="grid grid-cols-2 gap-2">
+              {/* Botão para voltar à lista, visível se houver ficha ativa */}
+              {activeCharacter && (
+                 <button 
+                   onClick={() => setActiveCharacter(null)} 
+                   className="w-full px-3 py-2 text-sm font-bold rounded-md shadow-md transition-colors bg-bgElement text-textPrimary hover:bg-opacity-80"
+                   title="Voltar para a tela de seleção de personagens."
+                 >
+                   ← Voltar Lista
+                 </button>
               )}
-              <button
-                onClick={() => setIsSpoilerMode(!isSpoilerMode)}
-                className={`w-full px-3 py-2 text-sm font-bold rounded-md shadow-md transition-colors ${!isSpoilerMode ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-bgElement text-textPrimary hover:bg-opacity-80'}`}
-                title="Ativa/Desativa a visualização de spoilers."
-              >
-                {isSpoilerMode ? '🙈 Ocultar Spoilers' : '🐵 Ver Spoilers'}
-              </button>
+              {/* Botão de spoiler, visível apenas para o Mestre */}
+              {isMaster && (
+                <button
+                  onClick={() => setIsSpoilerMode(!isSpoilerMode)}
+                  className={`w-full px-3 py-2 text-sm font-bold rounded-md shadow-md transition-colors ${isSpoilerMode ? 'bg-bgElement text-textPrimary hover:bg-opacity-80' : 'bg-purple-600 text-white hover:bg-purple-700'}`}
+                  title="Ativa/Desativa a visualização de spoilers."
+                >
+                  {isSpoilerMode ? '🙈 Ocultar Spoilers' : '🐵 Ver Spoilers'}
+                </button>
+              )}
             </div>
           </>
         )}
 
-        {/* Botões que aparecem QUANDO uma ficha V1 está ativa */}
+        {/* Ícones de Navegação da Ficha */}
         {activeCharacter && (
           <>
-            <button 
-              onClick={() => setActiveCharacter(null)} 
-              className="w-full px-3 py-2 text-sm font-bold rounded-md shadow-md transition-colors bg-bgElement text-textPrimary hover:bg-opacity-80"
-              title="Voltar para a tela de seleção de personagens."
-            >
-              ← Voltar para a Lista
-            </button>
             <hr className="border-bgElement my-2" />
             <div className="grid grid-cols-5 gap-2">
               {V1_SECTIONS.map(section => (
@@ -187,6 +183,17 @@ const GlobalControls = () => {
                   {section.icon}
                 </NavButton>
               ))}
+              {/* Botão de Modo Edição (Mestre ou dono da ficha) */}
+              {canToggleEditMode && (
+                <NavButton
+                  href="#"
+                  title={isEditMode ? 'Sair do Modo de Edição' : 'Entrar no Modo de Edição'}
+                >
+                  <span onClick={(e) => { e.preventDefault(); setIsEditMode(!isEditMode); }}>
+                    {isEditMode ? '🔒' : '✏️'}
+                  </span>
+                </NavButton>
+              )}
               {/* Botão para abrir o editor de temas */}
               <NavButton
                 href="#"

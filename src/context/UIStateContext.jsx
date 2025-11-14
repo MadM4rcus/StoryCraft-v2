@@ -11,6 +11,7 @@ export const useUIState = () => useContext(UIStateContext);
 const defaultUIState = {
   isRollFeedVisible: true,
   isPartyHealthMonitorVisible: true,
+  isSpoilerMode: true, // true = spoilers visíveis, false = ocultos
   layout: {
     partyMonitor: 'top-left', // 'top-left' or 'top-right'
     rollFeed: 'bottom-left', // 'bottom-left' or 'top-right'
@@ -18,7 +19,7 @@ const defaultUIState = {
 };
 
 export const UIStateProvider = ({ children }) => {
-  const { user } = useAuth();
+  const { user, isMaster } = useAuth();
   const { characterDataCollectionRoot } = useSystem();
   const [uiState, setUiState] = useState(defaultUIState);
 
@@ -32,6 +33,14 @@ export const UIStateProvider = ({ children }) => {
       });
     }
   }, [user, characterDataCollectionRoot]);
+
+  // Efeito para garantir que o mestre sempre comece com spoilers visíveis
+  // para evitar o inconveniente de ter que reativá-los a cada sessão.
+  useEffect(() => {
+    if (isMaster) {
+      setUiState(prev => ({ ...prev, isSpoilerMode: true }));
+    }
+  }, [isMaster]);
 
   // Debounce para salvar as configurações
   const debouncedSave = useCallback(debounce((path, uid, newUIState) => {
@@ -51,10 +60,12 @@ export const UIStateProvider = ({ children }) => {
   const value = {
     isRollFeedVisible: uiState.isRollFeedVisible,
     isPartyHealthMonitorVisible: uiState.isPartyHealthMonitorVisible,
+    isSpoilerMode: uiState.isSpoilerMode,
     layout: uiState.layout,
     // As funções agora atualizam o estado unificado
     setIsRollFeedVisible: (visible) => updateUIState({ isRollFeedVisible: visible }),
     setIsPartyHealthMonitorVisible: (visible) => updateUIState({ isPartyHealthMonitorVisible: visible }),
+    setIsSpoilerMode: (isSpoiler) => updateUIState({ isSpoilerMode: isSpoiler }),
     updateLayout: (newLayout) => updateUIState({ layout: newLayout }),
   };
 
