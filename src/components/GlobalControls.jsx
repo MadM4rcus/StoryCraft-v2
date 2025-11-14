@@ -78,7 +78,9 @@ const GlobalControls = () => {
       characterName: activeCharacter.name || 'Narrador',
       rollName: `Rolagem Rápida de d${sides}`,
       results: [{ value: result, displayValue: `d${sides} (${result})` }],
-      discordText: discordText
+      totalResult: result, // Adicionado para consistência
+      discordText: discordText,
+      ownerUid: user.uid, // CORREÇÃO: Adiciona o UID do dono para validação nas regras do RTDB
     });
   };
 

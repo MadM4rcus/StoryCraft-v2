@@ -56,13 +56,40 @@ export const RollFeedProvider = ({ children }) => {
   const addRollToFeed = useCallback((newRoll) => {
     if (!user || !sessionDataCollectionRoot) return;
     const feedRef = ref(rtdb, sessionDataCollectionRoot);
-    push(feedRef, { ...newRoll, type: 'roll', timestamp: serverTimestamp() });
+
+    // PENTE FINO: Garante que todos os campos obrigatórios pelas regras do RTDB existam.
+    const rollData = { ...newRoll, ownerUid: user.uid };
+
+    // Garante um nome para a rolagem, se não houver.
+    if (!rollData.rollName) {
+      rollData.rollName = 'Rolagem de Dados';
+    }
+
+    // Garante que rolagens rápidas (que podem não ter totalResult) tenham um total.
+    if (rollData.totalResult === undefined && rollData.results && rollData.results.length > 0) {
+      // Se não houver total, mas houver resultados, soma-os.
+      // Útil para rolagens simples como 1d20.
+      rollData.totalResult = rollData.results.reduce((acc, r) => acc + (r.value || 0), 0);
+    }
+
+    // Envia a rolagem completa para o Firebase.
+    push(feedRef, { ...rollData, type: 'roll', timestamp: serverTimestamp() });
   }, [user, sessionDataCollectionRoot]);
 
   const addMessageToFeed = useCallback((newMessage) => {
     if (!user || !sessionDataCollectionRoot) return;
     const feedRef = ref(rtdb, sessionDataCollectionRoot);
-    push(feedRef, { ...newMessage, type: 'message', timestamp: serverTimestamp() });
+
+    // PENTE FINO: Garante que todos os campos obrigatórios pelas regras do RTDB existam.
+    const messageData = { ...newMessage, ownerUid: user.uid }; // Garante o ownerUid.
+
+    // Garante que a mensagem tenha um campo 'text', que é obrigatório na regra de validação.
+    if (!messageData.text) {
+      messageData.text = 'Ação de Cura/Dano registrada no feed.';
+    }
+
+    // Envia a mensagem completa para o Firebase.
+    push(feedRef, { ...messageData, type: 'message', timestamp: serverTimestamp() });
   }, [user, sessionDataCollectionRoot]);
 
   const value = {

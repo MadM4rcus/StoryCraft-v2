@@ -1,10 +1,6 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // =====================================================================
-    // FUNÇÕES GLOBAIS
-    // =====================================================================
     // =====================================================================
     // REGRAS PARA STORYCRAFT V1 (LEGADO - artifacts)
     // =====================================================================
@@ -30,14 +26,13 @@ service cloud.firestore {
     // REGRAS PARA STORYCRAFT V2 (ATUAL - artifacts2)
     // =====================================================================
     
-    // --- REGRA CORRIGIDA (Separamos Read e Write para quebrar o loop) ---
+    // Regra para o documento de usuário.
     match /artifacts2/{appId}/users/{userId} {
-      // Um usuário pode SEMPRE ler seu próprio documento. Isso quebra o loop.
+      // Um usuário pode SEMPRE ler seu próprio documento.
       allow read: if request.auth != null && request.auth.uid == userId;
       
       // Um usuário pode escrever em seu próprio doc, OU um Mestre pode escrever.
-      // A função 'write' chama 'isMasterV2', que 'lê'.
-      // Como a regra 'read' acima é separada e permite a leitura, o loop é quebrado.
+      // A verificação de 'isMaster' no token é segura e não causa loops de leitura.
       allow write: if request.auth != null && (request.auth.uid == userId || request.auth.token.isMaster == true);
       
       // Um mestre pode listar todos os usuários.
@@ -45,11 +40,12 @@ service cloud.firestore {
     }
 
     match /artifacts2/{appId}/users/{userId}/characterSheets/{sheetId} {
+      // O dono da ficha ou um Mestre podem ler, escrever e deletar.
       allow read, write, delete: if request.auth != null && (request.auth.uid == userId || request.auth.token.isMaster == true);
     }
 
-    // --- NOVA REGRA: Permite que Mestres listem TODAS as fichas de uma vez ---
-    // Esta regra é necessária para a consulta `collectionGroup` usada no PartyHealthMonitor.
+    // Regra de Collection Group: Permite que Mestres listem TODAS as fichas de uma vez.
+    // Necessária para consultas como a do PartyHealthMonitor.
     // IMPORTANTE: Esta regra requer um índice composto no Firestore.
     match /{path=**}/characterSheets/{sheetId} {
       allow read: if request.auth != null && request.auth.token.isMaster == true;
@@ -66,17 +62,9 @@ service cloud.firestore {
     // =====================================================================
     // REGRAS PARA DADOS DE SESSÃO (CHAT/FEED E CONFIGS) - NOVO
     // =====================================================================
-    // A regra para 'feed' foi removida, pois a funcionalidade será migrada para o Discord.
-
-    // --- REGRA PARA OS LAYOUTS DE FICHA (SKINS) ---
+    // Regra para os layouts de ficha (skins).
     match /storycraft-v2/{appId}/layouts/{systemId} {
       allow read: if request.auth != null;
-      
-      // *** AQUI ESTÁ A REGRA CORRETA QUE VOCÊ QUERIA ***
-      // Agora ela funciona, pois 'isMasterV2' pode ler o doc de usuário sem travar.
-      // Ela usa o {appId} do seu aplicativo (o 1:727...) que o seu app
-      // deve conhecer e passar para a função isMasterV2.
-      // Vamos usar o seu appId específico, como você me mostrou.
       allow write: if request.auth != null && request.auth.token.isMaster == true;
     }
 

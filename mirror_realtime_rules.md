@@ -1,25 +1,28 @@
 {
   "rules": {
-    // Por padrão, ninguém pode ler ou escrever em lugar nenhum.
-    ".read": false,
-    ".write": false,
-    
     // Define as regras para o nó principal do seu app
     "storycraft-v2": {
-      // Define as regras para o nó da sessão de chat/rolagens
-      "default-session": {
-        
-        // Qualquer usuário autenticado pode ler as mensagens do feed.
+      // Regra curinga para qualquer ID de sessão (ex: "default-session")
+      "$session_id": {
+        // Qualquer usuário autenticado pode ler os dados da sessão (o feed).
         ".read": "auth != null",
-        
-        // Para cada nova mensagem ($pushId) que está sendo adicionada...
+
+        // Ninguém pode sobrescrever a lista inteira de itens do feed.
+        // A permissão de escrita será concedida por item individual abaixo.
+        ".write": false,
+
+        // Adiciona um índice no campo 'timestamp' para otimizar as consultas
+        // que ordenam e limitam os itens do feed. Isso resolve o aviso de performance.
+        ".indexOn": "timestamp",
+
+        // Regras para cada novo item ($pushId) que está sendo adicionado ao feed.
         "$pushId": {
-          // Apenas usuários autenticados podem tentar escrever.
-          // A validação abaixo garante que eles só escrevam em seu próprio nome.
-          ".write": "auth != null",
-          
-          // Valida a estrutura e a autoria dos dados que estão sendo enviados.
-          ".validate": "newData.hasChildren(['characterName', 'ownerUid', 'timestamp', 'type']) && newData.child('ownerUid').val() === auth.uid && (newData.child('type').val() === 'message' ? newData.hasChild('text') : newData.hasChild('rollName')) && newData.child('timestamp').val() === now"
+          // Permite a escrita se o usuário estiver autenticado E se o item ainda não existir.
+          // Isso garante que a operação seja apenas de criação (push).
+          ".write": "auth != null && !data.exists()",
+
+          // Valida a estrutura dos dados que estão sendo enviados para garantir consistência.
+          ".validate": "newData.hasChildren(['type', 'ownerUid', 'timestamp', 'characterName']) && newData.child('ownerUid').val() === auth.uid && newData.child('timestamp').val() === now && ((newData.child('type').val() === 'message' && newData.hasChild('text')) || (newData.child('type').val() === 'roll' && newData.hasChild('rollName')))"
         }
       }
     }
