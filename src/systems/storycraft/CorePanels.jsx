@@ -267,7 +267,7 @@ export const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, tog
 
     return (
         <SheetSkin title="Atributos" isCollapsed={isCollapsed} toggleSection={toggleSection}>
-            <div className="space-y-6">
+            <div className="space-y-2">
                 
                 {/* --- LAYOUT HP/MP CORRIGIDO --- */}
                 {/* Corrigido de lg:grid-cols-3 para sm:grid-cols-2 para evitar coluna vazia */}
@@ -333,11 +333,12 @@ export const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, tog
                                         {key}
                                     </label>
                                 </div>
-                            );
+                            );
                         })}
                     </div>
                 
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 auto-rows-fr">
+                {/* --- ATRIBUTOS DE COMBATE --- */}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 auto-rows-fr">
                     {/* --- ATRIBUTOS DE COMBATE --- */}
                     {['Iniciativa', 'FA', 'FM', 'MD', 'Acerto', 'ME'].map(key => {
                             const lowerKey = key.toLowerCase();
@@ -399,8 +400,10 @@ a                                         ria-label={`${key}
                                 </div>
                             );
                         })}
+                </div>
 
-                    {/* --- TESTES DE RESISTÊNCIA --- */}
+                {/* --- TESTES DE RESISTÊNCIA (em um novo grid sem auto-rows-fr) --- */}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                     {[{key: 'Fortitude', defaultAttr: 'CON'}, {key: 'Reflexo', defaultAttr: 'DES'}, {key: 'Vontade', defaultAttr: 'SAB'}].map(({key, defaultAttr}) => {
                         const lowerKey = key.toLowerCase();
                         const attrField = `${lowerKey}Attr`; // ex: 'fortitudeAttr'
@@ -419,8 +422,8 @@ a                                         ria-label={`${key}
                         };
 
                                 return (
-                                    <div key={key} className="flex flex-col items-center p-2 bg-bgElement rounded-md col-span-2 justify-center">
-                                        <label htmlFor={key} className="uppercase font-bold text-sm text-textSecondary mb-1">{key}</label>
+                                    <div key={key} className="flex flex-col items-center px-2 py-1 bg-bgElement rounded-md col-span-2 justify-center">
+                                        <label htmlFor={key} className="uppercase font-bold text-xs text-textSecondary">{key}</label>
                                         <div className="flex items-center gap-2 w-full">
                                             <span className="text-2xl font-bold text-textPrimary cursor-pointer hover:text-btnHighlightBg flex-shrink-0" onClick={() => onAttributeRoll(key, total)} title={`Clique para rolar ${key} (Valor: ${total})`}>
                                                 {total}
