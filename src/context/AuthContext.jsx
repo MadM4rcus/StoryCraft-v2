@@ -21,12 +21,12 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
-      // OTIMIZAÇÃO: Em vez de um listener (onSnapshot), verificamos o token do usuário uma vez.
+      // OTIMIZAÇÃO: Em vez de um listener (onSnapshot), verificamos o token do usuário.
       // Isso não custa leituras no Firestore.
       try {
         // Força a atualização do token para pegar os claims mais recentes.
         const idTokenResult = await currentUser.getIdTokenResult(true);
-        // A flag 'isMaster' é um "Custom Claim" que deve ser definido no backend.
+        // A flag 'isMaster' é um "Custom Claim" seguro, definido no backend.
         const isUserMaster = idTokenResult.claims.isMaster === true;
         setIsMaster(isUserMaster);
         

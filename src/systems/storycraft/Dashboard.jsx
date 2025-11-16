@@ -8,7 +8,7 @@ import ThemeEditor from '@/components/ThemeEditor';
 import PartyHealthMonitor from '@/components/PartyHealthMonitor'; // Já está sendo usado
 import { useAuth } from '@/hooks/useAuth';
 import { useSystem } from '@/context/SystemContext';
-import { useUIState } from '@/context/UIStateContext';
+import { useUIState } from '@/context/UIStateContext'; // Corrigido
 import { useGlobalControls } from '@/context/GlobalControlsContext'; // 1. Importar o contexto dos controles
 import { getCharactersForUser, createNewCharacter, deleteCharacter } from '@/services/firestoreService';
 import { getThemeById } from '@/services/themeService';
@@ -20,8 +20,8 @@ const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
   const [characters, setCharacters] = useState([]);
   const fileInputRef = useRef(null);
   const [viewingAll, setViewingAll] = useState(false);  
-  const { isPartyHealthMonitorVisible } = useUIState();
-  const { isThemeEditorOpen, setIsThemeEditorOpen, isSpoilerMode } = useGlobalControls();
+  const { isPartyHealthMonitorVisible, isSpoilerMode } = useUIState(); // Corrigido
+  const { isThemeEditorOpen, setIsThemeEditorOpen } = useGlobalControls();
   const [activeFilters, setActiveFilters] = useState([]); // NOVO: Estado para os filtros de flag ativos
   const [sortOrder, setSortOrder] = useState('creationDate'); // 'creationDate', 'name', 'flags'
 
@@ -29,7 +29,7 @@ const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
   const [modalState, setModalState] = useState({ type: null, props: {} });
   const closeModal = () => setModalState({ type: null, props: {} });
 
-  // Otimização: Armazena o ID do tema ativo em um estado local
+  // Otimização: Armazena o ID do tema ativo em um estado local.
   const [activeThemeId, setActiveThemeId] = useState(null);
 
   useEffect(() => {
@@ -41,13 +41,13 @@ const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
       });
       return () => unsubscribe();
     } else {
-      // Limpa o ID e o tema se não houver personagem ativo.
+      // Limpa o ID e o tema se não houver personagem ativo
       setActiveThemeId(null);
-      setActiveTheme(null); // Limpa o tema se não houver personagem ativo
+      setActiveTheme(null);
     }
   }, [activeCharacter, characterDataCollectionRoot]);
 
-  // Este novo useEffect só executa a busca do tema quando o ID do tema mudar.
+  // Este novo useEffect só executa a busca do tema quando o ID do tema realmente mudar.
   useEffect(() => {
     if (activeThemeId) {
       getThemeById(activeThemeId).then(setActiveTheme);

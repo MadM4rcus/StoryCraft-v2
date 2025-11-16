@@ -2,14 +2,12 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useGlobalControls } from '@/context/GlobalControlsContext';
 import { useUIState } from '@/context/UIStateContext';
 import { usePartyHealth } from '@/context/PartyHealthContext';
 
 const PartyHealthMonitor = ({ onCharacterClick }) => {
   const { isMaster } = useAuth();
-  const { isSpoilerMode } = useGlobalControls();
-  const { layout, updateLayout } = useUIState();
+  const { layout, updateLayout, isSpoilerMode } = useUIState(); // Corrigido
   const { allCharacters, selectedCharIds, partyHealthData, toggleCharacterSelection } = usePartyHealth();
   const [showSelector, setShowSelector] = useState(false);
 

@@ -27,7 +27,7 @@ export const RollFeedProvider = ({ children }) => {
     const feedQuery = query(
       feedRef,
       orderByChild('timestamp'),
-      limitToLast(20) // Limita a busca às últimas 20 mensagens para performance
+      limitToLast(20) // Otimização: Limita a busca às últimas 20 mensagens para performance.
     );
 
     const unsubscribe = onValue(feedQuery, (snapshot) => {
