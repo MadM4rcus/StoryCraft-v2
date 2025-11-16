@@ -271,7 +271,7 @@ export const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, tog
                 
                 {/* --- LAYOUT HP/MP CORRIGIDO --- */}
                 {/* Corrigido de lg:grid-cols-3 para sm:grid-cols-2 para evitar coluna vazia */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {/* Bloco de HP */}
                     <div className="flex flex-col items-center p-2 bg-bgElement rounded-md">
                         <label className="text-lg font-medium text-textSecondary mb-1 uppercase">HP</label>
@@ -295,7 +295,7 @@ export const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, tog
                 </div>
 
                 {/* --- NOVO LAYOUT "EMPILHADO" PARA ATRIBUTOS --- */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
                     {['Força', 'Destreza', 'Constituição', 'Inteligencia', 'Sabedoria', 'Carisma'].map(key => {
                             const lowerKey = key.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // forca, constituicao, etc.
                             const baseValue = localMainAttributes?.[lowerKey] ?? '';
@@ -338,7 +338,7 @@ export const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, tog
                     </div>
                 
                 {/* --- ATRIBUTOS DE COMBATE --- */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 auto-rows-fr">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 auto-rows-fr">
                     {/* --- ATRIBUTOS DE COMBATE --- */}
                     {['Iniciativa', 'FA', 'FM', 'MD', 'Acerto', 'ME'].map(key => {
                             const lowerKey = key.toLowerCase();
@@ -403,7 +403,7 @@ a                                         ria-label={`${key}
                 </div>
 
                 {/* --- TESTES DE RESISTÊNCIA (em um novo grid sem auto-rows-fr) --- */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
                     {[{key: 'Fortitude', defaultAttr: 'CON'}, {key: 'Reflexo', defaultAttr: 'DES'}, {key: 'Vontade', defaultAttr: 'SAB'}].map(({key, defaultAttr}) => {
                         const lowerKey = key.toLowerCase();
                         const attrField = `${lowerKey}Attr`; // ex: 'fortitudeAttr'
