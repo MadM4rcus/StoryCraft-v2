@@ -418,50 +418,25 @@ a                                         ria-label={`${key}
                             onUpdate(attrField, newAttr);
                         };
 
-                        return (
-                            <div key={key} className="flex flex-col items-center p-2 bg-bgElement rounded-md col-span-2 justify-between">
-                                <span 
-                                    className="text-4xl font-bold text-textPrimary cursor-pointer hover:text-btnHighlightBg"
-                                    onClick={() => onAttributeRoll(key, total)}
-                                    title={`Clique para rolar ${key} (Valor: ${total})`}>
-                                    {total}
-                                </span>
-
-                                <div className="flex items-center gap-2">
-                                    <input
-                                        type="number"
-                                        id={key}
-                                        name={lowerKey}
-                                        value={baseValue}
-                                        onChange={handleLocalChange}
-                                        onBlur={() => handleSave(lowerKey)}
-                                        className="w-16 p-1 text-center bg-bgInput border border-bgElement rounded-md text-textSecondary text-lg"
-                                        disabled={!canEditGeneral || !isEditMode}
-                                        aria-label={`${key} Base`}
-                                    />
-                                    {isEditMode ? (
-                                        <select 
-                                            value={selectedAttr}
-                                            onChange={(e) => handleAttrChange(e.target.value)}
-                                            className="bg-bgInput text-textPrimary text-sm font-bold rounded-md p-1 border-none focus:ring-2 focus:ring-btnHighlightBg"
-                                            disabled={!canEditGeneral}
-                                        >
-                                            {Object.keys(attrValueMap).map(attr => (
-                                                <option key={attr} value={attr}>{attr}</option>
-                                            ))}
-                                        </select>
-                                    ) : (
-                                        <span className="font-semibold text-textSecondary text-sm ml-1">({selectedAttr})</span>
-                                    )}
-                                </div>
-
-                                <label 
-                                    htmlFor={key} 
-                                    className="uppercase font-bold text-sm text-textSecondary mt-1"
-                                >
-                                    {key}
-                                </label>
-                            </div>
+                                return (
+                                    <div key={key} className="flex flex-col items-center p-2 bg-bgElement rounded-md col-span-2 justify-center">
+                                        <label htmlFor={key} className="uppercase font-bold text-sm text-textSecondary mb-1">{key}</label>
+                                        <div className="flex items-center gap-2 w-full">
+                                            <span className="text-2xl font-bold text-textPrimary cursor-pointer hover:text-btnHighlightBg flex-shrink-0" onClick={() => onAttributeRoll(key, total)} title={`Clique para rolar ${key} (Valor: ${total})`}>
+                                                {total}
+                                            </span>
+                                            <span className="text-textSecondary">=</span>
+                                            <input type="number" id={key} name={lowerKey} value={baseValue} onChange={handleLocalChange} onBlur={() => handleSave(lowerKey)} className="w-full p-1 text-center bg-bgInput border border-bgElement rounded-md text-textSecondary text-lg" disabled={!canEditGeneral || !isEditMode} aria-label={`${key} Base`} />
+                                            <span className="text-textSecondary">+</span>
+                                            {isEditMode ? (
+                                                <select value={selectedAttr} onChange={(e) => handleAttrChange(e.target.value)} className="bg-bgInput text-textPrimary text-sm font-bold rounded-md p-1 border-none focus:ring-2 focus:ring-btnHighlightBg" disabled={!canEditGeneral}>
+                                                    {Object.keys(attrValueMap).map(attr => (<option key={attr} value={attr}>{attr}</option>))}
+                                                </select>
+                                            ) : (
+                                                <span className="font-semibold text-textSecondary text-sm w-12 text-center">({selectedAttr})</span>
+                                            )}
+                                        </div>
+                                    </div>
                         );
                     })}
                     </div>
