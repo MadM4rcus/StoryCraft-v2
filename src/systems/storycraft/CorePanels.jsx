@@ -40,34 +40,34 @@ const ImageUrlModal = ({ initialValue, onConfirm, onCancel }) => {
 
 
 // --- Sub-componente: CharacterInfo ---
-const CharacterInfo = ({ character, onUpdate, isMaster, isCollapsed, toggleSection, isEditMode }) => {
+const CharacterInfo = ({ character, onUpdate, isMaster, isCollapsed, toggleSection, isEditMode, onPowerScaleUpdate }) => {
     const { user } = useAuth();
     const canEdit = user && (user.uid === character.ownerUid || isMaster);
     const [isModalOpen, setIsModalOpen] = useState(false);
     
-    const [localFields, setLocalFields] = useState({
-        name: character.name || '',
-        age: character.age || '',
-        height: character.height || '',
-        gender: character.gender || '',
-        race: character.race || '',
-        class: character.class || '',
-        alignment: character.alignment || '',
-        level: character.level || '',
-        xp: character.xp || '',
-    });
+    const [localFields, setLocalFields] = useState({
+        name: character.name || '',
+        age: character.age || '',
+        height: character.height || '',
+        gender: character.gender || '',
+        race: character.race || '',
+        class: character.class || '',
+        alignment: character.alignment || '',
+        level: character.level || '',
+        xp: character.xp || '',
+    });
 
     useEffect(() => {
         setLocalFields({
-            name: character.name || '',
-            age: character.age || '',
-            height: character.height || '',
-            gender: character.gender || '',
-            race: character.race || '',
-            class: character.class || '',
-            alignment: character.alignment || '',
-            level: character.level || '',
-            xp: character.xp || '',
+            name: character.name || '',
+            age: character.age || '',
+            height: character.height || '',
+            gender: character.gender || '',
+            race: character.race || '',
+            class: character.class || '',
+            alignment: character.alignment || '',
+            level: character.level || '',
+            xp: character.xp || '',
         });
     }, [character]);
 
@@ -75,23 +75,30 @@ const CharacterInfo = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
     const getPowerScale = (level) => {
         level = parseInt(level, 10);
         if (isNaN(level) || level < 1) {
-            return { scale: 'N/A', category: 'Desconhecida' };
+            return { scale: 'N/A', category: 'Desconhecida', powerBonus: 0 };
         }
 
-        if (level >= 1 && level <= 10) return { scale: 0, category: 'Comum' };
-        if (level >= 11 && level <= 20) return { scale: 1, category: 'Lendário I' };
-        if (level >= 21 && level <= 30) return { scale: 2, category: 'Lendário II' };
-        if (level >= 31 && level <= 40) return { scale: 3, category: 'Lendário III' };
-        if (level >= 41 && level <= 45) return { scale: 4, category: 'Colossal I' };
-        if (level >= 46 && level <= 50) return { scale: 5, category: 'Colossal II' };
-        if (level >= 51 && level <= 55) return { scale: 6, category: 'Colossal III' };
-        if (level >= 56 && level <= 59) return { scale: 7, category: 'Titânico' };
-        if (level === 60) return { scale: 8, category: 'Divino' };
+        if (level >= 1 && level <= 10) return { scale: 0, category: 'Comum', powerBonus: 1 };
+        if (level >= 11 && level <= 20) return { scale: 1, category: 'Lendário I', powerBonus: 2 };
+        if (level >= 21 && level <= 30) return { scale: 2, category: 'Lendário II', powerBonus: 2 };
+        if (level >= 31 && level <= 40) return { scale: 3, category: 'Lendário III', powerBonus: 2 };
+        if (level >= 41 && level <= 45) return { scale: 4, category: 'Colossal I', powerBonus: 3 };
+        if (level >= 46 && level <= 50) return { scale: 5, category: 'Colossal II', powerBonus: 3 };
+        if (level >= 51 && level <= 55) return { scale: 6, category: 'Colossal III', powerBonus: 3 };
+        if (level >= 56 && level <= 59) return { scale: 7, category: 'Titânico', powerBonus: 4 };
+        if (level === 60) return { scale: 8, category: 'Divino', powerBonus: 5 };
 
-        return { scale: 'N/A', category: 'Além do Divino' }; // For levels beyond 60 or other edge cases
+        return { scale: 'N/A', category: 'Além do Divino', powerBonus: 6 }; // For levels beyond 60
     };
 
-    const { scale, category } = useMemo(() => getPowerScale(character.level), [character.level]);
+    const { scale, category, powerBonus } = useMemo(() => getPowerScale(character.level), [character.level]);
+
+    // NOVO: Efeito para comunicar a mudança do bônus de poder para o componente pai
+    useEffect(() => {
+        if (onPowerScaleUpdate) {
+            onPowerScaleUpdate(powerBonus);
+        }
+    }, [powerBonus, onPowerScaleUpdate]);
 
     const handleLocalChange = (e) => {
         const { name, value } = e.target;
@@ -169,7 +176,7 @@ const CharacterInfo = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
 };
 
 // --- Sub-componente: MainAttributes ---
-export const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, toggleSection, buffModifiers, isEditMode, onAttributeRoll, onMapUpdate }) => {
+export const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, toggleSection, buffModifiers, isEditMode, onAttributeRoll, onMapUpdate, powerScaleBonus }) => {
     const { user } = useAuth();
     const canEdit = user && (user.uid === character.ownerUid || isMaster);
     const canEditGeneral = user && (user.uid === character.ownerUid || isMaster);
@@ -405,7 +412,7 @@ a                                         ria-label={`${key}
                         const attrValue = attrValueMap[selectedAttr] || 0;
 
                         const baseValue = localMainAttributes?.[lowerKey] ?? '';
-                        const total = (parseInt(baseValue, 10) || 0) + attrValue + (buffModifiers[key] || 0);
+                        const total = (parseInt(baseValue, 10) || 0) + attrValue + (buffModifiers[key] || 0) + (powerScaleBonus || 0);
 
                         const handleAttrChange = (newAttr) => {
                             onUpdate(attrField, newAttr);

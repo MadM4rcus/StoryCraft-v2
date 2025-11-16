@@ -22,6 +22,8 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
   const { isEditMode } = useGlobalControls();
   // Novo estado para armazenar o mapa de atributos totais vindo do CorePanels
   const [totalAttributesMap, setTotalAttributesMap] = useState({});
+  // NOVO: Estado para o bônus de escala de poder
+  const [powerScaleBonus, setPowerScaleBonus] = useState(0);
 
   const [modalState, setModalState] = useState({ type: null, props: {} });
   const closeModal = () => setModalState({ type: null, props: {} });
@@ -599,9 +601,10 @@ const handleExecuteFormulaAction = async (action) => {
     <div className="w-full max-w-4xl mx-auto p-4">
           <ModalManager modalState={modalState} closeModal={closeModal} />
           {/* O botão de voltar foi movido para o GlobalControls */}
-
-      <div id="info"><CharacterInfo character={character} onUpdate={updateCharacterField} isMaster={isMaster} isEditMode={isEditMode} isCollapsed={character.collapsedStates?.info} toggleSection={() => toggleSection('info')} /></div>
-      <div id="main-attributes"><MainAttributes character={character} onUpdate={updateCharacterField} isMaster={isMaster} isEditMode={isEditMode} buffModifiers={buffModifiers.attributes} isCollapsed={character.collapsedStates?.main} toggleSection={() => toggleSection('main')} onAttributeRoll={handleAttributeClick} onMapUpdate={setTotalAttributesMap} /></div>
+      {/* 1. O CharacterInfo agora atualiza o bônus de poder */}
+      <div id="info"><CharacterInfo character={character} onUpdate={updateCharacterField} isMaster={isMaster} isEditMode={isEditMode} isCollapsed={character.collapsedStates?.info} toggleSection={() => toggleSection('info')} onPowerScaleUpdate={setPowerScaleBonus} /></div>
+      {/* 2. O MainAttributes agora recebe o bônus de poder */}
+      <div id="main-attributes"><MainAttributes character={character} onUpdate={updateCharacterField} isMaster={isMaster} isEditMode={isEditMode} buffModifiers={buffModifiers.attributes} isCollapsed={character.collapsedStates?.main} toggleSection={() => toggleSection('main')} onAttributeRoll={handleAttributeClick} onMapUpdate={setTotalAttributesMap} powerScaleBonus={powerScaleBonus} /></div>
       <div id="actions"><ActionsSection character={character} isMaster={isMaster} isCollapsed={character.collapsedStates?.actions} toggleSection={() => toggleSection('actions')} allAttributes={allAttributes} onUpdate={updateCharacterField} onExecuteFormula={handleExecuteFormulaAction} isEditMode={isEditMode} /></div>
       <div id="buffs"><BuffsSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} allAttributes={allAttributes} isCollapsed={character.collapsedStates?.buffs} toggleSection={() => toggleSection('buffs')} isEditMode={isEditMode} /></div>
       {/* SpecializationsList foi refatorado para ser a nova seção de PERÍCIAS. Passamos o mapa de atributos totais. */}
