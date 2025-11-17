@@ -64,6 +64,31 @@ const RollFeed = () => {
     // Determina se é uma ação puramente descritiva (sem acerto e sem resultados de dados).
     const isDescriptiveAction = !roll.acertoResult && (!roll.results || roll.results.length === 0);
 
+    // --- NOVO: Bloco para Modo Secreto ---
+    if (roll.isSecret) {
+      return (
+        <div key={roll.id} className="p-3 bg-bgElement rounded-md border border-red-500/50 mb-2 shadow-lg shadow-red-900/20">
+          <div className="flex justify-between items-center text-xs text-textSecondary mb-1">
+            <span className="font-bold text-base text-textPrimary">{roll.characterName}</span>
+            <span>{formatTimestamp(roll.timestamp)}</span>
+          </div>
+          <div className="text-center py-2">
+            <p className="font-semibold text-lg text-textPrimary">{roll.rollName}</p>
+            {roll.acertoResult && (
+              <p className="font-semibold text-textPrimary/90">
+                {roll.acertoResult.skillName}:
+                <span className="font-bold text-3xl ml-2 text-textAccent">{roll.acertoResult.total}</span>
+              </p>
+            )}
+            <p className={`font-semibold ${roll.acertoResult ? 'text-textPrimary/90' : 'text-textPrimary'}`}>
+              {roll.acertoResult ? 'Dano/Resultado:' : 'Resultado:'}
+              <span className={`font-bold text-3xl ml-2 text-textAccent`}>{total}</span>
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     // --- NOVO: Bloco para Rolagem Rápida ---
     if (roll.isQuickRoll) {
       return (

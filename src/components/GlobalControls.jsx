@@ -36,7 +36,7 @@ const DICE_TYPES = [2, 3, 4, 6, 8, 10, 12, 20, 50, 100];
 const GlobalControls = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isRollPanelOpen, setIsRollPanelOpen] = useState(false);
-  const { isEditMode, setIsEditMode, isThemeEditorOpen, setIsThemeEditorOpen } = useGlobalControls();
+  const { isEditMode, setIsEditMode, isThemeEditorOpen, setIsThemeEditorOpen, isSecretMode, setIsSecretMode } = useGlobalControls();
   const { isRollFeedVisible, setIsRollFeedVisible, isPartyHealthMonitorVisible, setIsPartyHealthMonitorVisible, isSpoilerMode, setIsSpoilerMode, layout, updateLayout } = useUIState();
   const { user, isMaster } = useAuth();
   const { activeCharacter, setActiveCharacter } = useSystem(); // 3. Pega o personagem ativo e o setter
@@ -84,6 +84,7 @@ const GlobalControls = () => {
       totalResult: result,
       discordText: feedText,
       ownerUid: user.uid, // CORREÇÃO: Adiciona o UID do dono para validação nas regras do RTDB
+      isSecret: isSecretMode,
       isQuickRoll: true, // Adiciona uma flag para identificar a rolagem rápida
     });
   };
@@ -122,17 +123,17 @@ const GlobalControls = () => {
         <div className="grid grid-cols-2 gap-2 mb-2">
           <button
             onClick={() => setIsRollFeedVisible(!isRollFeedVisible)}
-            className="px-3 py-2 text-sm font-bold rounded-md shadow-md transition-colors bg-bgElement text-textPrimary hover:bg-opacity-80"
+            className={`px-3 py-2 text-sm font-bold rounded-md shadow-md transition-colors text-white ${isRollFeedVisible ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}
             title="Mostrar/Ocultar o painel de Chat e Rolagens."
           >
-            {isRollFeedVisible ? 'Ocultar Chat' : 'Mostrar Chat'}
+            Chat
           </button>
           <button
             onClick={() => setIsPartyHealthMonitorVisible(!isPartyHealthMonitorVisible)}
-            className="px-3 py-2 text-sm font-bold rounded-md shadow-md transition-colors bg-bgElement text-textPrimary hover:bg-opacity-80"
+            className={`px-3 py-2 text-sm font-bold rounded-md shadow-md transition-colors text-white ${isPartyHealthMonitorVisible ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}
             title="Mostrar/Ocultar o painel de Monitor de Grupo."
           >
-            {isPartyHealthMonitorVisible ? 'Ocultar Grupo' : 'Mostrar Grupo'}
+            Grupo
           </button>
         </div>
 
@@ -169,10 +170,20 @@ const GlobalControls = () => {
               {isMaster && (
                 <button
                   onClick={() => setIsSpoilerMode(!isSpoilerMode)}
-                  className={`w-full px-3 py-2 text-sm font-bold rounded-md shadow-md transition-colors ${isSpoilerMode ? 'bg-bgElement text-textPrimary hover:bg-opacity-80' : 'bg-purple-600 text-white hover:bg-purple-700'}`}
+                  className={`w-full px-3 py-2 text-sm font-bold rounded-md shadow-md transition-colors text-white ${isSpoilerMode ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}
                   title="Ativa/Desativa a visualização de spoilers."
                 >
-                  {isSpoilerMode ? '🙈 Ocultar Spoilers' : '🐵 Ver Spoilers'}
+                  Spoilers
+                </button>
+              )}
+              {/* Botão do Modo Secreto, visível apenas para o Mestre */}
+              {isMaster && (
+                <button
+                  onClick={() => setIsSecretMode(!isSecretMode)}
+                  className={`w-full px-3 py-2 text-sm font-bold rounded-md shadow-md transition-colors text-white ${isSecretMode ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}
+                  title="Ativa/Desativa o modo de rolagens secretas."
+                >
+                  Secreto
                 </button>
               )}
             </div>

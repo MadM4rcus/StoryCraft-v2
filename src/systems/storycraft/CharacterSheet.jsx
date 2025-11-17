@@ -17,7 +17,7 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
   const { character, loading, updateCharacterField, toggleSection } = useCharacter(initialCharacter.id, initialCharacter.ownerUid);
   const { addRollToFeed, addMessageToFeed } = useRollFeed();
   const { user } = useAuth();
-
+  const { isSecretMode } = useGlobalControls();
   // 2. Usa o estado de edição do contexto global
   const { isEditMode } = useGlobalControls();
   // Novo estado para armazenar o mapa de atributos totais vindo do CorePanels
@@ -553,6 +553,7 @@ const handleExecuteFormulaAction = async (action) => {
         discordText: descriptionText,
         costText: footerText,
         // CORREÇÃO: Garante que 'components' seja sempre um array para evitar erros no Firebase.
+        isSecret: isSecretMode,
         components: action.components || [],
     });
 };
