@@ -64,6 +64,23 @@ const RollFeed = () => {
     // Determina se é uma ação puramente descritiva (sem acerto e sem resultados de dados).
     const isDescriptiveAction = !roll.acertoResult && (!roll.results || roll.results.length === 0);
 
+    // --- NOVO: Bloco para Rolagem Rápida ---
+    if (roll.isQuickRoll) {
+      return (
+        <div key={roll.id} className="p-3 bg-bgElement rounded-md border border-bgInput mb-2">
+          <div className="flex justify-between items-center text-xs text-textSecondary mb-1">
+            <span className="font-bold text-base text-textPrimary">{roll.characterName}</span>
+            <span>{formatTimestamp(roll.timestamp)}</span>
+          </div>
+          <div className="text-center py-2">
+            <p className="text-textPrimary">
+              Rolou <span className="font-bold text-4xl text-textAccent">{roll.totalResult}</span> em um {roll.rollName}
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div key={roll.id} className="p-3 bg-bgElement rounded-md border border-bgInput mb-2">
         <div className="flex justify-between items-center text-xs text-textSecondary mb-1">

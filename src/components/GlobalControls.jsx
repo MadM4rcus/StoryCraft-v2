@@ -60,27 +60,31 @@ const GlobalControls = () => {
     const result = Math.floor(Math.random() * sides) + 1;
     setIsRollPanelOpen(false);
 
-    let discordText = `Rolagem de d${sides}\n**Resultado: ${result}**`;
+    // Texto para o Discord (embed)
+    const discordEmbedDescription = `**Resultado: ${result}**`;
+
+    // Texto para o feed da aplicação (mais direto)
+    const feedText = `Rolou **${result}** em um d${sides}.`;
+
     if (activeCharacter.discordWebhookUrl) {
       try {
         await fetch(activeCharacter.discordWebhookUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ embeds: [{ title: `Rolagem de d${sides}`, description: `**Resultado: ${result}**`, color: 7506394 }] })
+          body: JSON.stringify({ embeds: [{ title: `Rolagem de d${sides}`, description: discordEmbedDescription, color: 7506394 }] })
         });
       } catch (error) {
         console.error('Failed to send to Discord:', error);
-        discordText = `(Falha ao enviar para o Discord) ${discordText}`;
       }
     }
 
     addRollToFeed({
       characterName: activeCharacter.name || 'Narrador',
-      rollName: `Rolagem Rápida de d${sides}`,
-      results: [{ value: result, displayValue: `d${sides} (${result})` }],
-      totalResult: result, // Adicionado para consistência
-      discordText: discordText,
+      rollName: `d${sides}`, // Simplificado para apenas o tipo de dado
+      totalResult: result,
+      discordText: feedText,
       ownerUid: user.uid, // CORREÇÃO: Adiciona o UID do dono para validação nas regras do RTDB
+      isQuickRoll: true, // Adiciona uma flag para identificar a rolagem rápida
     });
   };
 
