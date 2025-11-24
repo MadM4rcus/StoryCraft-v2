@@ -66,24 +66,61 @@ const RollFeed = () => {
 
     // --- NOVO: Bloco para Modo Secreto ---
     if (roll.isSecret) {
+      // --- LÓGICA REFINADA ---
+      // Uma "Ação" é uma rolagem com múltiplos componentes (ex: perícia + dano)
+      // ou com componentes que não são de perícia (ex: uma cura com dados).
+      // Uma rolagem de perícia pura (1 componente do tipo 'skillRoll') não é uma "Ação".
+      const isComplexActionRoll = roll.components && (
+        roll.components.length > 1 || (roll.components.length === 1 && roll.components[0].type !== 'skillRoll')
+      );
+
       return (
-        <div key={roll.id} className="p-3 bg-bgElement rounded-md border border-red-500/50 mb-2 shadow-lg shadow-red-900/20">
+        <div key={roll.id} className="p-3 bg-bgElement rounded-md border border-red-500/50 mb-2 shadow-lg shadow-red-900/30">
           <div className="flex justify-between items-center text-xs text-textSecondary mb-1">
             <span className="font-bold text-base text-textPrimary">{roll.characterName}</span>
             <span>{formatTimestamp(roll.timestamp)}</span>
           </div>
           <div className="text-center py-2">
             <p className="font-semibold text-lg text-textPrimary">{roll.rollName}</p>
-            {roll.acertoResult && (
+            {/* --- LÓGICA DE EXIBIÇÃO PARA MODO SECRETO --- */}
+            {isComplexActionRoll ? ( // É uma ação complexa?
+              roll.acertoResult?.isCritFail ? ( // 1. E é uma falha crítica no acerto?
+                // Mostra apenas a mensagem de falha, sem dano.
+                <p className="font-bold text-3xl text-red-500 animate-pulse">💥 Falha Crítica!</p>
+              ) : (
+                // 2. Se não for falha crítica, mostra os detalhes.
+                <>
+                  {roll.acertoResult && (
+                    <p className="font-semibold text-textPrimary/90">
+                      {roll.acertoResult.skillName}:
+                      {roll.acertoResult.isCrit ? (
+                          <span className="font-bold text-3xl ml-2 text-green-400 animate-pulse">CRÍTICO! 🎯</span>
+                      ) : (
+                          <span className={`font-bold text-3xl ml-2 text-textAccent`}>
+                              {roll.acertoResult.total}
+                          </span>
+                      )}
+                    </p>
+                  )}
+                  <p className={`font-semibold ${roll.acertoResult ? 'text-textPrimary/90' : 'text-textPrimary'}`}>
+                    {roll.acertoResult ? 'Dano/Resultado:' : 'Resultado:'}
+                    <span className={`font-bold text-3xl ml-2 text-textAccent`}>{total}</span>
+                  </p>
+                </>
+              )
+            ) : roll.acertoResult?.isCrit ? ( // Não é ação complexa, mas é sucesso crítico?
+              // 2. Se for ROLAGEM SIMPLES e CRÍTICO, mostra a mensagem
+              <p className="font-bold text-3xl text-green-400 animate-pulse">🎯 Sucesso Crítico!</p>
+            ) : roll.acertoResult?.isCritFail ? ( // Não é ação complexa, mas é falha crítica?
+              // 3. Se for ROLAGEM SIMPLES e FALHA, mostra a mensagem
+              <p className="font-bold text-3xl text-red-500 animate-pulse">💥 Falha Crítica!</p>
+            ) : (
+              // 4. Se for ROLAGEM SIMPLES e NORMAL, mostra o resultado
               <p className="font-semibold text-textPrimary/90">
-                {roll.acertoResult.skillName}:
-                <span className="font-bold text-3xl ml-2 text-textAccent">{roll.acertoResult.total}</span>
+                Resultado:
+                <span className="font-bold text-3xl ml-2 text-textAccent">{roll.acertoResult?.total ?? total}</span>
               </p>
             )}
-            <p className={`font-semibold ${roll.acertoResult ? 'text-textPrimary/90' : 'text-textPrimary'}`}>
-              {roll.acertoResult ? 'Dano/Resultado:' : 'Resultado:'}
-              <span className={`font-bold text-3xl ml-2 text-textAccent`}>{total}</span>
-            </p>
           </div>
         </div>
       );
