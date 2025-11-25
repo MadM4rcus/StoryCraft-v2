@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUIState } from '@/context/UIStateContext';
-import { usePartyHealth } from '@/context/PartyHealthContext';
+import { usePartyHealth } from '@/context/EventManagerContext';
 
 const PartyHealthMonitor = ({ onCharacterClick }) => {
   const { isMaster } = useAuth();

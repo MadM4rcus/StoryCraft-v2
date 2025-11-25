@@ -7,7 +7,7 @@ import ClassicSheet from './ClassicSheet'; // 1. DESCOMENTADO - A ficha real
 import ClassicSheetAdjuster from './ClassicSheetAdjuster'; // 2. MANTIDO - A ferramenta de GM
 import ModalManager from '@/components/ModalManager';
 import ThemeEditor from '@/components/ThemeEditor';
-import PartyHealthMonitor from '@/components/PartyHealthMonitor';
+import PartyHealthMonitor from '@/components/EventManager';
 import { useAuth } from '@/hooks/useAuth';
 import { useSystem } from '@/context/SystemContext';
 import { getCharactersForUser, createNewCharacter, deleteCharacter } from '@/services/firestoreService';

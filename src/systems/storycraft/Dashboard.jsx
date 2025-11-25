@@ -5,7 +5,7 @@ import CharacterList from './CharacterList';
 import CharacterSheet from './CharacterSheet';
 import ModalManager from '@/components/ModalManager';
 import ThemeEditor from '@/components/ThemeEditor';
-import PartyHealthMonitor from '@/components/PartyHealthMonitor'; // Já está sendo usado
+import PartyHealthMonitor from '@/components/EventManager'; // Já está sendo usado
 import { useAuth } from '@/hooks/useAuth';
 import { useSystem } from '@/context/SystemContext';
 import { useUIState } from '@/context/UIStateContext'; // Corrigido
