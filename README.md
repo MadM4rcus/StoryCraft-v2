@@ -82,9 +82,60 @@ Aqui é onde podemos rastrear as próximas grandes tarefas.
 
 -   [x] **Otimizar Leituras do Firestore:** Identificar e corrigir componentes que causam consumo excessivo de leituras no banco de dados. O objetivo é garantir que a aplicação seja sustentável e não ultrapasse os limites do plano gratuito.
 
+(Tarefa executada, porêm sempre manter manutenção.)
+
 ### Em Pausa
 
--   **Desenvolvimento da Skin V2 (`storycraft_classic`):** O trabalho no sistema de layout dinâmico está em pausa até que as otimizações de performance e a nova arquitetura do chat sejam concluídas.
+-   **Desenvolvimento da Skin V2 (`storycraft_classic`):** O trabalho no sistema de layout dinâmico está em pausa até que a funcionalidade do Gerenciador de Eventos seja concluída.
+
+### Nova Funcionalidade: Gerenciador de Eventos (Combate)
+
+Esta será a próxima grande funcionalidade, evoluindo o `PartyHealthMonitor` para um sistema completo de gerenciamento de encontros. O objetivo é permitir que o Mestre controle combates e que as ações dos jogadores tenham consequências automatizadas, mantendo os custos do Firebase no mínimo.
+
+**Plano de Ação:**
+
+1.  **Arquitetura "Mestre como Host":**
+    *   O estado do combate (participantes, HPs, turnos, etc.) será mantido no navegador do Mestre, não no Firestore, para evitar leituras/escritas constantes.
+    *   Ao iniciar um "evento", o Mestre adiciona jogadores e NPCs. O sistema fará uma leitura inicial das fichas no **Firestore** para popular o estado do combate.
+
+2.  **Comunicação via Realtime Database:**
+    *   Será criado um novo "canal" (`/combat-events/{sessionId}`) no **Realtime Database**.
+    *   O Mestre transmitirá o estado do combate para este canal. Todos os jogadores irão "ouvir" as mudanças para que suas interfaces (ex: o monitor de vida do grupo) sejam atualizadas em tempo real.
+    *   As regras de segurança garantirão que apenas o Mestre possa escrever neste canal.
+
+3.  **Fluxo de Ação com Aprovação:**
+    *   Quando um jogador usar uma ação (ex: um ataque), ele não executará a lógica. Em vez disso, enviará uma "solicitação de ação" para um canal separado no Realtime Database (`/action-requests/{sessionId}`).
+    *   O navegador do Mestre receberá essa solicitação e exibirá um **popup de aprovação**.
+    *   O Mestre poderá aprovar, negar ou modificar a ação.
+
+4.  **Execução e Sincronização:**
+    *   Ao aprovar, o navegador do Mestre executará a lógica da ação (rolagens, cálculos de dano, etc.).
+    *   O estado do combate local do Mestre será atualizado (ex: o HP do alvo diminui).
+    *   Imediatamente, o novo estado será retransmitido para todos os jogadores via Realtime Database.
+
+5.  **Persistência Econômica:**
+    *   As atualizações de HP/MP só serão salvas permanentemente no **Firestore** quando o Mestre clicar em um botão "Salvar Combate". Isso consolida todas as mudanças em poucas operações de escrita, otimizando drasticamente os custos.
+
+6.  **Desenvolvimento da Interface:**
+    *   Evoluir o componente `PartyHealthMonitor` para se tornar o novo "Gerenciador de Eventos".
+    *   Criar o novo modal de aprovação de ações para o Mestre.
+    *   Adaptar a ficha do jogador para entrar em "modo de combate", onde as ações disparam solicitações em vez de execuções diretas.
+
+Sobre essa tarefa: eu já renomeei o partyHealthMonitor e seu context para nomenclaturas mais adequadas, (verificar dependencias.)
+
+a idéia é evoluir o componente em vez de apenas um monitor e atalho para fichas, para um construtor de eventos robusto. a interface do mestre deverá ser possivel de criar multiplos eventos de combate.
+salvar e encerrar esses eventos caso deseje. na interface do jogador não mestre ele apenas tem a exibição do jeito que está atualmente com os nomes das fichas, sem poder clicar para ver a ficha, apenas o nome, hp e mp caso o mestre deseje compartilhar. 
+
+o mestre deverá poder adicionar quaisquer fichas ao evento, essas fichas que estão juntas em um evento devem poder interagir entre sí: por exemplo já temos as açoes rápidas que são espécies de ataques que o proprio jogador configura. ao clicar nessa ação atualmente o app faz as rolagens pré-configuradas no chat e no discord. porém quando estiver em um evento com mais de uma ficha, o usuário dono da ficha que está em um evento deverá poder escolher um alvo para essa ação rápida, seja cura ou ataque, ao usar uma ação e escolher um alvo, o app vai enviar essas informaçoes para o monitor de eventos para o mestre confirmar ou cancelar. se o mestre confirmar a ação toma efeito. seja ela uma cura, um ataque, se for cura, a rolagem deve acontecer, e o alvo recuperar o hp segundo as regras definidas pela ação em questão, o mesmo para os ataques. existem algumas regras e lógicas que devem ser aplicadas mas isso eu adicionarei futuramente, a principio precisamos criar essa interface que reune essas açoes. 
+
+uma nova coleçao no firestore será criada para salvar esses eventos de combate. caso o mestre deseje salvar. 
+para evitar leituras e escritas desnecessárias no firestore, somente será feita a leitura das fichas quando o mestre adicionar uma ficha para o evento, ou quando ele clicar em algum botão "atualizar" pois as vezes alguma ficha pode receber um buff, e isso provavelmente não será atualizado em tempo real no monitor de eventos. 
+no decorrer do evento, vão acontecer curas e ataques, alterações no hp e mp das fichas. essa informação não deve ser constantemente lida e escrita, apenas quando o mestre clicar em salvar. 
+tudo isso acontecerá usando o navegador do mestre como servidor temporário. e será salvo no firestore quando o mestre clicar em salvar atualizando assim o hp e mp de todas as fichas envolvidas no evento. 
+para visualização em tempo real dos jogadores podemos usar o servidor real time, para atualizar para os jogadores o estado de hp e mp, bem como outras informaçoes, passagem de turnos etec. 
+
+a principio vamos deixar o componente minimamente funcional, criar os canais de comunicação, e depois eu adiciono os detalhes e regras
+
 
 📦STORYCRAFT-V2
 ┣ 📂src
@@ -94,14 +145,14 @@ Aqui é onde podemos rastrear as próximas grandes tarefas.
 ┃ ┃ ┣ 📜Login.jsx
 ┃ ┃ ┣ 📜LoginScreen.jsx
 ┃ ┃ ┣ 📜ModalManager.jsx
-┃ ┃ ┣ 📜PartyHealthMonitor.jsx
+┃ ┃ ┣ 📜PartyHealthMonitor.jsx => EventManager.jsx
 ┃ ┃ ┣ 📜RollFeed.jsx
 ┃ ┃ ┣ 📜SystemRouter.jsx
 ┃ ┃ ┗ 📜ThemeEditor.jsx
 ┃ ┣ 📂context
 ┃ ┃ ┣ 📜AuthContext.jsx
 ┃ ┃ ┣ 📜GlobalControlsContext.jsx
-┃ ┃ ┣ 📜PartyHealthContext.jsx
+┃ ┃ ┣ 📜PartyHealthContext.jsx => EventManagerContext.jsx
 ┃ ┃ ┣ 📜RollFeedContext.jsx
 ┃ ┃ ┣ 📜SystemContext.jsx
 ┃ ┃ ┗ 📜UIStateContext.jsx
