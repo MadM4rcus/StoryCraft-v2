@@ -34,6 +34,7 @@ const ActionsSection = ({
             multiplier: 1, discordText: '', isCollapsed: false, costValue: 0, costType: '',
             recoverHP: false,
             recoverMP: false,
+            requiresTarget: false,
         };
         onUpdate('formulaActions', [...(character.formulaActions || []), newAction]);
     };
@@ -291,6 +292,7 @@ const ActionsSection = ({
                                                 </select>
                                             </div>
                                             {canEdit && (
+                                                <>
                                                 <div className="flex gap-4 mt-4" style={{ display: isEditMode ? 'flex' : 'none' }}>
                                                     <div className="flex items-center">
                                                         <input
@@ -314,7 +316,35 @@ const ActionsSection = ({
                                                         />
                                                         <label htmlFor={`recover-mp-${action.id}`} className="ml-2 text-sm text-textSecondary">Recuperar MP</label>
                                                     </div>
+                                                    <div className="flex items-center">
+                                                        <input
+                                                            type="checkbox"
+                                                            id={`requires-target-${action.id}`}
+                                                            checked={action.requiresTarget || false}
+                                                            onChange={(e) => handleSaveActionChange(action.id, 'requiresTarget', e.target.checked)}
+                                                            className="form-checkbox text-yellow-500 rounded-sm"
+                                                            disabled={!canEdit}
+                                                        />
+                                                        <label htmlFor={`requires-target-${action.id}`} className="ml-2 text-sm text-textSecondary">Requer Alvo</label>
+                                                    </div>
                                                 </div>
+                                                {action.requiresTarget && (
+                                                    <div className="mt-3">
+                                                        <label className="text-sm font-medium text-textSecondary block mb-1">Efeito no Alvo:</label>
+                                                        <select
+                                                            value={action.targetEffect || 'damage'}
+                                                            onChange={(e) => handleSaveActionChange(action.id, 'targetEffect', e.target.value)}
+                                                            className="p-2 bg-bgInput border border-bgElement rounded-md text-textPrimary text-sm w-full"
+                                                            disabled={!canEdit}
+                                                        >
+                                                            <option value="damage">💥 Causar Dano (HP)</option>
+                                                            <option value="heal">❤️ Curar (HP)</option>
+                                                            <option value="damageMP">⚡ Drenar MP</option>
+                                                            <option value="healMP">💧 Restaurar MP</option>
+                                                        </select>
+                                                    </div>
+                                                )}
+                                                </>
                                             )}
                                         </div>
                                     </div>}

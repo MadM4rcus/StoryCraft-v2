@@ -10,10 +10,10 @@ export const useUIState = () => useContext(UIStateContext);
 
 const defaultUIState = {
   isRollFeedVisible: true,
-  isPartyHealthMonitorVisible: true,
+  isEventManagerVisible: true,
   isSpoilerMode: false, // O padrão agora é oculto
   layout: {
-    partyMonitor: 'top-left', // 'top-left' or 'top-right'
+    eventManager: 'top-left', // 'top-left' or 'top-right'
     rollFeed: 'bottom-left', // 'bottom-left' or 'top-right'
   }
 };
@@ -51,12 +51,12 @@ export const UIStateProvider = ({ children }) => {
 
   const value = {
     isRollFeedVisible: uiState.isRollFeedVisible,
-    isPartyHealthMonitorVisible: uiState.isPartyHealthMonitorVisible,
+    isEventManagerVisible: uiState.isEventManagerVisible,
     isSpoilerMode: uiState.isSpoilerMode,
     layout: uiState.layout,
     // As funções agora atualizam o estado unificado
     setIsRollFeedVisible: (visible) => updateUIState({ isRollFeedVisible: visible }),
-    setIsPartyHealthMonitorVisible: (visible) => updateUIState({ isPartyHealthMonitorVisible: visible }),
+    setIsEventManagerVisible: (visible) => updateUIState({ isEventManagerVisible: visible }),
     setIsSpoilerMode: (isSpoiler) => updateUIState({ isSpoilerMode: isSpoiler }),
     updateLayout: (newLayout) => updateUIState({ layout: newLayout }),
   };

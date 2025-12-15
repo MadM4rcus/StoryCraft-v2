@@ -7,7 +7,7 @@ import ClassicSheet from './ClassicSheet'; // 1. DESCOMENTADO - A ficha real
 import ClassicSheetAdjuster from './ClassicSheetAdjuster'; // 2. MANTIDO - A ferramenta de GM
 import ModalManager from '@/components/ModalManager';
 import ThemeEditor from '@/components/ThemeEditor';
-import PartyHealthMonitor from '@/components/EventManager';
+import EventManager from '@/components/EventManager';
 import { useAuth } from '@/hooks/useAuth';
 import { useSystem } from '@/context/SystemContext';
 import { getCharactersForUser, createNewCharacter, deleteCharacter } from '@/services/firestoreService';
@@ -120,7 +120,7 @@ const DashboardV2 = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
     });
   };
 
-  const partyMonitor = <PartyHealthMonitor onCharacterClick={handleCharacterClickFromMonitor} />;
+  const eventManager = <EventManager onCharacterClick={handleCharacterClickFromMonitor} />;
 
   // 4. LÓGICA DE RENDERIZAÇÃO CORRIGIDA
   // Prioridade:
@@ -139,7 +139,7 @@ const DashboardV2 = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
   if (selectedCharacter) {
     return (
       <>
-        {partyMonitor} 
+          {eventManager}  
         <ClassicSheet 
           character={selectedCharacter} 
           onBack={() => setSelectedCharacter(null)} 
@@ -152,7 +152,7 @@ const DashboardV2 = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
   // Se nenhum dos acima for verdadeiro, mostra o Dashboard (lista)
   return (
     <>
-      {partyMonitor}
+        {eventManager} 
       
       <div className="w-full max-w-5xl mx-auto p-4 md:p-8">
         <ModalManager modalState={modalState} closeModal={closeModal} />

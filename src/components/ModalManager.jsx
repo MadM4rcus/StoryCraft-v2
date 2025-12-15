@@ -1,6 +1,75 @@
 // src/components/ModalManager.jsx
 
 import React, { useState } from 'react';
+import { useEventManager } from '@/context/EventManagerContext';
+
+const TargetSelectionModalContent = ({ action, actor, onConfirm, onCancel }) => {
+  const { events, allCharacters } = useEventManager();
+  const [selectedTargetIds, setSelectedTargetIds] = useState([]);
+
+  // Find the event the actor is in
+  // CORREÇÃO: event.characters é um array de objetos, precisamos verificar o ID
+  const currentEvent = events.find(event => event.characters.some(c => c.id === actor.id));
+  
+  // CORREÇÃO: Usa a lista de personagens do PRÓPRIO evento para popular o dropdown.
+  // Isso garante que jogadores vejam os outros alvos mesmo sem ter acesso à ficha completa deles.
+  const targetableCharacters = currentEvent 
+    ? currentEvent.characters.filter(char => char.id !== actor.id)
+    : [];
+
+  const toggleTarget = (charId) => {
+    setSelectedTargetIds(prev => {
+        if (prev.includes(charId)) {
+            return prev.filter(id => id !== charId);
+        } else {
+            return [...prev, charId];
+        }
+    });
+  };
+
+  const handleConfirm = () => {
+    // Busca os objetos dos alvos selecionados
+    const targets = targetableCharacters.filter(char => selectedTargetIds.includes(char.id));
+    onConfirm(action, actor, targets);
+  };
+
+  return (
+    <>
+      <h2 className="text-xl font-bold mb-4 text-textAccent">Selecionar Alvos para "{action.name}"</h2>
+      
+      {targetableCharacters.length > 0 ? (
+        <div className="max-h-60 overflow-y-auto space-y-2 mb-4">
+            {targetableCharacters.map(char => (
+                <div 
+                    key={char.id} 
+                    onClick={() => toggleTarget(char.id)}
+                    className={`p-2 rounded-md border cursor-pointer flex items-center justify-between ${selectedTargetIds.includes(char.id) ? 'bg-btnHighlightBg/20 border-btnHighlightBg' : 'bg-bgInput border-bgElement hover:bg-bgElement'}`}
+                >
+                    <span className="text-textPrimary font-semibold">{char.name}</span>
+                    {selectedTargetIds.includes(char.id) && <span className="text-green-400 font-bold">✓</span>}
+                </div>
+            ))}
+        </div>
+      ) : (
+        <p className="text-textSecondary mb-4">Nenhum outro personagem no evento para alvejar.</p>
+      )}
+
+      <div className="flex justify-end gap-3 mt-6">
+        <button onClick={onCancel} className="px-4 py-2 bg-gray-600 text-white font-bold rounded-md hover:bg-gray-700">
+          Cancelar
+        </button>
+        <button 
+          onClick={handleConfirm} 
+          disabled={selectedTargetIds.length === 0 && targetableCharacters.length > 0}
+          className="px-4 py-2 bg-green-600 text-white font-bold rounded-md hover:bg-green-700 disabled:bg-gray-400"
+        >
+          Confirmar ({selectedTargetIds.length})
+        </button>
+      </div>
+    </>
+  );
+};
+
 
 const InfoConfirmModalContent = ({ message, onConfirm, onCancel, type, showCopyButton, copyText }) => {
     const [copySuccess, setCopySuccess] = useState('');
@@ -154,6 +223,8 @@ const ModalManager = ({ modalState, closeModal }) => {
                 return <RollAttributeModalContent {...props} />;
             case 'damageHeal':
                 return <DamageHealModalContent {...props} />;
+            case 'targetSelection':
+                return <TargetSelectionModalContent {...props} />;
             default:
                 return null;
         }

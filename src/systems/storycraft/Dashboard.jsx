@@ -5,7 +5,7 @@ import CharacterList from './CharacterList';
 import CharacterSheet from './CharacterSheet';
 import ModalManager from '@/components/ModalManager';
 import ThemeEditor from '@/components/ThemeEditor';
-import PartyHealthMonitor from '@/components/EventManager'; // Já está sendo usado
+import EventManager from '@/components/EventManager'; // Já está sendo usado
 import { useAuth } from '@/hooks/useAuth';
 import { useSystem } from '@/context/SystemContext';
 import { useUIState } from '@/context/UIStateContext'; // Corrigido
@@ -20,7 +20,7 @@ const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
   const [characters, setCharacters] = useState([]);
   const fileInputRef = useRef(null);
   const [viewingAll, setViewingAll] = useState(false);  
-  const { isPartyHealthMonitorVisible, isSpoilerMode } = useUIState(); // Corrigido
+  const { isEventManagerVisible, isSpoilerMode } = useUIState(); // Corrigido
   const { isThemeEditorOpen, setIsThemeEditorOpen } = useGlobalControls();
   const [activeFilters, setActiveFilters] = useState([]); // NOVO: Estado para os filtros de flag ativos
   const [sortOrder, setSortOrder] = useState('creationDate'); // 'creationDate', 'name', 'flags'
@@ -233,11 +233,11 @@ const Dashboard = ({ activeTheme, setActiveTheme, setPreviewTheme }) => {
     });
   });
 
-  const partyMonitor = isPartyHealthMonitorVisible ? <PartyHealthMonitor onCharacterClick={handleCharacterClickFromMonitor} /> : null;
+  const eventManager = isEventManagerVisible ? <EventManager onCharacterClick={handleCharacterClickFromMonitor} /> : null;
 
   return (
     <>
-      {partyMonitor} {/* Renderiza o monitor condicionalmente */}
+      {eventManager} {/* Renderiza o monitor condicionalmente */}
       {isThemeEditorOpen && <ThemeEditor character={activeCharacter} originalTheme={activeTheme} setPreviewTheme={setPreviewTheme} onClose={handleCloseEditor} />}
 
       {activeCharacter ? (

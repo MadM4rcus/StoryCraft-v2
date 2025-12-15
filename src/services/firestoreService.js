@@ -1,15 +1,16 @@
-import { db } from './firebase';
+import { db } from './firebase'; // Importa a instância do DB
 import { 
   collection, 
   query, 
   getDocs, 
   addDoc, 
-  serverTimestamp, 
   deleteDoc, 
   doc, 
   getDoc, 
   setDoc,
-  onSnapshot 
+  onSnapshot,
+  writeBatch,      // Adicionado aqui
+  serverTimestamp  // Adicionado aqui
 } from 'firebase/firestore';
 
 // A função agora pode buscar todas as fichas se fetchAll for verdadeiro
@@ -127,9 +128,117 @@ export const saveUserSettings = async (basePath, userId, settings) => {
 };
 
 
+/**
+ * Salva o estado de um evento de combate no Firestore.
+ * - Cria/Atualiza o documento do evento na coleção 'events'.
+ * - Atualiza o HP e MP de cada personagem envolvido no evento.
+ * @param {string} characterDataCollectionRoot - O caminho raiz para os dados (ex: 'artifacts2/1:727...').
+ * @param {object} eventData - O objeto do evento, contendo os personagens com seus status atualizados.
+ */
+export const saveEventState = async (characterDataCollectionRoot, eventData) => {
+  if (!characterDataCollectionRoot || !eventData || !eventData.id) {
+    console.error("saveEventState: Dados insuficientes para salvar o evento.");
+    return;
+  }
+
+  const batch = writeBatch(db);
+  const eventCharacters = eventData.characters || [];
+  // 1. Salvar o próprio evento na coleção de eventos
+  // O caminho para os eventos é fixo em 'storycraft-v2/default/events', conforme as regras de segurança.
+  // Não depende do characterDataCollectionRoot.
+  const eventCollectionPath = 'storycraft-v2/default/events';
+  const eventRef = doc(db, eventCollectionPath, eventData.id);
+  const eventToSave = {
+    id: eventData.id,
+    name: eventData.name,
+    characterIds: eventData.characters.map(c => c.id), // Salva apenas os IDs
+    savedAt: serverTimestamp(),
+  };
+  batch.set(eventRef, eventToSave, { merge: true });
+
+  // 2. Atualizar a ficha de cada personagem envolvido
+  // Precisamos ler a ficha atual para não sobrescrever outros atributos, 
+  // já que 'mainAttributes' é armazenado como uma string JSON.
+  const readPromises = eventCharacters.map(async (character) => {
+    if (!character.ownerUid || !character.id) return null;
+    
+    const charRef = doc(db, `${characterDataCollectionRoot}/users/${character.ownerUid}/characterSheets/${character.id}`);
+    const charSnap = await getDoc(charRef);
+    
+    if (charSnap.exists()) {
+        return { ref: charRef, data: charSnap.data(), eventChar: character };
+    }
+    return null;
+  });
+
+  const results = await Promise.all(readPromises);
+
+  results.forEach(result => {
+    if (!result) return;
+    const { ref, data, eventChar } = result;
+
+    let currentMainAttrs = {};
+    try {
+        // Tenta parsear o que está no banco. Se for string, parseia. Se for objeto, usa.
+        if (typeof data.mainAttributes === 'string') {
+            currentMainAttrs = JSON.parse(data.mainAttributes);
+        } else {
+            currentMainAttrs = data.mainAttributes || {};
+        }
+    } catch (e) {
+        console.error("Erro ao parsear mainAttributes da ficha:", e);
+        currentMainAttrs = {};
+    }
+
+    // Atualiza APENAS HP e MP com os dados do evento
+    if (eventChar.mainAttributes?.hp) {
+        currentMainAttrs.hp = eventChar.mainAttributes.hp;
+    }
+    if (eventChar.mainAttributes?.mp) {
+        currentMainAttrs.mp = eventChar.mainAttributes.mp;
+    }
+
+    // Salva de volta como string JSON, preservando Força, Dex, etc.
+    batch.update(ref, {
+        mainAttributes: JSON.stringify(currentMainAttrs)
+    });
+  });
+
+  try {
+    await batch.commit();
+    console.log(`[FirestoreService] Evento '${eventData.name}' e fichas atualizadas com sucesso!`);
+  } catch (error) {
+    console.error("Erro ao salvar o estado do evento:", error);
+  }
+};
+
+/**
+ * Deleta um evento salvo do Firestore.
+ * @param {string} eventId - O ID do evento a ser deletado.
+ */
+export const deleteEventFromFirestore = async (eventId) => {
+  if (!eventId) {
+    console.error("deleteEventFromFirestore: ID do evento é necessário.");
+    return;
+  }
+
+  // O caminho para os eventos é fixo, conforme as regras de segurança.
+  const eventCollectionPath = 'storycraft-v2/default/events';
+  const eventRef = doc(db, eventCollectionPath, eventId);
+
+  try {
+    await deleteDoc(eventRef);
+    console.log(`[FirestoreService] Evento '${eventId}' deletado com sucesso do Firestore!`);
+  } catch (error) {
+    console.error(`Erro ao deletar o evento '${eventId}' do Firestore:`, error);
+  }
+};
+
+
 // =====================================================================
 // 2. --- NOVAS FUNÇÕES DE LAYOUT (ROADMAP) ---
 // =====================================================================
+
 
 // Dimensões do palco do Adjuster (baseado no ClassicSheetAdjuster.jsx)
 const STAGE_WIDTH = 827;

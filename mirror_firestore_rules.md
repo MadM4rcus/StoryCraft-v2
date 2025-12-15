@@ -45,7 +45,7 @@ service cloud.firestore {
     }
 
     // Regra de Collection Group: Permite que Mestres listem TODAS as fichas de uma vez.
-    // Necessária para consultas como a do PartyHealthMonitor.
+    // Necessária para consultas como a do EventManager.
     // IMPORTANTE: Esta regra requer um índice composto no Firestore.
     match /{path=**}/characterSheets/{sheetId} {
       allow read: if request.auth != null && request.auth.token.isMaster == true;
@@ -71,6 +71,13 @@ service cloud.firestore {
     match /storycraft-v2/{appId}/userSettings/{userId} {
       // Um usuário só pode ler e escrever suas próprias configurações.
       allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // --- NOVA REGRA: Para a coleção de eventos de combate salvos ---
+    match /storycraft-v2/{appId}/events/{eventId} {
+      // Apenas Mestres podem ler, criar, atualizar ou deletar eventos salvos.
+      // Isso impede que jogadores acessem informações de eventos que não estão ativos.
+      allow read, write, delete: if request.auth != null && request.auth.token.isMaster == true;
     }
 
     // =====================================================================

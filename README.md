@@ -19,6 +19,12 @@ A plataforma utiliza o Firebase Firestore para sincronização de dados em tempo
 * **Feed de Sessão**: Um feed em tempo real para rolagens de dados e mensagens, garantindo a integridade do log de eventos da sessão.
 * **Layout Dinâmico (Skin V2)**: O visual v2 não possui um layout fixo. Sua estrutura é carregada de um documento no Firestore, permitindo que a aparência da ficha seja alterada sem a necessidade de um novo deploy.
 * **Ferramenta de Ajuste (GM-Only)**: Uma ferramenta interna (`ClassicSheetAdjuster`) permite que o Mestre mova, redimensione e salve as posições dos elementos do visual V2 diretamente no banco de dados.
+* **Gerenciador de Eventos (Em desenvolvimento)**: Um sistema robusto para que o Mestre de Jogo gerencie encontros e combates.
+    *   **Mestre como Host**: O estado do combate é gerenciado no navegador do Mestre para evitar custos com o Firestore.
+    *   **Comunicação em Tempo Real**: Utiliza o Realtime Database para sincronizar o estado do combate com os jogadores.
+    *   **Aprovação de Ações**: Jogadores solicitam ações (ataques, curas) que o Mestre aprova, nega ou modifica.
+    *   **Execução Centralizada**: A lógica da ação é executada no navegador do Mestre, garantindo consistência.
+    *   **Persistência Otimizada**: As alterações na ficha (HP, MP) são salvas no Firestore apenas quando o Mestre decide, reduzindo operações de escrita.
 
 ⚙️ Gerenciando Permissões de Mestre
 ==================================
@@ -90,7 +96,7 @@ Aqui é onde podemos rastrear as próximas grandes tarefas.
 
 ### Nova Funcionalidade: Gerenciador de Eventos (Combate)
 
-Esta será a próxima grande funcionalidade, evoluindo o `PartyHealthMonitor` para um sistema completo de gerenciamento de encontros. O objetivo é permitir que o Mestre controle combates e que as ações dos jogadores tenham consequências automatizadas, mantendo os custos do Firebase no mínimo.
+Esta será a próxima grande funcionalidade, evoluindo o `EventManager` para um sistema completo de gerenciamento de encontros. O objetivo é permitir que o Mestre controle combates e que as ações dos jogadores tenham consequências automatizadas, mantendo os custos do Firebase no mínimo.
 
 **Plano de Ação:**
 
@@ -117,11 +123,11 @@ Esta será a próxima grande funcionalidade, evoluindo o `PartyHealthMonitor` pa
     *   As atualizações de HP/MP só serão salvas permanentemente no **Firestore** quando o Mestre clicar em um botão "Salvar Combate". Isso consolida todas as mudanças em poucas operações de escrita, otimizando drasticamente os custos.
 
 6.  **Desenvolvimento da Interface:**
-    *   Evoluir o componente `PartyHealthMonitor` para se tornar o novo "Gerenciador de Eventos".
+    *   Evoluir o componente `EventManager` para se tornar o novo "Gerenciador de Eventos".
     *   Criar o novo modal de aprovação de ações para o Mestre.
     *   Adaptar a ficha do jogador para entrar em "modo de combate", onde as ações disparam solicitações em vez de execuções diretas.
 
-Sobre essa tarefa: eu já renomeei o partyHealthMonitor e seu context para nomenclaturas mais adequadas, (verificar dependencias.)
+Event manager =>
 
 a idéia é evoluir o componente em vez de apenas um monitor e atalho para fichas, para um construtor de eventos robusto. a interface do mestre deverá ser possivel de criar multiplos eventos de combate.
 salvar e encerrar esses eventos caso deseje. na interface do jogador não mestre ele apenas tem a exibição do jeito que está atualmente com os nomes das fichas, sem poder clicar para ver a ficha, apenas o nome, hp e mp caso o mestre deseje compartilhar. 
@@ -141,18 +147,18 @@ a principio vamos deixar o componente minimamente funcional, criar os canais de 
 ┣ 📂src
 ┃ ┣ 📂components
 ┃ ┃ ┣ 📜ChatInput.jsx
+┃ ┃ ┣ 📜EventManager.jsx
 ┃ ┃ ┣ 📜GlobalControls.jsx
 ┃ ┃ ┣ 📜Login.jsx
 ┃ ┃ ┣ 📜LoginScreen.jsx
 ┃ ┃ ┣ 📜ModalManager.jsx
-┃ ┃ ┣ 📜PartyHealthMonitor.jsx => EventManager.jsx
 ┃ ┃ ┣ 📜RollFeed.jsx
 ┃ ┃ ┣ 📜SystemRouter.jsx
 ┃ ┃ ┗ 📜ThemeEditor.jsx
 ┃ ┣ 📂context
 ┃ ┃ ┣ 📜AuthContext.jsx
+┃ ┃ ┣ 📜EventManagerContext.jsx
 ┃ ┃ ┣ 📜GlobalControlsContext.jsx
-┃ ┃ ┣ 📜PartyHealthContext.jsx => EventManagerContext.jsx
 ┃ ┃ ┣ 📜RollFeedContext.jsx
 ┃ ┃ ┣ 📜SystemContext.jsx
 ┃ ┃ ┗ 📜UIStateContext.jsx

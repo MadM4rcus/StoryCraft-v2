@@ -2,8 +2,9 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useCharacter } from '@/hooks/useCharacter';
 import { useAuth } from '@/hooks/useAuth';
 import { useRollFeed } from '@/context/RollFeedContext';
-import { useGlobalControls } from '@/context/GlobalControlsContext'; // 1. Importa o hook do novo contexto
+import { useGlobalControls } from '@/context/GlobalControlsContext';
 import { useSystem } from '@/context/SystemContext';
+import { useEventManager } from '@/context/EventManagerContext';
 import ModalManager from '@/components/ModalManager';
 import { CharacterInfo, MainAttributes, DiscordIntegration } from './CorePanels';
 import { InventoryList, EquippedItemsList, SkillsList, PerksList } from './ListSections';
@@ -18,28 +19,23 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
   const { addRollToFeed, addMessageToFeed } = useRollFeed();
   const { user } = useAuth();
   const { isSecretMode } = useGlobalControls();
-  // 2. Usa o estado de edição do contexto global
   const { isEditMode } = useGlobalControls();
-  // Novo estado para armazenar o mapa de atributos totais vindo do CorePanels
   const [totalAttributesMap, setTotalAttributesMap] = useState({});
-  // NOVO: Estado para o bônus de escala de poder
   const [powerScaleBonus, setPowerScaleBonus] = useState(0);
+  const { events, sendActionRequest } = useEventManager();
 
   const [modalState, setModalState] = useState({ type: null, props: {} });
   const closeModal = () => setModalState({ type: null, props: {} });
 
   const allAttributes = useMemo(() => {
     if (!character) return [];
-    // Com a desativação de AttributesSection, a lista de atributos disponíveis
-    // para Ações e Buffs agora vem diretamente dos Atributos Principais e de Combate.
     const mainAttrs = [
         'Iniciativa', 'FA', 'FM', 'FD', 'Acerto', 'MD', 'ME',
         'Força', 'Destreza', 'Constituição', 'Inteligencia', 'Sabedoria', 'Carisma',
         'Fortitude', 'Reflexo', 'Vontade',
     ];
-    // A lógica para atributos dinâmicos foi removida.
     return mainAttrs;
-  }, [character]); // A dependência de character.attributes foi removida.
+  }, [character]);
 
   const buffModifiers = useMemo(() => {
     const modifiers = { attributes: {}, dice: [] };
@@ -65,18 +61,15 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
       fields = [], 
       footerText = '', 
       imageUrl = '',
-      isRollAction = false // <-- 1. ADICIONE ESTE NOVO PARÂMETRO
+      isRollAction = false
   ) => {
     if (!character) return;
 
-    // Adiciona a mensagem ao feed do app, APENAS SE NÃO FOR UMA ROLAGEM
-    if (!isRollAction) { // <-- 2. ADICIONE ESTE 'IF'
+    if (!isRollAction) {
       addMessageToFeed({
         characterName: character.name || 'Narrador',
-        // 3. MUDE DE 'text' PARA DADOS ESTRUTURADOS
         title: title,
         description: description || 'Nenhuma descrição.'
-        // text: `${title}\n${description || 'Nenhuma descrição.'}` // <-- Linha antiga removida
       });
     }
 
@@ -121,6 +114,41 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
   
   const handleConfirmAction = (amount, target, actionType, isDirectDamage = false) => {
     if (!character?.mainAttributes) return;
+
+    // --- LÓGICA DE EVENTO: Intercepta alterações de HP/MP se estiver em combate ---
+    const isInEvent = events.some(event => event.characters.some(c => c.id === character.id));
+
+    console.log(`[CharacterSheet] Tentativa de alteração de ${target}. Em evento? ${isInEvent}.`);
+
+    // Se estiver em evento, envia solicitação para HP ou MP (mesmo se for Mestre, para sincronizar)
+    if (isInEvent && (target === 'HP' || target === 'MP' || target === 'HP Bonus')) {
+        let effectType = 'damage';
+        
+        if (target === 'HP Bonus') {
+            effectType = actionType === 'heal' ? 'healTemp' : 'damageTemp';
+        } else if (actionType === 'heal') {
+            effectType = target === 'MP' ? 'healMP' : 'heal';
+        } else {
+            effectType = target === 'MP' ? 'damageMP' : 'damage';
+        }
+
+        const actionName = actionType === 'heal' ? `Recuperar ${target}` : `Dano em ${target}`;
+
+        sendActionRequest({
+            action: {
+                name: actionName,
+                targetEffect: effectType,
+                totalResult: amount
+            },
+            actorId: character.id,
+            targetId: character.id // Alvo é o próprio usuário
+        });
+
+        setModalState({ type: 'info', props: { message: `Solicitação de ${actionName} enviada para o mestre.`, onConfirm: closeModal } });
+        return;
+    }
+    // -----------------------------------------------------------------------------
+
     let message = '';
     const charName = character.name || 'Personagem';
     const newMainAttributes = JSON.parse(JSON.stringify(character.mainAttributes));
@@ -173,17 +201,13 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
   const handleSimpleAttributeRoll = (attributeName, totalBonus) => {
     if (!character) return;
 
-    // 1. Rola o d20 para obter o resultado do dado.
     const d20Roll = Math.floor(Math.random() * 20) + 1;
     const isCrit = d20Roll === 20;
-    const isCritFail = d20Roll === 1; // Falha crítica sempre resulta em 1.
+    const isCritFail = d20Roll === 1;
     const total = isCritFail ? 1 : d20Roll + totalBonus;
 
-    // 2. Monta um objeto de ação SIMPLIFICADO.
-    // CORREÇÃO: Removemos `totalResult` para que não seja interpretado como dano.
     const action = {
         name: `Rolagem de ${attributeName}`,
-        // Não há 'components' para não serem processados como dano.
         acertoResult: {
             roll: d20Roll,
             bonus: totalBonus,
@@ -205,38 +229,31 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
       }
   };
 
-  // --- Lógica de Cálculo de Bônus de Perícia (movida para cá para ser reutilizável) ---
   const calculateTotalBonus = useCallback((skillName, character) => {
     const skill = PREDEFINED_SKILLS.find(s => s.name === skillName);
     const skillState = character?.skillSystem?.[skillName];
     if (!skill || !skillState) return 0;    
     
-    // --- CORREÇÃO ---
-    // 1. Bônus de Atributo: Usa o `totalAttributesMap` que já inclui os buffs.
     const selectedAttr = skillState.selectedAttr || skill.attr;
     const attrBonus = totalAttributesMap[selectedAttr] || 0;
     
-    // 2. Bônus de Treinamento
     const level = character.level || 0;
     let trainingBonus = 0;
     if (skillState.trained) {
         trainingBonus = 2 + Math.floor(level / 10);
     }
     
-    // 3. Bônus Variável (Outros)
     const otherBonus = parseInt(skillState.otherBonus, 10) || 0;
     
     return attrBonus + trainingBonus + otherBonus;
   }, [totalAttributesMap, character?.level, character?.skillSystem]);
 
-  // Função para parsear e rolar fórmulas complexas (ex: "1d10+5+1d4")
   const parseAndRollFormula = (formula) => {
     if (!formula) return { total: 0, details: '' };
 
     let expressionForEval = formula.replace(/\s/g, '');
     let details = formula;
 
-    // Regex para encontrar todas as notações de dados (e.g., 1d20, 4d6)
     const diceRegex = /(\d+d\d+)/gi;
     const diceMatches = formula.match(diceRegex);
 
@@ -256,30 +273,42 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
           diceRollResult += roll;
         }
         
-        // Substitui a primeira ocorrência do dado na string de detalhes e na de avaliação
         details = details.replace(diceString, `${diceString}(${rolls.join('+')})`);
         expressionForEval = expressionForEval.replace(diceString, `(${diceRollResult})`);
       });
     }
 
-    // Avalia a expressão matemática final de forma segura
     const total = Math.floor(new Function('return ' + expressionForEval.replace(/[^0-9+\-*/().]/g, ''))());
     return { total, details };
+  };
+
+  const handleSendActionRequest = (action, actor, targets) => {
+    if (!targets || targets.length === 0) {
+        console.error("Erro: Nenhum alvo selecionado.");
+        return;
+    }
+
+    sendActionRequest({
+        action,
+        actorId: actor.id,
+        targetIds: targets.map(t => t.id) // Envia lista de IDs
+    });
+    closeModal();
+    setModalState({ type: 'info', props: { message: `Ação "${action.name}" enviada para o mestre para aprovação.`, onConfirm: closeModal } });
   };
 
 const handleExecuteFormulaAction = async (action) => {
     if (!action) return;
 
-    // --- INÍCIO DA CORREÇÃO: Verificação de Custo Antecipada ---
+    const isInEvent = events.some(event => event.characters.some(c => c.id === character.id));
+
     const initialCost = { HP: 0, MP: 0 };
     const actionCostValue = parseInt(action.costValue, 10) || 0;
 
-    // 1. Custo da própria ação
     if (action.costType && actionCostValue > 0) {
         initialCost[action.costType] += actionCostValue;
     }
 
-    // 2. Custo de manutenção de buffs ativos
     const activeBuffs = (character.buffs || []).filter(b => b.isActive);
     activeBuffs.forEach(buff => {
         if (buff.costType && buff.costValue) {
@@ -290,18 +319,14 @@ const handleExecuteFormulaAction = async (action) => {
         }
     });
 
-    // 3. Verificação e bloqueio se os recursos forem insuficientes
     if (character.mainAttributes.hp.current < initialCost.HP || character.mainAttributes.mp.current < initialCost.MP) {
         setModalState({ type: 'info', props: { message: `Recursos insuficientes! Custo: ${initialCost.HP} HP, ${initialCost.MP} MP.`, onConfirm: closeModal } });
-        return; // Bloqueia a execução da ação
+        return;
     }
-    // --- FIM DA CORREÇÃO ---
 
-    // Se a ação já vier com um totalResult (como em rolagens de atributo simples),
-    // usamos esse valor. Caso contrário, inicializamos com 0 para calcular.
     let totalResult = action.totalResult ?? 0;
 
-    let acertoResult = action.acertoResult || null; // Pega o acertoResult da ação, se existir
+    let acertoResult = action.acertoResult || null;
     let rollResultsForFeed = [];
     let criticals = [];
     const multiplier = action.multiplier || 1;
@@ -325,24 +350,19 @@ const handleExecuteFormulaAction = async (action) => {
 
     const skillRollComp = action.components?.find(c => c.type === 'skillRoll');
 
-    // --- Nova Lógica de Acerto ---
     if (skillRollComp && skillRollComp.skill) {
-        // Determina se é um ataque (tem mais componentes além da perícia)
         const isAttackRoll = (action.components || []).length > 1;
 
         const d20Roll = Math.floor(Math.random() * 20) + 1;
         let skillBonus = calculateTotalBonus(skillRollComp.skill, character);
 
-        // --- CORREÇÃO: Adiciona o bônus de "Acerto" se for um ataque ---
         if (isAttackRoll) {
             const acertoBonus = getAttributeValue('Acerto');
             skillBonus += acertoBonus;
         }
 
-        // O crítico agora é d20 >= critMin (padrão 20 se não definido)
         const isCrit = d20Roll >= (parseInt(skillRollComp.critMin, 10) || 20);
         const isCritFail = d20Roll === 1;
-        // Falha crítica sempre resulta em 1, ignorando bônus.
         const totalAcerto = isCritFail ? 1 : d20Roll + skillBonus;
 
         acertoResult = {
@@ -357,7 +377,6 @@ const handleExecuteFormulaAction = async (action) => {
         if (isCrit) {
             criticals.push(`Acerto Crítico no d20 (${d20Roll})!`);
             
-            // --- INÍCIO DA NOVA LÓGICA DO DANO CRÍTICO ---
             const critFormula = skillRollComp.critFormula || '';
             if (critFormula) {
                 const { total: critRollResult, details: critDetails } = parseAndRollFormula(critFormula);
@@ -367,17 +386,11 @@ const handleExecuteFormulaAction = async (action) => {
                     criticals.push(critDisplay);
                 }
             }
-            // --- FIM DA NOVA LÓGICA DO DANO CRÍTICO ---
         }
     } else if (!acertoResult) {
-        // Lógica antiga para rolagens sem acerto (ex: rolagens de atributo)
-        // Isso só será executado se a ação não tiver nem `skillRoll` nem `acertoResult` pré-definido.
         const components = action.components || [];
         const hasDiceComponent = components.some(c => c.type === 'dice' || c.type === 'critDice');
         
-        // --- CORREÇÃO ---
-        // Rola um d20 apenas se a ação tiver componentes, mas nenhum deles for um dado.
-        // Se não houver componentes, não rola nada.
         if (components.length > 0 && !hasDiceComponent) {
             const roll = Math.floor(Math.random() * 20) + 1;
             totalResult += roll;
@@ -385,9 +398,6 @@ const handleExecuteFormulaAction = async (action) => {
         }
     }
 
-    // --- Lógica de Dano / Resultado Principal ---
-    // CORREÇÃO: O cálculo de dano/resultado agora acontece independentemente da rolagem de acerto.
-    // Apenas pulamos se a ação for uma rolagem de atributo simples que já vem com um `totalResult` pré-calculado.
     if (action.totalResult === undefined) {
         for (let i = 0; i < (multiplier || 1); i++) {
             for (const comp of (action.components || [])) {
@@ -408,12 +418,10 @@ const handleExecuteFormulaAction = async (action) => {
                         const diceRollResult = rolls.reduce((a, b) => a + b, 0);
                         totalResult += diceRollResult;
                         rollResultsForFeed.push({ type: 'dice', value: diceRollResult, displayValue: `${comp.value}(${rolls.join('+')})` });
-                    } else if (!isNaN(parseInt(comp.value, 10))) { // Permite números fixos
-                        // --- INÍCIO DA CORREÇÃO ---
+                    } else if (!isNaN(parseInt(comp.value, 10))) {
                         const num = parseInt(comp.value, 10) || 0;
                         totalResult += num;
                         rollResultsForFeed.push({ type: 'number', value: num, displayValue: `${num}` });
-                        // --- FIM DA CORREÇÃO ---
                     }
                 } else if (comp.type === 'number') {
                     const num = parseInt(comp.value, 10) || 0;
@@ -421,7 +429,6 @@ const handleExecuteFormulaAction = async (action) => {
                     const label = comp.label ? `${comp.label}(${num >= 0 ? '+' : ''}${num})` : `${num}`;
                     rollResultsForFeed.push({ type: 'number', value: num, displayValue: label });
                 } else if (comp.type === 'skillRoll') {
-                    // O componente skillRoll já foi processado, então o ignoramos aqui.
                 }
             }
         }
@@ -501,22 +508,18 @@ const handleExecuteFormulaAction = async (action) => {
     }
 
     let detailsString = rollResultsForFeed.map(r => r.displayValue).join(' + ');
-    // --- CORREÇÃO: Garante que o detailsText seja sempre gerado para o feed do app ---
     const detailsTextForFeed = detailsString;
     let discordDescription;
 
-    // Se for uma rolagem de atributo simples, a descrição é diferente.
     if (acertoResult && action.totalResult !== undefined && !action.components?.some(c => c.type === 'skillRoll')) {
-        // --- CORREÇÃO: Adiciona a indicação de crítico na linha de resultado do Discord ---
         const critText = acertoResult.isCrit ? ' 🎯 CRÍTICO!' : acertoResult.isCritFail ? ' 💥 FALHA CRÍTICA!' : '';
         discordDescription = `${descriptionText}\n\n**Resultado: ${acertoResult.total}**${critText}`;
         detailsString = `1d20(${acertoResult.roll}) ${acertoResult.bonus >= 0 ? '+' : '-'} ${Math.abs(acertoResult.bonus)}`;
-    } else if (acertoResult) { // Rolagem de perícia/ataque
-        // --- CORREÇÃO: Adiciona a indicação de crítico na linha de acerto do Discord ---
+    } else if (acertoResult) {
         const critText = acertoResult.isCrit ? ' 🎯 CRÍTICO!' : acertoResult.isCritFail ? ' 💥 FALHA CRÍTICA!' : '';
         const acertoString = `**Teste de ${acertoResult.skillName}:** ${acertoResult.total} (d20:${acertoResult.roll} + Bônus:${acertoResult.bonus || 0})${critText}`;
         discordDescription = `${descriptionText}\n${acertoString}\n\n**Dano/Resultado: ${totalResult}**`;
-    } else { // Rolagem sem acerto (ex: cura)
+    } else {
         discordDescription = `${descriptionText}\n\n**Resultado Final: ${totalResult}**`;
     }
 
@@ -529,30 +532,75 @@ const handleExecuteFormulaAction = async (action) => {
     }
     const footerText = costDetails.length > 0 ? `Custo Total: ${costDetails.join(' | ')}` : '';
     
-    // Envia para o Discord
     handleShowOnDiscord(
         action.name, 
         discordDescription, 
         discordFields, 
         footerText, 
         imageUrl,
-        true // <-- 1. ADICIONE 'true' AQUI PARA SINALIZAR QUE É UMA ROLAGEM
+        true
     );
 
-    // Envia para o Feed de Rolagens
+    // --- LÓGICA DE CUSTO, RECUPERAÇÃO E ALVO ---
+    const hasCost = totalCost.HP > 0 || totalCost.MP > 0;
+    const hasRecovery = totalRecovery.HP > 0 || totalRecovery.MP > 0;
+
+    // Se estiver em um evento, todas as mudanças de recursos e ações com alvo passam por aprovação (mesmo se for Mestre).
+    if (isInEvent) {
+        // Ação com alvo: abre o modal de seleção. O custo é enviado junto.
+        if (action.requiresTarget) {
+            const actionWithResult = { ...action, totalResult, acertoResult, cost: totalCost };
+            setModalState({
+                type: 'targetSelection',
+                props: { action: actionWithResult, actor: character, onConfirm: handleSendActionRequest, onCancel: closeModal },
+            });
+        } 
+        // Ação sem alvo, mas com custo (ex: buff pessoal)
+        else if (hasCost) {
+            const costText = [];
+            if (totalCost.HP > 0) costText.push(`${totalCost.HP} HP`);
+            if (totalCost.MP > 0) costText.push(`${totalCost.MP} MP`);
+
+            sendActionRequest({
+                action: { name: `Custo de '${action.name}'`, targetEffect: 'cost', cost: totalCost, totalResult: `Custo: ${costText.join(', ')}` },
+                actorId: character.id,
+                targetIds: [character.id] // Alvo do custo é o próprio personagem
+            });
+        }
+        // Ação sem alvo, mas com recuperação (ex: poção de cura em si mesmo)
+        else if (hasRecovery) {
+             sendActionRequest({
+                action: { name: `Usou '${action.name}'`, targetEffect: 'selfHeal', recovery: totalRecovery, totalResult: `Recuperou ${totalRecovery.HP > 0 ? totalRecovery.HP + ' HP' : ''}${totalRecovery.MP > 0 ? totalRecovery.MP + ' MP' : ''}` },
+                actorId: character.id,
+                targetIds: [character.id]
+            });
+        }
+    } else {
+        // Lógica original para o Mestre ou para quem não está em evento: aplica custos/recuperações diretamente.
+        if (hasCost || hasRecovery) {
+            const newMainAttributes = { ...character.mainAttributes };
+            newMainAttributes.hp.current = newMainAttributes.hp.current - totalCost.HP + totalRecovery.HP;
+            newMainAttributes.mp.current = newMainAttributes.mp.current - totalCost.MP + totalRecovery.MP;
+            newMainAttributes.hp.current = Math.min(newMainAttributes.hp.current, newMainAttributes.hp.max);
+            newMainAttributes.hp.current = Math.max(newMainAttributes.hp.current, 0);
+            newMainAttributes.mp.current = Math.min(newMainAttributes.mp.current, newMainAttributes.mp.max);
+            newMainAttributes.mp.current = Math.max(newMainAttributes.mp.current, 0);
+            await updateCharacterField('mainAttributes', newMainAttributes);
+        }
+    }
+
     addRollToFeed({
         characterId: character.id,
         characterName: character.name,
         ownerUid: user.uid,
         rollName: action.name,
         results: rollResultsForFeed,
-        totalResult: totalResult,     // O resultado numérico final
-        acertoResult: acertoResult,   // O objeto de acerto (ou null)
-        detailsText: detailsTextForFeed, // <-- ADICIONADO: Passa os detalhes do cálculo para o feed
-        criticals: criticals,         // O array de strings de críticos
+        totalResult: totalResult,
+        acertoResult: acertoResult,
+        detailsText: detailsTextForFeed,
+        criticals: criticals,
         discordText: descriptionText,
         costText: footerText,
-        // CORREÇÃO: Garante que 'components' seja sempre um array para evitar erros no Firebase.
         isSecret: isSecretMode,
         components: action.components || [],
     });
@@ -571,7 +619,7 @@ const handleExecuteFormulaAction = async (action) => {
                     forca: 0, destreza: 0, constituicao: 0, inteligencia: 0, sabedoria: 0, carisma: 0,
                     fortitude: 0, reflexo: 0, vontade: 0
                 }, 
-                attributes: [], // Mantém limpo pois a seção está desativada
+                attributes: [],
                 inventory: [], 
                 wallet: { zeni: 0, inspiration: 0 },
                 fortitude: 0, reflexo: 0, vontade: 0,
@@ -582,7 +630,7 @@ const handleExecuteFormulaAction = async (action) => {
                 fortitudeAttr: 'CON',
                 reflexoAttr: 'DES',
                 vontadeAttr: 'SAB',
-                skillSystem: {} // Reseta o novo sistema de perícias
+                skillSystem: {}
             }; 
             for (const [field, value] of Object.entries(fieldsToReset)) { 
                 await updateCharacterField(field, value); 
@@ -601,26 +649,19 @@ const handleExecuteFormulaAction = async (action) => {
   return (
     <div className="w-full max-w-4xl mx-auto p-4">
           <ModalManager modalState={modalState} closeModal={closeModal} />
-          {/* O botão de voltar foi movido para o GlobalControls */}
-      {/* 1. O CharacterInfo agora atualiza o bônus de poder */}
       <div id="info"><CharacterInfo character={character} onUpdate={updateCharacterField} isMaster={isMaster} isEditMode={isEditMode} isCollapsed={character.collapsedStates?.info} toggleSection={() => toggleSection('info')} onPowerScaleUpdate={setPowerScaleBonus} /></div>
-      {/* 2. O MainAttributes agora recebe o bônus de poder */}
       <div id="main-attributes"><MainAttributes character={character} onUpdate={updateCharacterField} isMaster={isMaster} isEditMode={isEditMode} buffModifiers={buffModifiers.attributes} isCollapsed={character.collapsedStates?.main} toggleSection={() => toggleSection('main')} onAttributeRoll={handleAttributeClick} onMapUpdate={setTotalAttributesMap} powerScaleBonus={powerScaleBonus} /></div>
       <div id="actions"><ActionsSection character={character} isMaster={isMaster} isCollapsed={character.collapsedStates?.actions} toggleSection={() => toggleSection('actions')} allAttributes={allAttributes} onUpdate={updateCharacterField} onExecuteFormula={handleExecuteFormulaAction} isEditMode={isEditMode} /></div>
       <div id="buffs"><BuffsSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} allAttributes={allAttributes} isCollapsed={character.collapsedStates?.buffs} toggleSection={() => toggleSection('buffs')} isEditMode={isEditMode} /></div>
-      {/* SpecializationsList foi refatorado para ser a nova seção de PERÍCIAS. Passamos o mapa de atributos totais. */}
       <div id="specializations"><SpecializationsList character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.specializations} toggleSection={() => toggleSection('specializations')} onExecuteFormula={handleExecuteFormulaAction} isEditMode={isEditMode} totalAttributesMap={totalAttributesMap} buffModifiers={buffModifiers.attributes} /></div>
       <div id="perks"><PerksList character={character} onUpdate={updateCharacterField} onShowDiscord={handleShowOnDiscord} isCollapsed={character.collapsedStates?.perks} toggleSection={() => toggleSection('perks')} isEditMode={isEditMode} /></div>      
       <div id="inventory"><InventoryList character={character} onUpdate={updateCharacterField} isMaster={isMaster} onShowDiscord={handleShowOnDiscord} isCollapsed={character.collapsedStates?.inventory} toggleSection={() => toggleSection('inventory')} isEditMode={isEditMode} /></div>
       <div id="equipped"><EquippedItemsList character={character} onUpdate={updateCharacterField} isMaster={isMaster} onShowDiscord={handleShowOnDiscord} isCollapsed={character.collapsedStates?.equipped} toggleSection={() => toggleSection('equipped')} isEditMode={isEditMode} /></div>
-      {/* SkillsList é a seção de HABILIDADES e deve ser mantida. */}
       <div id="skills"><SkillsList character={character} onUpdate={updateCharacterField} isMaster={isMaster} onShowDiscord={handleShowOnDiscord} isCollapsed={character.collapsedStates?.skills} toggleSection={() => toggleSection('skills')} isEditMode={isEditMode} /></div>
       <div id="notes"><Notes character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.notes} toggleSection={() => toggleSection('notes')} isEditMode={isEditMode} /></div>
       <div id="story"><Story character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.story} toggleSection={() => toggleSection('story')} isEditMode={isEditMode} /></div>
       <div id="discord"><DiscordIntegration character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.discord} toggleSection={() => toggleSection('discord')} isEditMode={isEditMode} /></div>
       
-      {/* Os botões de Exportar e Resetar foram removidos daqui. */}
-      {/* A exportação agora é feita na lista de personagens. */}
     </div>
   );
 };

@@ -43,6 +43,10 @@
       // --- NOVO: REGRAS PARA AS SOLICITAÇÕES DE AÇÃO DO JOGADOR ---
       "action-requests": {
         "$session_id": {
+          // APENAS o Mestre pode ler a lista de solicitações de ação.
+          // Jogadores não precisam ver as solicitações dos outros.
+          ".read": "auth != null && auth.token.isMaster === true",
+
           // Qualquer jogador autenticado pode enviar (escrever) uma solicitação de ação.
           ".write": "auth != null"
         }

@@ -37,7 +37,7 @@ const GlobalControls = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isRollPanelOpen, setIsRollPanelOpen] = useState(false);
   const { isEditMode, setIsEditMode, isThemeEditorOpen, setIsThemeEditorOpen, isSecretMode, setIsSecretMode } = useGlobalControls();
-  const { isRollFeedVisible, setIsRollFeedVisible, isPartyHealthMonitorVisible, setIsPartyHealthMonitorVisible, isSpoilerMode, setIsSpoilerMode, layout, updateLayout } = useUIState();
+  const { isRollFeedVisible, setIsRollFeedVisible, isEventManagerVisible, setIsEventManagerVisible, isSpoilerMode, setIsSpoilerMode, layout, updateLayout } = useUIState();
   const { user, isMaster } = useAuth();
   const { activeCharacter, setActiveCharacter } = useSystem(); // 3. Pega o personagem ativo e o setter
   const { addRollToFeed } = useRollFeed();
@@ -129,8 +129,8 @@ const GlobalControls = () => {
             Chat
           </button>
           <button
-            onClick={() => setIsPartyHealthMonitorVisible(!isPartyHealthMonitorVisible)}
-            className={`px-3 py-2 text-sm font-bold rounded-md shadow-md transition-colors text-white ${isPartyHealthMonitorVisible ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}
+            onClick={() => setIsEventManagerVisible(!isEventManagerVisible)}
+            className={`px-3 py-2 text-sm font-bold rounded-md shadow-md transition-colors text-white ${isEventManagerVisible ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}
             title="Mostrar/Ocultar o painel de Monitor de Grupo."
           >
             Grupo
