@@ -15,11 +15,11 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <AuthProvider>
         <UIStateProvider> {/* Provider para o estado da UI (visibilidade de painéis) */}
           <GlobalControlsProvider> {/* Provider para controles globais (modo edição, etc) */}
-            <EventManagerProvider>
-              <RollFeedProvider>
+            <RollFeedProvider>
+              <EventManagerProvider>
                 <App /> {/* Renderiza o componente App aqui */}
-              </RollFeedProvider>
-            </EventManagerProvider>
+              </EventManagerProvider>
+            </RollFeedProvider>
           </GlobalControlsProvider>
         </UIStateProvider>
       </AuthProvider>

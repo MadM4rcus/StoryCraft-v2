@@ -133,28 +133,53 @@ const EventManager = ({ onCharacterClick }) => {
             <p className="text-textSecondary italic text-xs text-center">Nenhuma ação pendente.</p>
           ) : (
             actionRequests.filter(req => req.status === 'pending').map(req => {
-              const targetNames = (req.targetIds || [req.targetId]).map(id => characterMap[id]?.name || '??').join(', ');
               const effectType = req.action.targetEffect || 'damage';
               let effectLabel = 'Dano';
               let effectColor = 'text-red-400';
               
-              if (effectType === 'heal') { effectLabel = 'Cura'; effectColor = 'text-green-400'; }
-              if (effectType === 'healTemp') { effectLabel = 'Ganho HP Bônus'; effectColor = 'text-green-300'; }
-              if (effectType === 'damageTemp') { effectLabel = 'Dano HP Bônus'; effectColor = 'text-red-300'; }
-              if (effectType === 'damageMP') { effectLabel = 'Dano MP'; effectColor = 'text-purple-400'; }
-              if (effectType === 'healMP') { effectLabel = 'Cura MP'; effectColor = 'text-blue-400'; }
-              if (effectType === 'cost') { effectLabel = 'Custo de Ação'; effectColor = 'text-yellow-500'; }
-              if (effectType === 'selfHeal') { effectLabel = 'Auto-Recuperação'; effectColor = 'text-teal-400'; }
+              switch (effectType) {
+                case 'heal': effectLabel = 'Cura'; effectColor = 'text-green-400'; break;
+                case 'healTemp': effectLabel = 'Ganho HP Bônus'; effectColor = 'text-green-300'; break;
+                case 'damageTemp': effectLabel = 'Dano HP Bônus'; effectColor = 'text-red-300'; break;
+                case 'damageMP': effectLabel = 'Dano MP'; effectColor = 'text-purple-400'; break;
+                case 'healMP': effectLabel = 'Cura MP'; effectColor = 'text-blue-400'; break;
+                case 'cost': effectLabel = 'Custo de Ação'; effectColor = 'text-yellow-500'; break;
+                case 'selfHeal': effectLabel = 'Auto-Recuperação'; effectColor = 'text-teal-400'; break;
+                default: break;
+              }
 
               return (
               <div key={req.id} className="bg-bgInput p-2 rounded-md text-sm border border-bgElement">
                 <p className="text-textPrimary">
                   <span className="font-bold">{characterMap[req.actorId]?.name || '??'}</span> usa <span className="font-bold text-textAccent">{req.action.name}</span>
-                  <br/>
-                  Alvos: <span className="font-bold">{targetNames}</span>
                 </p>
-                {req.action.acertoResult && (
-                  <p className="text-xs text-textSecondary mt-1">Acerto: <span className="font-bold text-textPrimary">{req.action.acertoResult.total}</span></p>
+                {req.action.acertoResult ? (
+                  <div className="mt-1">
+                    <p className="text-xs text-textSecondary">
+                      Rolagem de Acerto: <span className="font-bold text-textPrimary">{req.action.acertoResult.total}</span>
+                      {req.action.acertoResult.isCrit && <span className="font-bold text-green-400 ml-2">CRÍTICO!</span>}
+                    </p>
+                    <ul className="text-xs text-textSecondary list-disc list-inside pl-2 mt-1">
+                      {(req.targetIds || [req.targetId]).map(id => {
+                        const targetChar = allCharacters.find(c => c.id === id);
+                        if (!targetChar) return <li key={id}>Alvo desconhecido</li>;
+
+                        const baseME = targetChar.mainAttributes?.me || 0;
+                        const buffME = (targetChar.buffs || []).filter(b => b.isActive).flatMap(b => b.effects || []).filter(e => e.type === 'attribute' && e.target === 'ME').reduce((sum, e) => sum + (parseInt(e.value, 10) || 0), 0);
+                        const totalME = baseME + buffME;
+                        const isHit = req.action.acertoResult.isCrit || req.action.acertoResult.total >= totalME;
+
+                        return (
+                          <li key={id}>
+                            <span className="font-bold text-textPrimary">{targetChar.name}</span> (ME: {totalME}) - 
+                            {isHit ? <span className="font-bold text-green-400"> ACERTO</span> : <span className="font-bold text-red-500"> ERRO</span>}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                ) : (
+                  <p className="text-xs text-textSecondary mt-1">Alvos: <span className="font-bold">{(req.targetIds || [req.targetId]).map(id => characterMap[id]?.name || '??').join(', ')}</span></p>
                 )}
                 {req.action.totalResult !== undefined && (
                   <p className="text-xs text-textSecondary mt-1">
@@ -226,6 +251,7 @@ const EventManager = ({ onCharacterClick }) => {
                  <select
                     onChange={(e) => {
                       const charId = e.target.value;
+                      if (!charId) return; // Evita adicionar em caso de re-seleção do placeholder
                       const charName = allCharacters.find(c => c.id === charId)?.name || 'Desconhecido';
                       console.log(`[DIAGNÓSTICO] Tentando adicionar '${charName}' (ID: ${charId}) ao evento '${event.name}'.`);
                       addCharacterToEvent(event.id, charId);
@@ -234,11 +260,47 @@ const EventManager = ({ onCharacterClick }) => {
                     className="w-full bg-bgInput text-textPrimary border border-bgElement rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-btnHighlightBg"
                   >
                     <option value="" disabled>Selecione...</option>
-                    {allCharacters // CORREÇÃO: Filtra personagens que já estão no evento.
-                      .filter(char => !(event.characters || []).some(eventChar => eventChar.id === char.id))
-                      .map(char => (
-                        <option key={char.id} value={char.id}>{char.name}</option>
-                    ))}
+                    {(() => {
+                      const availableChars = allCharacters.filter(char => !(event.characters || []).some(eventChar => eventChar.id === char.id));
+
+                      const allCustomFlags = Array.from(
+                        availableChars.reduce((acc, char) => {
+                          if (char.flags) {
+                            Object.keys(char.flags).forEach(flag => {
+                              if (flag !== 'spoiler') acc.add(flag);
+                            });
+                          }
+                          return acc;
+                        }, new Set())
+                      ).sort();
+
+                      const charsWithoutFlags = availableChars
+                        .filter(char => !char.flags || Object.keys(char.flags).filter(f => f !== 'spoiler').length === 0)
+                        .sort((a, b) => a.name.localeCompare(b.name));
+
+                      return (
+                        <>
+                          {allCustomFlags.map(flag => {
+                            const charsWithFlag = availableChars
+                              .filter(char => char.flags && char.flags[flag])
+                              .sort((a, b) => a.name.localeCompare(b.name));
+
+                            if (charsWithFlag.length === 0) return null;
+
+                            return (
+                              <optgroup key={flag} label={`# ${flag.charAt(0).toUpperCase() + flag.slice(1)}`}>
+                                {charsWithFlag.map(char => <option key={char.id} value={char.id}>{char.name}</option>)}
+                              </optgroup>
+                            );
+                          })}
+                          {charsWithoutFlags.length > 0 && (
+                            <optgroup label="Outros">
+                              {charsWithoutFlags.map(char => <option key={char.id} value={char.id}>{char.name}</option>)}
+                            </optgroup>
+                          )}
+                        </>
+                      );
+                    })()}
                  </select>
               </div>
             )}

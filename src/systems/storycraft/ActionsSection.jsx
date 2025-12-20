@@ -30,11 +30,14 @@ const ActionsSection = ({
 
     const handleAddFormulaAction = () => {
         const newAction = {
-            id: crypto.randomUUID(), name: 'Nova Ação', components: [{ id: crypto.randomUUID(), type: 'dice', value: '1d6' }],
-            multiplier: 1, discordText: '', isCollapsed: false, costValue: 0, costType: '',
-            recoverHP: false,
-            recoverMP: false,
-            requiresTarget: false,
+            id: crypto.randomUUID(), name: 'Nova Ação', 
+            components: [{ id: crypto.randomUUID(), type: 'dice', value: '1d6' }],
+            multiplier: 1, discordText: '', isCollapsed: false, 
+            costValue: 0, costType: '',
+            recoverHP: false, recoverMP: false,
+            requiresTarget: false, ignoraMD: false,
+            // NOVO: Adiciona a estrutura do teste de resistência
+            savingThrow: { type: 'none', dc: 15, effect: 'halfDamage' },
         };
         onUpdate('formulaActions', [...(character.formulaActions || []), newAction]);
     };
@@ -328,6 +331,42 @@ const ActionsSection = ({
                                                         <label htmlFor={`requires-target-${action.id}`} className="ml-2 text-sm text-textSecondary">Requer Alvo</label>
                                                     </div>
                                                 </div>
+                                                {/* --- NOVOS CAMPOS: Ignora MD e Teste de Resistência --- */}
+                                                <div className="flex gap-4 mt-2" style={{ display: isEditMode ? 'flex' : 'none' }}>
+                                                    <div className="flex items-center">
+                                                        <input
+                                                            type="checkbox"
+                                                            id={`ignora-md-${action.id}`}
+                                                            checked={action.ignoraMD || false}
+                                                            onChange={(e) => handleSaveActionChange(action.id, 'ignoraMD', e.target.checked)}
+                                                            className="form-checkbox text-orange-500 rounded-sm"
+                                                            disabled={!canEdit}
+                                                        />
+                                                        <label htmlFor={`ignora-md-${action.id}`} className="ml-2 text-sm text-textSecondary">Ignora MD</label>
+                                                    </div>
+                                                </div>
+
+                                                <div className="mt-3" style={{ display: isEditMode ? 'flex' : 'none' }}>
+                                                    <label className="text-sm font-medium text-textSecondary block mb-1">Teste de Resistência:</label>
+                                                    <div className="grid grid-cols-3 gap-2">
+                                                        <select value={action.savingThrow?.type || 'none'} onChange={(e) => handleSaveActionChange(action.id, 'savingThrow', { ...action.savingThrow, type: e.target.value })} className="p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary text-sm" disabled={!canEdit}>
+                                                            <option value="none">Nenhum</option>
+                                                            <option value="Fortitude">Fortitude</option>
+                                                            <option value="Reflexo">Reflexo</option>
+                                                            <option value="Vontade">Vontade</option>
+                                                        </select>
+                                                        <div className="flex items-center gap-1">
+                                                            <span className="text-sm text-textSecondary">CD:</span>
+                                                            <input type="number" value={action.savingThrow?.dc || ''} onChange={(e) => handleLocalActionChange(action.id, 'savingThrow', { ...action.savingThrow, dc: e.target.value })} onBlur={() => handleSaveActionChange(action.id, 'savingThrow')} className="w-full p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary text-sm" disabled={!canEdit || action.savingThrow?.type === 'none'} />
+                                                        </div>
+                                                        <select value={action.savingThrow?.effect || 'halfDamage'} onChange={(e) => handleSaveActionChange(action.id, 'savingThrow', { ...action.savingThrow, effect: e.target.value })} className="p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary text-sm" disabled={!canEdit || action.savingThrow?.type === 'none'}>
+                                                            <option value="halfDamage">Metade do Dano</option>
+                                                            <option value="noDamage">Nenhum Dano</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                {/* --- FIM DOS NOVOS CAMPOS --- */}
+
                                                 {action.requiresTarget && (
                                                     <div className="mt-3">
                                                         <label className="text-sm font-medium text-textSecondary block mb-1">Efeito no Alvo:</label>

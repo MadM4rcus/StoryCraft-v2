@@ -213,22 +213,15 @@ export const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, tog
 
     // Chama o callback para atualizar o mapa no componente pai sempre que ele mudar.
     useEffect(() => {
-        if (onMapUpdate) {
-            onMapUpdate(attrValueMap);
-        }
+        if (onMapUpdate) onMapUpdate(attrValueMap);
     }, [attrValueMap, onMapUpdate]);
-
-    const mdBaseValue = (parseInt(localMainAttributes?.fd, 10) || 0);
 
     const handleLocalChange = (e, attributeKey) => {
         const { name, value } = e.target;
         const parsedValue = value === '' ? '' : parseInt(value, 10);
  
         setLocalMainAttributes(prev => {
-            // Se attributeKey for 'fd', estamos editando o campo MD, que salva em 'fd'
-            if (attributeKey === 'fd') {
-                return { ...prev, fd: parsedValue };
-            } else if (attributeKey) { // Para 'hp', 'mp'
+            if (attributeKey) { // Para 'hp', 'mp'
                 return { ...prev, [attributeKey]: { ...(prev[attributeKey] || {}), [name]: parsedValue } };
             }
             return { ...prev, [name]: parsedValue };
@@ -350,7 +343,7 @@ export const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, tog
                                 const initiativeBonus = parseInt(baseValue, 10) || 0;
                                 total = calculateTotal(baseValue, 'Iniciativa') + dexterityValue;
                             } else if (key === 'MD') {
-                                baseValue = localMainAttributes?.fd ?? '';
+                                baseValue = localMainAttributes?.md ?? '';
                                 total = calculateTotal(baseValue, 'MD') + constitutionValue; 
                             } else {
                                 baseValue = localMainAttributes?.[lowerKey] ?? '';
@@ -382,8 +375,8 @@ a                                         ria-label={`${key}
                                             id={key}
                                             name={lowerKey}
                                             value={baseValue}
-                                            onChange={e => handleLocalChange(e, key === 'MD' ? 'fd' : undefined)}
-                                            onBlur={() => handleSave(key === 'MD' ? 'fd' : lowerKey)}
+                                            onChange={handleLocalChange}
+                                            onBlur={() => handleSave(lowerKey)}
                                             className="w-16 p-1 text-center bg-bgInput border border-bgElement rounded-md text-textSecondary text-lg"
                                          disabled={!canEditGeneral}
                                             aria-label={`${key} Base`}

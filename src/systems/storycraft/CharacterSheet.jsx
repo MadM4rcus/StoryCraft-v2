@@ -288,9 +288,17 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
         return;
     }
 
+    // Cria um "snapshot" do estado atual do atacante para enviar ao mestre.
+    const actorSnapshot = {
+      id: actor.id,
+      name: actor.name,
+      mainAttributes: actor.mainAttributes,
+      buffs: (actor.buffs || []).filter(b => b.isActive)
+    };
+
     sendActionRequest({
-        action,
-        actorId: actor.id,
+        action, // A ação já contém todos os resultados e regras (ignoraMD, savingThrow, etc)
+        actorSnapshot,
         targetIds: targets.map(t => t.id) // Envia lista de IDs
     });
     closeModal();
@@ -532,6 +540,25 @@ const handleExecuteFormulaAction = async (action) => {
     }
     const footerText = costDetails.length > 0 ? `Custo Total: ${costDetails.join(' | ')}` : '';
     
+    // --- LÓGICA DE EVENTO: Intercepta Ações com Alvo ---
+    // Se estiver em evento e requerer alvo, paramos AQUI.
+    // Não enviamos para o Discord nem para o Feed local ainda.
+    // O feedback virá do EventManager após aprovação do Mestre.
+    if (isInEvent && action.requiresTarget) {
+        const actionWithResult = { 
+            ...action, 
+            totalResult, 
+            acertoResult, 
+            cost: totalCost,
+            detailsText: detailsTextForFeed // Passa os detalhes (fórmula) para o mestre ver
+        };
+        setModalState({
+            type: 'targetSelection',
+            props: { action: actionWithResult, actor: character, onConfirm: handleSendActionRequest, onCancel: closeModal },
+        });
+        return; // <--- RETORNO ANTECIPADO: Impede duplicação no feed
+    }
+
     handleShowOnDiscord(
         action.name, 
         discordDescription, 
@@ -545,18 +572,10 @@ const handleExecuteFormulaAction = async (action) => {
     const hasCost = totalCost.HP > 0 || totalCost.MP > 0;
     const hasRecovery = totalRecovery.HP > 0 || totalRecovery.MP > 0;
 
-    // Se estiver em um evento, todas as mudanças de recursos e ações com alvo passam por aprovação (mesmo se for Mestre).
+    // Se estiver em um evento, custos sem alvo (buffs pessoais) também passam por aprovação
     if (isInEvent) {
-        // Ação com alvo: abre o modal de seleção. O custo é enviado junto.
-        if (action.requiresTarget) {
-            const actionWithResult = { ...action, totalResult, acertoResult, cost: totalCost };
-            setModalState({
-                type: 'targetSelection',
-                props: { action: actionWithResult, actor: character, onConfirm: handleSendActionRequest, onCancel: closeModal },
-            });
-        } 
         // Ação sem alvo, mas com custo (ex: buff pessoal)
-        else if (hasCost) {
+        if (hasCost) {
             const costText = [];
             if (totalCost.HP > 0) costText.push(`${totalCost.HP} HP`);
             if (totalCost.MP > 0) costText.push(`${totalCost.MP} MP`);
@@ -568,7 +587,8 @@ const handleExecuteFormulaAction = async (action) => {
             });
         }
         // Ação sem alvo, mas com recuperação (ex: poção de cura em si mesmo)
-        else if (hasRecovery) {
+        // CORREÇÃO: Remove o 'else' para permitir que uma ação tenha Custo E Recuperação simultaneamente
+        if (hasRecovery) {
              sendActionRequest({
                 action: { name: `Usou '${action.name}'`, targetEffect: 'selfHeal', recovery: totalRecovery, totalResult: `Recuperou ${totalRecovery.HP > 0 ? totalRecovery.HP + ' HP' : ''}${totalRecovery.MP > 0 ? totalRecovery.MP + ' MP' : ''}` },
                 actorId: character.id,

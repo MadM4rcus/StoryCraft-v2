@@ -1,6 +1,8 @@
 import React, { createContext, useState, useContext, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSystem } from '@/context/SystemContext';
+import { useRollFeed } from '@/context/RollFeedContext';
+import { useGlobalControls } from '@/context/GlobalControlsContext';
 import { db, rtdb } from '@/services/firebase';
 import { ref, set, onValue, remove, push, serverTimestamp } from 'firebase/database';
 import { saveEventState, deleteEventFromFirestore } from '@/services/firestoreService';
@@ -15,6 +17,8 @@ export const useEventManager = () => useContext(EventManagerContext);
 export const EventManagerProvider = ({ children }) => {
   const { user, isMaster } = useAuth();
   const { characterDataCollectionRoot } = useSystem();
+  const { addRollToFeed, addMessageToFeed } = useRollFeed();
+  const { isSecretMode } = useGlobalControls();
   
   const [allCharacters, setAllCharacters] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -240,17 +244,21 @@ export const EventManagerProvider = ({ children }) => {
     saveEventState(characterDataCollectionRoot, eventToSave);
   };
   
-  const sendActionRequest = (actionData) => {
+  const sendActionRequest = (requestData) => { // Agora recebe { action, actorSnapshot, targetIds }
     if (!actionRequestsRef) return;
     
     // Sanitiza o objeto actionData para remover undefineds que o Firebase não aceita
-    const cleanActionData = JSON.parse(JSON.stringify(actionData));
+    const cleanRequestData = JSON.parse(JSON.stringify(requestData));
 
-    console.log("[DIAGNÓSTICO] Enviando actionRequest:", cleanActionData);
+    console.log("[DIAGNÓSTICO] Enviando actionRequest:", cleanRequestData);
+
+    // CORREÇÃO: Garante que actorId seja definido, seja via snapshot (ataques) ou direto (curas/custos)
+    const actorId = requestData.actorSnapshot?.id || requestData.actorId;
 
     const newRequestRef = push(actionRequestsRef);
     set(newRequestRef, {
-      ...cleanActionData,
+      ...cleanRequestData,
+      actorId: actorId, // Usa o ID resolvido com segurança
       status: 'pending',
       timestamp: serverTimestamp(),
     })
@@ -269,63 +277,274 @@ export const EventManagerProvider = ({ children }) => {
   
     const request = actionRequests.find(r => r.id === requestId);
     if (!request) return;
-  
-    setCombatState(prevState => {
-      const newEvents = prevState.events.map(event => {
-        const newCharacters = event.characters.map(character => {
-          // Verifica se o personagem está na lista de alvos (suporta targetId único legado ou targetIds array)
-          const isTarget = (request.targetIds && request.targetIds.includes(character.id)) || character.id === request.targetId;
 
-          if (isTarget) {
-            const newChar = { ...character };
-            const hp = newChar.mainAttributes.hp;
-            const mp = newChar.mainAttributes.mp;
+    const actor = request.actorSnapshot || allCharacters.find(c => c.id === request.actorId);
+    if (!actor) {
+        console.error("Ator não encontrado para o pedido de ação:", request.actorId);
+        denyActionRequest(requestId);
+        return;
+    }
+
+    // --- Lógica para Rolagens de Ataque (acerto vs ME) ---
+    // Helper para calcular atributos derivados de um personagem "vivo" (com buffs, etc.)
+    const calculateLiveAttribute = (liveChar, attrName) => {
+        if (!liveChar) return 0;
+
+        const getStat = (character, statName) => {
+            let key = statName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+            const base = character.mainAttributes?.[key] || 0;
+            const buff = (character.buffs || []).filter(b => b.isActive).flatMap(b => b.effects || []).filter(e => e.type === 'attribute' && e.target === statName).reduce((sum, e) => sum + (parseInt(e.value, 10) || 0), 0);
+            return (parseInt(base, 10) || 0) + buff;
+        };
+
+        // CORREÇÃO: MD soma com Constituição
+        if (attrName === 'MD') {
+            return getStat(liveChar, 'MD') + getStat(liveChar, 'Constituição');
+        }
+
+        // CORREÇÃO: Iniciativa soma com Destreza
+        if (attrName === 'Iniciativa') {
+            return getStat(liveChar, 'Iniciativa') + getStat(liveChar, 'Destreza');
+        }
+
+        if (!['Fortitude', 'Reflexo', 'Vontade'].includes(attrName)) {
+            return getStat(liveChar, attrName);
+        }
+
+        // Lógica para Testes de Resistência
+        const getPowerScaleBonus = (level) => {
+            level = parseInt(level, 10);
+            if (isNaN(level) || level < 1) return 0;
+            if (level >= 1 && level <= 10) return 1;
+            if (level >= 11 && level <= 40) return 2;
+            if (level >= 41 && level <= 55) return 3;
+            if (level >= 56 && level <= 59) return 4;
+            if (level === 60) return 5;
+            return 6;
+        };
+
+        const powerScaleBonus = getPowerScaleBonus(liveChar.level);
+        const baseSaveValue = getStat(liveChar, attrName);
+
+        const attrField = `${attrName.toLowerCase()}Attr`;
+        const defaultAttrMap = { Fortitude: 'CON', Reflexo: 'DES', Vontade: 'SAB' };
+        const selectedAttrAbbr = liveChar[attrField] || defaultAttrMap[attrName];
+        
+        const primaryAttrNameMap = { CON: 'Constituição', DES: 'Destreza', SAB: 'Sabedoria' };
+        const primaryAttrName = primaryAttrNameMap[selectedAttrAbbr];
+        
+        const primaryAttrValue = primaryAttrName ? getStat(liveChar, primaryAttrName) : 0;
+
+        return baseSaveValue + primaryAttrValue + powerScaleBonus;
+    };
+
+    if (request.action.acertoResult) {
+        const acertoTotal = request.action.acertoResult.total;
+        const hitTargets = [];
+        const missedTargets = [];
+        let totalDamageDealt = 0;
+
+        const newState = JSON.parse(JSON.stringify(combatState));
+
+        (request.targetIds || [request.targetId]).forEach(targetId => {
+            let combatChar = null; // O personagem no estado de combate (para modificar)
+            for (const event of newState.events) {
+                const char = event.characters.find(c => c.id === targetId);
+                if (char) {
+                    combatChar = char;
+                    break;
+                }
+            }
+            if (!combatChar) return;
+
+            const liveChar = allCharacters.find(c => c.id === targetId);
+            if (!liveChar) return;
+
+            const totalME = calculateLiveAttribute(liveChar, 'ME');
+
+            // REGRA: Crítico é acerto automático, independente da ME.
+            const isCrit = request.action.acertoResult?.isCrit;
+
+            if (isCrit || acertoTotal >= totalME) {
+                const hp = combatChar.mainAttributes.hp;
+                const action = request.action || {};
+                let amount = parseInt(action.totalResult, 10) || 0;
+                const effectType = action.targetEffect || 'damage';
+                let damageApplied = 0;
+                let damageReduced = 0;
+
+                if (effectType === 'damage' && amount > 0) {
+                    const totalMD = calculateLiveAttribute(liveChar, 'MD');
+                    damageReduced = action.ignoraMD ? 0 : totalMD;
+                    const damageToApply = Math.max(0, amount - damageReduced);
+
+                    const initialHP = hp.current;
+                    hp.current = Math.max(0, hp.current - damageToApply);
+                    damageApplied = initialHP - hp.current;
+                    totalDamageDealt += damageApplied;
+                }
+                hitTargets.push({ 
+                    name: combatChar.name, 
+                    me: totalME, 
+                    damage: damageApplied,
+                    reduced: damageReduced 
+                });
+            } else {
+                missedTargets.push({ name: combatChar.name, me: totalME });
+            }
+        });
+
+        setCombatState(newState);
+
+        try {
+          addRollToFeed({
+              type: 'roll',
+              characterName: actor.name,
+              ownerUid: actor.ownerUid,
+              rollName: request.action.name,
+              acertoResult: request.action.acertoResult,
+              totalResult: totalDamageDealt,
+              rolledDamage: request.action.totalResult, // Passa o dano rolado original
+              targetResults: { hits: hitTargets, misses: missedTargets },
+              costText: request.action.costText || '',
+              isSecret: isSecretMode,
+              detailsText: request.action.detailsText || '', // Passa a fórmula do dano
+          });
+        } catch (error) {
+            console.error("Falha ao enviar resultado do ataque para o feed:", error);
+        }
+
+        denyActionRequest(requestId);
+        return;
+    }
+    
+    // --- LÓGICA PARA TESTES DE RESISTÊNCIA (SAVING THROWS) ---
+    if (request.action.savingThrow && request.action.savingThrow.type !== 'none') {
+        const savingThrowResults = [];
+        const newState = JSON.parse(JSON.stringify(combatState));
+
+        (request.targetIds || [request.targetId]).forEach(targetId => {
+            let combatChar = null;
+            for (const event of newState.events) {
+                const char = event.characters.find(c => c.id === targetId);
+                if (char) { combatChar = char; break; }
+            }
+            if (!combatChar) return;
+
+            const liveChar = allCharacters.find(c => c.id === targetId);
+            if (!liveChar) return;
+
+            const saveType = request.action.savingThrow.type;
+            const saveDC = request.action.savingThrow.dc;
+            const saveBonus = calculateLiveAttribute(liveChar, saveType);
             
-            // Lógica de placeholder para o efeito da ação
-            const action = request.action || {};
+            const d20Roll = Math.floor(Math.random() * 20) + 1;
+            const saveTotal = d20Roll + saveBonus;
+            const isSuccess = saveTotal >= saveDC;
+
+            let damageAmount = parseInt(request.action.totalResult, 10) || 0;
+            let damageAfterSave = damageAmount;
+
+            if (isSuccess) {
+                if (request.action.savingThrow.effect === 'halfDamage') {
+                    damageAfterSave = Math.floor(damageAmount / 2);
+                } else if (request.action.savingThrow.effect === 'noDamage') {
+                    damageAfterSave = 0;
+                }
+            }
+
+            const totalMD = calculateLiveAttribute(liveChar, 'MD');
+            const damageReducedByMD = request.action.ignoraMD ? 0 : totalMD;
+            const finalDamage = Math.max(0, damageAfterSave - damageReducedByMD);
+
+            const initialHP = combatChar.mainAttributes.hp.current;
+            combatChar.mainAttributes.hp.current = Math.max(0, initialHP - finalDamage);
+            const damageApplied = initialHP - combatChar.mainAttributes.hp.current;
+
+            savingThrowResults.push({
+                targetName: liveChar.name,
+                saveType,
+                d20Roll,
+                saveBonus,
+                saveTotal,
+                saveDC,
+                isSuccess,
+                initialDamage: damageAmount,
+                damageAfterSave,
+                damageReducedByMD,
+                finalDamage: damageApplied
+            });
+        });
+
+        setCombatState(newState);
+
+        try {
+            addRollToFeed({
+                type: 'roll',
+                characterName: actor.name,
+                ownerUid: actor.ownerUid,
+                rollName: request.action.name,
+                savingThrowResults, // Nova estrutura de dados para o feed
+                isSecret: isSecretMode,
+            });
+        } catch (error) {
+            console.error("Falha ao enviar resultado do teste de resistência para o feed:", error);
+        }
+        denyActionRequest(requestId);
+        return;
+    }
+
+    // --- Lógica original para ações sem rolagem de ataque ---
+    // Clonamos o estado atual para calcular as modificações e mensagens antes de atualizar
+    const newState = JSON.parse(JSON.stringify(combatState));
+    const feedbackMessages = [];
+    const actorName = allCharacters.find(c => c.id === request.actorId)?.name || 'Desconhecido';
+
+    newState.events = newState.events.map(event => ({
+        ...event,
+        characters: event.characters.map(character => {
+            const isTarget = (request.targetIds && request.targetIds.includes(character.id)) || character.id === request.targetId;
+            if (!isTarget) return character;
+
+            const newChar = { ...character };
+            const { hp, mp } = newChar.mainAttributes;
+            const { action } = request;
             const amount = parseInt(action.totalResult, 10) || 0;
-            const effectType = action.targetEffect || 'damage'; // Padrão é dano se não especificado
+            const effectType = action.targetEffect || 'damage';
+            let msg = '';
 
             switch (effectType) {
-                case 'heal':
-                    hp.current = Math.min(hp.max, hp.current + amount);
-                    break;
-                case 'healTemp':
-                    hp.temp = (hp.temp || 0) + amount;
-                    break;
-                case 'damageTemp':
-                    hp.temp = Math.max(0, (hp.temp || 0) - amount);
-                    break;
-                case 'damageMP':
-                    mp.current = Math.max(0, mp.current - amount);
-                    break;
-                case 'healMP':
-                    mp.current = Math.min(mp.max, mp.current + amount);
-                    break;
-                case 'cost': // Custo de ação em si mesmo
+                case 'heal': hp.current = Math.min(hp.max, hp.current + amount); msg = `${character.name} recuperou ${amount} HP.`; break;
+                case 'healTemp': hp.temp = (hp.temp || 0) + amount; msg = `${character.name} ganhou ${amount} HP Temporário.`; break;
+                case 'damageTemp': hp.temp = Math.max(0, (hp.temp || 0) - amount); msg = `${character.name} perdeu ${amount} HP Temporário.`; break;
+                case 'damageMP': mp.current = Math.max(0, mp.current - amount); msg = `${character.name} perdeu ${amount} MP.`; break;
+                case 'healMP': mp.current = Math.min(mp.max, mp.current + amount); msg = `${character.name} recuperou ${amount} MP.`; break;
+                case 'cost':
                     if (action.cost?.HP) hp.current = Math.max(0, hp.current - (action.cost.HP || 0));
                     if (action.cost?.MP) mp.current = Math.max(0, mp.current - (action.cost.MP || 0));
+                    msg = `${character.name} pagou o custo da ação.`;
                     break;
-                case 'selfHeal': // Recuperação em si mesmo
+                case 'selfHeal':
                     if (action.recovery?.HP) hp.current = Math.min(hp.max, hp.current + (action.recovery.HP || 0));
                     if (action.recovery?.MP) mp.current = Math.min(mp.max, mp.current + (action.recovery.MP || 0));
+                    msg = `${character.name} se recuperou.`;
                     break;
                 case 'damage':
-                default:
-                    hp.current = Math.max(0, hp.current - amount);
-                    break;
+                default: hp.current = Math.max(0, hp.current - amount); msg = `${character.name} sofreu ${amount} de dano.`; break;
             }
-  
+            if (msg) feedbackMessages.push(msg);
             return newChar;
-          }
-          return character;
-        });
-        return { ...event, characters: newCharacters };
-      });
-      return { ...prevState, events: newEvents };
+        })
+    }));
+
+    setCombatState(newState);
+
+    // Envia as mensagens de feedback para o chat
+    feedbackMessages.forEach(msg => {
+        addMessageToFeed({ characterName: actorName, text: msg, ownerUid: user.uid });
     });
-  
-    // Remove a requisição após aprovação
+
     denyActionRequest(requestId);
   };
   

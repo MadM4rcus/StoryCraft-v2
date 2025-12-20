@@ -7,6 +7,7 @@ import ChatInput from '@/components/ChatInput';
 const RollFeed = () => {
   const { feedItems, isLoading } = useRollFeed();
   const { layout, updateLayout } = useUIState();
+  const { isMaster } = useAuth(); // Adiciona para verificar se é mestre
 
   const togglePosition = () => {
     updateLayout({ rollFeed: layout.rollFeed === 'bottom-left' ? 'top-right' : 'bottom-left' });
@@ -64,6 +65,121 @@ const RollFeed = () => {
     // Determina se é uma ação puramente descritiva (sem acerto e sem resultados de dados).
     const isDescriptiveAction = !roll.acertoResult && (!roll.results || roll.results.length === 0);
 
+    // --- NOVO: Bloco para resultados de Teste de Resistência (Saving Throw) ---
+    if (roll.savingThrowResults) {
+      return (
+        <div key={roll.id} className="p-3 bg-bgElement rounded-md border border-bgInput mb-2">
+          {/* Cabeçalho */}
+          <div className="flex justify-between items-center text-xs text-textSecondary mb-1">
+            <span className="font-bold text-base text-textPrimary">{roll.characterName}</span>
+            <span>{formatTimestamp(roll.timestamp)}</span>
+          </div>
+          <p className="font-semibold text-lg text-textPrimary">{roll.rollName}</p>
+
+          {/* Bloco de Resultados por Alvo */}
+          <div className="mt-2 pt-2 border-t border-bgInput/50 space-y-2">
+            {roll.savingThrowResults.map((res, index) => (
+              <div key={`save-${index}`}>
+                <p className="text-sm text-textPrimary font-semibold">
+                  Alvo: {res.targetName}
+                </p>
+                <div className="pl-2 border-l-2 border-bgInput ml-1">
+                  <p className="text-xs text-textSecondary">
+                    Teste de {res.saveType}: {res.saveTotal} (1d20[{res.d20Roll}] + {res.saveBonus}) vs CD {res.saveDC}
+                  </p>
+                  {res.isSuccess ? (
+                    <p className="text-xs text-green-400 font-bold">
+                      ✔️ SUCESSO!
+                    </p>
+                  ) : (
+                    <p className="text-xs text-red-500 font-bold">
+                      ❌ FALHA!
+                    </p>
+                  )}
+                  <p className="text-xs text-textSecondary">
+                    Dano Inicial: {res.initialDamage}
+                    {res.isSuccess && res.damageAfterSave !== res.initialDamage && ` ➜ Metade: ${res.damageAfterSave}`}
+                    {res.damageReducedByMD > 0 && ` ➜ MD: -${res.damageReducedByMD}`}
+                  </p>
+                   <p className="text-sm font-bold text-red-400">
+                    Dano Final: {res.finalDamage}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // --- NOVO: Bloco para resultados de ataque com múltiplos alvos ---
+    if (roll.targetResults) {
+      // Só mostra o bloco de dano se houver pelo menos um acerto.
+      const hasHits = roll.targetResults.hits && roll.targetResults.hits.length > 0;
+
+      return (
+        <div key={roll.id} className="p-3 bg-bgElement rounded-md border border-bgInput mb-2">
+          {/* Cabeçalho */}
+          <div className="flex justify-between items-center text-xs text-textSecondary mb-1">
+            <span className="font-bold text-base text-textPrimary">{roll.characterName}</span>
+            <span>{formatTimestamp(roll.timestamp)}</span>
+          </div>
+          
+          {/* Nome da Ação */}
+          <p className="font-semibold text-lg text-textPrimary">{roll.rollName}</p>
+          
+          {/* Bloco da Rolagem de Acerto */}
+          {roll.acertoResult && (
+            <div className="mt-2 pt-2 border-t border-bgInput/50">
+              <p className={`font-semibold text-textPrimary/90`}>
+                Acerto: 
+                <span className={`font-bold text-lg ml-2 ${roll.acertoResult.isCrit ? 'text-green-400' : 'text-textAccent'}`}>
+                  {roll.acertoResult.total}
+                </span>
+                <span className="text-sm text-textSecondary ml-2">({roll.acertoResult.skillName})</span>
+              </p>
+              <p className="text-sm text-textSecondary mt-1">
+                1d20(<span className={roll.acertoResult.isCrit ? 'text-green-400 font-bold' : roll.acertoResult.isCritFail ? 'text-red-500 font-bold' : ''}>{roll.acertoResult.roll}</span>) + {roll.acertoResult.bonus}
+                {roll.acertoResult.isCrit && <span className="text-green-400 font-bold ml-2">🎯 CRÍTICO!</span>} 
+                {roll.acertoResult.isCritFail && <span className="text-red-500 font-bold ml-2">💥 FALHA CRÍTICA!</span>}
+              </p>
+            </div>
+          )}
+
+          {/* Bloco de Detalhes do Dano (para ataques com alvo) */}
+          {/* SÓ MOSTRA O DANO SE ACERTAR */}
+          {hasHits && (roll.detailsText || roll.rolledDamage !== undefined) && (
+            <div className="mt-2 pt-2 border-t border-bgInput/50">
+               {roll.rolledDamage !== undefined && (
+                 <p className="font-semibold text-textPrimary/90">
+                   Dano Rolado: <span className="font-bold text-lg text-textAccent ml-2">{roll.rolledDamage}</span>
+                 </p>
+               )}
+               {roll.detailsText && (
+                 <p className="text-sm text-textSecondary mt-1 break-words">{roll.detailsText}</p>
+               )}
+            </div>
+          )}
+
+          {/* Bloco de Resultados por Alvo */}
+          <div className="mt-2 pt-2 border-t border-bgInput/50 space-y-1">
+            {(roll.targetResults.hits || []).map((hit, index) => (
+              <p key={`hit-${index}`} className="text-sm text-green-400">
+                <span className="font-bold">✔️ ACERTOU</span> em {hit.name}
+                {isMaster && ` (ME ${hit.me})`}
+                {` causando `}<span className="font-bold">{hit.damage}</span> de dano
+                {hit.reduced > 0 && ` (${hit.reduced} absorvido)`}!
+              </p>
+            ))}
+            {(roll.targetResults.misses || []).map((miss, index) => (
+              <p key={`miss-${index}`} className="text-sm text-red-500">
+                <span className="font-bold">❌ ERROU</span> o ataque em {miss.name}.
+              </p>
+            ))}
+          </div>
+        </div>
+      );
+    }
     // --- NOVO: Bloco para Modo Secreto ---
     if (roll.isSecret) {
       // --- LÓGICA REFINADA ---
