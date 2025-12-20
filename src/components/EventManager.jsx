@@ -18,6 +18,7 @@ const EventManager = ({ onCharacterClick }) => {
     denyActionRequest,
     saveEvent,
     refreshEvent, // Importa a nova função
+    closeEvent,
     loadEventsFromFirestore // Importa a nova função
   } = useEventManager();
 
@@ -228,6 +229,13 @@ const EventManager = ({ onCharacterClick }) => {
                     title="Gerenciar personagens"
                   >
                    👥
+                  </button>
+                 <button 
+                    onClick={(e) => { e.stopPropagation(); saveEvent(event.id); closeEvent(event.id); }}
+                    className="text-xs text-yellow-500 hover:text-yellow-400 font-bold"
+                    title="Salvar e Minimizar (Fechar)"
+                  >
+                   ➖
                   </button>
                 <button 
                   onClick={() => deleteEvent(event.id)} 

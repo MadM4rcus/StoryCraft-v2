@@ -226,6 +226,14 @@ export const EventManagerProvider = ({ children }) => {
     }));
   };
   
+  const closeEvent = (eventId) => {
+    if (!isMaster) return;
+    setCombatState(prevState => ({
+      ...prevState,
+      events: prevState.events.filter(event => event.id !== eventId)
+    }));
+  };
+
   const clearAllEvents = () => {
     if (!isMaster) return;
     setCombatState({ events: [] });
@@ -584,7 +592,11 @@ export const EventManagerProvider = ({ children }) => {
       });
 
       if (loadedEvents.length > 0) {
-          setCombatState(prev => ({ ...prev, events: loadedEvents }));
+          setCombatState(prev => {
+            const currentIds = new Set(prev.events.map(e => e.id));
+            const newEvents = loadedEvents.filter(e => !currentIds.has(e.id));
+            return { ...prev, events: [...prev.events, ...newEvents] };
+          });
       }
     } catch (e) {
       console.error("Erro ao carregar eventos salvos:", e);
@@ -638,6 +650,7 @@ export const EventManagerProvider = ({ children }) => {
       deleteEvent,
       addCharacterToEvent,
       removeCharacterFromEvent,
+      closeEvent,
       clearAllEvents,
       saveEvent,
       loadEventsFromFirestore, // Exporta para uso manual se necessário
