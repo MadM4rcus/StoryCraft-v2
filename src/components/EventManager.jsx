@@ -13,6 +13,7 @@ const EventManager = ({ onCharacterClick }) => {
     deleteEvent, 
     addCharacterToEvent,
     removeCharacterFromEvent,
+    toggleCharacterVisibility,
     actionRequests,
     approveActionRequest,
     denyActionRequest,
@@ -50,12 +51,16 @@ const EventManager = ({ onCharacterClick }) => {
     }
   };
   
-  const renderCharacterHealth = (char) => {
+  const renderCharacterHealth = (char, eventId) => {
     const hp = char.mainAttributes?.hp || { current: '?', max: '?', temp: 0 };
     const mp = char.mainAttributes?.mp || { current: '?', max: '?' };
     
     const isSpoiler = isMaster && !isSpoilerMode && char.flags?.spoiler;
     const nameClasses = `font-bold text-textPrimary truncate ${isSpoiler ? 'blur-sm' : ''}`;
+
+    // Determina se os status devem ser mostrados
+    const isOwner = allCharacters.some(c => c.id === char.id);
+    const showStats = isMaster || isOwner || char.visibleStats;
 
     return (
       <div 
@@ -66,6 +71,16 @@ const EventManager = ({ onCharacterClick }) => {
       >
         <div className="flex justify-between items-center">
           <p className={nameClasses}>{char.name}</p>
+          <div className="flex items-center gap-1">
+          {isMaster && (
+             <button 
+                onClick={(e) => { e.stopPropagation(); toggleCharacterVisibility(eventId, char.id); }}
+                className="text-xs hover:scale-110 transition-transform mr-1"
+                title={char.visibleStats ? "Ocultar status dos jogadores" : "Revelar status para jogadores"}
+              >
+              {char.visibleStats ? '👁️' : '🙈'}
+            </button>
+          )}
           {isMaster && managingEventId && (
              <button 
                 onClick={(e) => {
@@ -78,10 +93,17 @@ const EventManager = ({ onCharacterClick }) => {
               X
             </button>
           )}
+          </div>
         </div>
         <div className="text-sm flex justify-between">
-          <span className="text-red-400">HP: {hp.current}/{hp.max} {hp.temp > 0 ? `(+${hp.temp})` : ''}</span>
-          <span className="text-blue-400">MP: {mp.current}/{mp.max}</span>
+          {showStats ? (
+            <>
+              <span className="text-red-400">HP: {hp.current}/{hp.max} {hp.temp > 0 ? `(+${hp.temp})` : ''}</span>
+              <span className="text-blue-400">MP: {mp.current}/{mp.max}</span>
+            </>
+          ) : (
+             <span className="text-textSecondary text-xs italic">Status Ocultos</span>
+          )}
         </div>
       </div>
     );
@@ -249,7 +271,7 @@ const EventManager = ({ onCharacterClick }) => {
             
             {/* Character List for this event */}
             <div className="space-y-2">
-              {(event.characters || []).map(char => renderCharacterHealth(char))}
+              {(event.characters || []).map(char => renderCharacterHealth(char, event.id))}
             </div>
 
             {/* Character Selector */}
@@ -320,21 +342,27 @@ const EventManager = ({ onCharacterClick }) => {
 
   // --- PLAYER VIEW ---
   const renderPlayerView = () => {
-    const allEventCharacters = useMemo(() => {
-      const charIds = new Set();
-      events.forEach(event => {
-        (event.characters || []).forEach(charId => charIds.add(charId));
-      });
-      return Array.from(charIds).map(id => characterMap[id]).filter(Boolean);
-    }, [events, characterMap]);
+    // Filtra apenas os eventos onde o jogador tem algum personagem participando
+    const playerCharIds = useMemo(() => new Set(allCharacters.map(c => c.id)), [allCharacters]);
+    
+    const relevantEvents = events.filter(event => 
+      (event.characters || []).some(c => playerCharIds.has(c.id))
+    );
 
     return (
       <div className="flex-grow p-3 overflow-y-auto space-y-2 max-h-[calc(100vh-150px)]">
-        {allEventCharacters.length > 0 ? (
-          allEventCharacters.map(renderCharacterHealth)
+        {relevantEvents.length > 0 ? (
+          relevantEvents.map(event => (
+             <div key={event.id} className="mb-3 bg-bgSurface p-2 rounded-lg border border-bgElement">
+                <h5 className="font-bold text-textAccent mb-2 text-center">{event.name}</h5>
+                <div className="space-y-2">
+                  {(event.characters || []).map(char => renderCharacterHealth(char, event.id))}
+                </div>
+             </div>
+          ))
         ) : (
           <p className="text-textSecondary italic text-sm text-center py-4">
-            Nenhum evento em andamento.
+            Você não está participando de nenhum evento.
           </p>
         )}
       </div>

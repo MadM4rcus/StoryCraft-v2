@@ -59,6 +59,7 @@ export const EventManagerProvider = ({ children }) => {
             id: char.id,
             name: char.name,
             flags: char.flags || {},
+            visibleStats: char.visibleStats || false, // Transmite a visibilidade
             mainAttributes: {
                 hp: char.mainAttributes?.hp || { current: 0, max: 0, temp: 0 },
                 mp: char.mainAttributes?.mp || { current: 0, max: 0 },
@@ -191,6 +192,7 @@ export const EventManagerProvider = ({ children }) => {
     // Isso garante que a estrutura de HP e MP seja sempre válida, evitando erros de 'undefined'.
     const characterInCombat = {
       ...JSON.parse(JSON.stringify(characterToAdd)), // Copia os campos seguros
+      visibleStats: false, // Por padrão, status ocultos para jogadores
       mainAttributes: {
         ...(characterToAdd.mainAttributes || {}),
         hp: characterToAdd.mainAttributes?.hp || { current: 0, max: 0, temp: 0 },
@@ -226,6 +228,24 @@ export const EventManagerProvider = ({ children }) => {
     }));
   };
   
+  const toggleCharacterVisibility = (eventId, characterId) => {
+    if (!isMaster) return;
+    setCombatState(prevState => ({
+      ...prevState,
+      events: prevState.events.map(event => {
+        if (event.id === eventId) {
+          return {
+            ...event,
+            characters: event.characters.map(c => 
+              c.id === characterId ? { ...c, visibleStats: !c.visibleStats } : c
+            )
+          };
+        }
+        return event;
+      })
+    }));
+  };
+
   const closeEvent = (eventId) => {
     if (!isMaster) return;
     setCombatState(prevState => ({
@@ -650,6 +670,7 @@ export const EventManagerProvider = ({ children }) => {
       deleteEvent,
       addCharacterToEvent,
       removeCharacterFromEvent,
+      toggleCharacterVisibility,
       closeEvent,
       clearAllEvents,
       saveEvent,
