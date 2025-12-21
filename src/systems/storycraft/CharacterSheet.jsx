@@ -116,7 +116,7 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
     if (!character?.mainAttributes) return;
 
     // --- LÓGICA DE EVENTO: Intercepta alterações de HP/MP se estiver em combate ---
-    const isInEvent = events.some(event => event.characters.some(c => c.id === character.id));
+    const isInEvent = events.some(event => (event.characters || []).some(c => c.id === character.id));
 
     console.log(`[CharacterSheet] Tentativa de alteração de ${target}. Em evento? ${isInEvent}.`);
 
@@ -308,7 +308,7 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
 const handleExecuteFormulaAction = async (action) => {
     if (!action) return;
 
-    const isInEvent = events.some(event => event.characters.some(c => c.id === character.id));
+    const isInEvent = events.some(event => (event.characters || []).some(c => c.id === character.id));
 
     const initialCost = { HP: 0, MP: 0 };
     const actionCostValue = parseInt(action.costValue, 10) || 0;
@@ -589,8 +589,16 @@ const handleExecuteFormulaAction = async (action) => {
         // Ação sem alvo, mas com recuperação (ex: poção de cura em si mesmo)
         // CORREÇÃO: Remove o 'else' para permitir que uma ação tenha Custo E Recuperação simultaneamente
         if (hasRecovery) {
-             sendActionRequest({
-                action: { name: `Usou '${action.name}'`, targetEffect: 'selfHeal', recovery: totalRecovery, totalResult: `Recuperou ${totalRecovery.HP > 0 ? totalRecovery.HP + ' HP' : ''}${totalRecovery.MP > 0 ? totalRecovery.MP + ' MP' : ''}` },
+            const recoveryAction = {
+                name: action.name,
+                targetEffect: 'selfHeal',
+                recovery: totalRecovery,
+                totalResult: totalResult,
+                detailsText: detailsTextForFeed,
+                costText: footerText,
+            };
+            sendActionRequest({
+                action: recoveryAction,
                 actorId: character.id,
                 targetIds: [character.id]
             });

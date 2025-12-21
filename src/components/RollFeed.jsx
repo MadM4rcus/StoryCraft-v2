@@ -63,7 +63,8 @@ const RollFeed = () => {
 
     // --- CORREÇÃO FINAL ---
     // Determina se é uma ação puramente descritiva (sem acerto e sem resultados de dados).
-    const isDescriptiveAction = !roll.acertoResult && (!roll.results || roll.results.length === 0);
+    // Agora considera que se tiver totalResult, NÃO é puramente descritiva (queremos ver o número).
+    const isDescriptiveAction = !roll.acertoResult && (!roll.results || roll.results.length === 0) && (roll.totalResult === undefined);
 
     // --- NOVO: Bloco para resultados de Teste de Resistência (Saving Throw) ---
     if (roll.savingThrowResults) {
@@ -317,7 +318,7 @@ const RollFeed = () => {
         )}
         
             {/* Bloco de Dano/Resultado (Layout 2.0) */}
-            {(roll.detailsText || (roll.acertoResult && roll.totalResult > 0)) && (
+            {(roll.detailsText || (roll.acertoResult && roll.totalResult > 0) || (!roll.acertoResult && roll.totalResult !== undefined)) && (
           <div className="mt-2 pt-2 border-t border-bgInput/50">
             
             {/* Linha 1: Dano: 668 */}

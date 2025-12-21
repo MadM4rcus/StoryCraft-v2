@@ -221,7 +221,7 @@ export const EventManagerProvider = ({ children }) => {
       ...prevState,
       events: prevState.events.map(event => {
         if (event.id === eventId) {
-          return { ...event, characters: event.characters.filter(c => c.id !== characterId) };
+          return { ...event, characters: (event.characters || []).filter(c => c.id !== characterId) };
         }
         return event;
       })
@@ -236,7 +236,7 @@ export const EventManagerProvider = ({ children }) => {
         if (event.id === eventId) {
           return {
             ...event,
-            characters: event.characters.map(c => 
+            characters: (event.characters || []).map(c => 
               c.id === characterId ? { ...c, visibleStats: !c.visibleStats } : c
             )
           };
@@ -313,6 +313,14 @@ export const EventManagerProvider = ({ children }) => {
         return;
     }
 
+    // Define a ação a partir do pedido para uso consistente em toda a função.
+    const { action } = request;
+    if (!action) {
+      console.error("Pedido de ação inválido: propriedade 'action' ausente.", request);
+      denyActionRequest(requestId);
+      return;
+    }
+
     // --- Lógica para Rolagens de Ataque (acerto vs ME) ---
     // Helper para calcular atributos derivados de um personagem "vivo" (com buffs, etc.)
     const calculateLiveAttribute = (liveChar, attrName) => {
@@ -367,8 +375,8 @@ export const EventManagerProvider = ({ children }) => {
         return baseSaveValue + primaryAttrValue + powerScaleBonus;
     };
 
-    if (request.action.acertoResult) {
-        const acertoTotal = request.action.acertoResult.total;
+    if (action.acertoResult) {
+        const acertoTotal = action.acertoResult.total;
         const hitTargets = [];
         const missedTargets = [];
         let totalDamageDealt = 0;
@@ -378,7 +386,7 @@ export const EventManagerProvider = ({ children }) => {
         (request.targetIds || [request.targetId]).forEach(targetId => {
             let combatChar = null; // O personagem no estado de combate (para modificar)
             for (const event of newState.events) {
-                const char = event.characters.find(c => c.id === targetId);
+                const char = (event.characters || []).find(c => c.id === targetId);
                 if (char) {
                     combatChar = char;
                     break;
@@ -392,11 +400,10 @@ export const EventManagerProvider = ({ children }) => {
             const totalME = calculateLiveAttribute(liveChar, 'ME');
 
             // REGRA: Crítico é acerto automático, independente da ME.
-            const isCrit = request.action.acertoResult?.isCrit;
+            const isCrit = action.acertoResult?.isCrit;
 
             if (isCrit || acertoTotal >= totalME) {
                 const hp = combatChar.mainAttributes.hp;
-                const action = request.action || {};
                 let amount = parseInt(action.totalResult, 10) || 0;
                 const effectType = action.targetEffect || 'damage';
                 let damageApplied = 0;
@@ -430,14 +437,14 @@ export const EventManagerProvider = ({ children }) => {
               type: 'roll',
               characterName: actor.name,
               ownerUid: actor.ownerUid,
-              rollName: request.action.name,
-              acertoResult: request.action.acertoResult,
+              rollName: action.name,
+              acertoResult: action.acertoResult,
               totalResult: totalDamageDealt,
-              rolledDamage: request.action.totalResult, // Passa o dano rolado original
+              rolledDamage: action.totalResult, // Passa o dano rolado original
               targetResults: { hits: hitTargets, misses: missedTargets },
-              costText: request.action.costText || '',
+              costText: action.costText || '',
               isSecret: isSecretMode,
-              detailsText: request.action.detailsText || '', // Passa a fórmula do dano
+              detailsText: action.detailsText || '', // Passa a fórmula do dano
           });
         } catch (error) {
             console.error("Falha ao enviar resultado do ataque para o feed:", error);
@@ -448,14 +455,14 @@ export const EventManagerProvider = ({ children }) => {
     }
     
     // --- LÓGICA PARA TESTES DE RESISTÊNCIA (SAVING THROWS) ---
-    if (request.action.savingThrow && request.action.savingThrow.type !== 'none') {
+    if (action.savingThrow && action.savingThrow.type !== 'none') {
         const savingThrowResults = [];
         const newState = JSON.parse(JSON.stringify(combatState));
 
         (request.targetIds || [request.targetId]).forEach(targetId => {
             let combatChar = null;
             for (const event of newState.events) {
-                const char = event.characters.find(c => c.id === targetId);
+                const char = (event.characters || []).find(c => c.id === targetId);
                 if (char) { combatChar = char; break; }
             }
             if (!combatChar) return;
@@ -463,27 +470,27 @@ export const EventManagerProvider = ({ children }) => {
             const liveChar = allCharacters.find(c => c.id === targetId);
             if (!liveChar) return;
 
-            const saveType = request.action.savingThrow.type;
-            const saveDC = request.action.savingThrow.dc;
+            const saveType = action.savingThrow.type;
+            const saveDC = action.savingThrow.dc;
             const saveBonus = calculateLiveAttribute(liveChar, saveType);
             
             const d20Roll = Math.floor(Math.random() * 20) + 1;
             const saveTotal = d20Roll + saveBonus;
             const isSuccess = saveTotal >= saveDC;
 
-            let damageAmount = parseInt(request.action.totalResult, 10) || 0;
+            let damageAmount = parseInt(action.totalResult, 10) || 0;
             let damageAfterSave = damageAmount;
 
             if (isSuccess) {
-                if (request.action.savingThrow.effect === 'halfDamage') {
+                if (action.savingThrow.effect === 'halfDamage') {
                     damageAfterSave = Math.floor(damageAmount / 2);
-                } else if (request.action.savingThrow.effect === 'noDamage') {
+                } else if (action.savingThrow.effect === 'noDamage') {
                     damageAfterSave = 0;
                 }
             }
 
             const totalMD = calculateLiveAttribute(liveChar, 'MD');
-            const damageReducedByMD = request.action.ignoraMD ? 0 : totalMD;
+            const damageReducedByMD = action.ignoraMD ? 0 : totalMD;
             const finalDamage = Math.max(0, damageAfterSave - damageReducedByMD);
 
             const initialHP = combatChar.mainAttributes.hp.current;
@@ -512,7 +519,7 @@ export const EventManagerProvider = ({ children }) => {
                 type: 'roll',
                 characterName: actor.name,
                 ownerUid: actor.ownerUid,
-                rollName: request.action.name,
+                rollName: action.name,
                 savingThrowResults, // Nova estrutura de dados para o feed
                 isSecret: isSecretMode,
             });
@@ -523,55 +530,132 @@ export const EventManagerProvider = ({ children }) => {
         return;
     }
 
+    // --- LÓGICA PARA AÇÕES DE CURA/CUSTO COM FÓRMULA (SEM ACERTO/RESISTÊNCIA) ---
+    if (action.targetEffect === 'selfHeal') {
+        const newState = JSON.parse(JSON.stringify(combatState));
+        const modifiedTargetsDesc = [];
+
+        newState.events = newState.events.map(event => ({
+            ...event,
+            characters: (event.characters || []).map(character => {
+                const isTarget = (request.targetIds && request.targetIds.includes(character.id)) || character.id === request.targetId;
+                if (!isTarget) return character;
+
+                const newChar = { ...character };
+                const { hp, mp } = newChar.mainAttributes;
+                let changeDescription = '';
+
+                if (action.recovery) {
+                    if (action.recovery.HP) {
+                        const healedHP = Math.min(hp.max, hp.current + (action.recovery.HP || 0)) - hp.current;
+                        hp.current += healedHP;
+                        changeDescription += `recuperou ${healedHP} HP`;
+                    }
+                    if (action.recovery.MP) {
+                        const healedMP = Math.min(mp.max, mp.current + (action.recovery.MP || 0)) - mp.current;
+                        mp.current += healedMP;
+                        if (changeDescription) changeDescription += ' e ';
+                        changeDescription += `recuperou ${healedMP} MP`;
+                    }
+                }
+
+                if (changeDescription) {
+                    modifiedTargetsDesc.push(`${character.name} ${changeDescription}`);
+                }
+                return newChar;
+            })
+        }));
+
+        setCombatState(newState);
+
+        // Envia um item de rolagem rico para o feed, que será renderizado com todos os detalhes.
+        addRollToFeed({
+            type: 'roll',
+            characterName: actor.name,
+            ownerUid: actor.ownerUid,
+            rollName: action.name,
+            totalResult: action.totalResult,
+            detailsText: action.detailsText,
+            costText: action.costText,
+            // Usa o campo discordText para mostrar um resumo do que aconteceu.
+            discordText: modifiedTargetsDesc.join('. ') + '.'
+        });
+
+        denyActionRequest(requestId);
+        return;
+    }
+
     // --- Lógica original para ações sem rolagem de ataque ---
     // Clonamos o estado atual para calcular as modificações e mensagens antes de atualizar
     const newState = JSON.parse(JSON.stringify(combatState));
-    const feedbackMessages = [];
+    const affectedTargets = []; // Armazena os resultados para criar um card rico
     const actorName = allCharacters.find(c => c.id === request.actorId)?.name || 'Desconhecido';
 
     newState.events = newState.events.map(event => ({
         ...event,
-        characters: event.characters.map(character => {
+        characters: (event.characters || []).map(character => {
             const isTarget = (request.targetIds && request.targetIds.includes(character.id)) || character.id === request.targetId;
             if (!isTarget) return character;
 
             const newChar = { ...character };
             const { hp, mp } = newChar.mainAttributes;
-            const { action } = request;
             const amount = parseInt(action.totalResult, 10) || 0;
             const effectType = action.targetEffect || 'damage';
-            let msg = '';
+            let msg = ''; // Descrição do efeito (ex: "recuperou 10 HP")
+            let appliedAmount = 0;
 
             switch (effectType) {
-                case 'heal': hp.current = Math.min(hp.max, hp.current + amount); msg = `${character.name} recuperou ${amount} HP.`; break;
-                case 'healTemp': hp.temp = (hp.temp || 0) + amount; msg = `${character.name} ganhou ${amount} HP Temporário.`; break;
-                case 'damageTemp': hp.temp = Math.max(0, (hp.temp || 0) - amount); msg = `${character.name} perdeu ${amount} HP Temporário.`; break;
-                case 'damageMP': mp.current = Math.max(0, mp.current - amount); msg = `${character.name} perdeu ${amount} MP.`; break;
-                case 'healMP': mp.current = Math.min(mp.max, mp.current + amount); msg = `${character.name} recuperou ${amount} MP.`; break;
+                case 'heal': 
+                    const healedHP = Math.min(hp.max, hp.current + amount) - hp.current;
+                    hp.current += healedHP; 
+                    appliedAmount = healedHP;
+                    msg = `recuperou ${healedHP} HP`; 
+                    break;
+                case 'healTemp': hp.temp = (hp.temp || 0) + amount; appliedAmount = amount; msg = `ganhou ${amount} HP Temporário`; break;
+                case 'damageTemp': hp.temp = Math.max(0, (hp.temp || 0) - amount); appliedAmount = amount; msg = `perdeu ${amount} HP Temporário`; break;
+                case 'damageMP': mp.current = Math.max(0, mp.current - amount); appliedAmount = amount; msg = `perdeu ${amount} MP`; break;
+                case 'healMP': mp.current = Math.min(mp.max, mp.current + amount); appliedAmount = amount; msg = `recuperou ${amount} MP`; break;
                 case 'cost':
                     if (action.cost?.HP) hp.current = Math.max(0, hp.current - (action.cost.HP || 0));
                     if (action.cost?.MP) mp.current = Math.max(0, mp.current - (action.cost.MP || 0));
-                    msg = `${character.name} pagou o custo da ação.`;
+                    msg = `pagou o custo da ação`;
                     break;
                 case 'selfHeal':
                     if (action.recovery?.HP) hp.current = Math.min(hp.max, hp.current + (action.recovery.HP || 0));
                     if (action.recovery?.MP) mp.current = Math.min(mp.max, mp.current + (action.recovery.MP || 0));
-                    msg = `${character.name} se recuperou.`;
+                    msg = `se recuperou`;
                     break;
                 case 'damage':
-                default: hp.current = Math.max(0, hp.current - amount); msg = `${character.name} sofreu ${amount} de dano.`; break;
+                default: 
+                    const damage = Math.min(hp.current, amount);
+                    hp.current -= damage; 
+                    appliedAmount = damage;
+                    msg = `sofreu ${damage} de dano`; 
+                    break;
             }
-            if (msg) feedbackMessages.push(msg);
+            
+            if (msg) {
+                affectedTargets.push({ name: character.name, msg });
+            }
             return newChar;
         })
     }));
 
     setCombatState(newState);
 
-    // Envia as mensagens de feedback para o chat
-    feedbackMessages.forEach(msg => {
-        addMessageToFeed({ characterName: actorName, text: msg, ownerUid: user.uid });
-    });
+    // Envia um card de rolagem rico se houver alvos afetados
+    if (affectedTargets.length > 0) {
+        const description = affectedTargets.map(t => `${t.name} ${t.msg}.`).join('\n');
+        addRollToFeed({
+            type: 'roll',
+            characterName: actorName,
+            ownerUid: user.uid,
+            rollName: action.name || 'Ação',
+            totalResult: action.totalResult, // Passa o valor original (pode ser string em custos)
+            discordText: description, // Usa este campo para listar os efeitos
+            isSecret: isSecretMode,
+        });
+    }
 
     denyActionRequest(requestId);
   };
@@ -639,7 +723,7 @@ export const EventManagerProvider = ({ children }) => {
         if (event.id !== eventId) return event;
 
         // Atualiza os dados de cada personagem com o que está na ficha (allCharacters)
-        const refreshedCharacters = event.characters.map(char => {
+        const refreshedCharacters = (event.characters || []).map(char => {
           const freshChar = allCharacters.find(c => c.id === char.id);
           if (freshChar) {
             return {
