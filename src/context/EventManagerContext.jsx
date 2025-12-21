@@ -11,6 +11,44 @@ import debounce from 'lodash/debounce';
 
 const EventManagerContext = createContext();
 
+// Helper function to determine Power Scale based on character level
+const getPowerScale = (level) => {
+    level = parseInt(level, 10);
+    if (isNaN(level) || level < 1) {
+        return { scale: 0, category: 'Desconhecida', powerBonus: 0 };
+    }
+
+    if (level >= 1 && level <= 10) return { scale: 0, category: 'Comum', powerBonus: 1 };
+    if (level >= 11 && level <= 20) return { scale: 1, category: 'Lendário I', powerBonus: 2 };
+    if (level >= 21 && level <= 30) return { scale: 2, category: 'Lendário II', powerBonus: 2 };
+    if (level >= 31 && level <= 40) return { scale: 3, category: 'Lendário III', powerBonus: 2 };
+    if (level >= 41 && level <= 45) return { scale: 4, category: 'Colossal I', powerBonus: 3 };
+    if (level >= 46 && level <= 50) return { scale: 5, category: 'Colossal II', powerBonus: 3 };
+    if (level >= 51 && level <= 55) return { scale: 6, category: 'Colossal III', powerBonus: 3 };
+    if (level >= 56 && level <= 59) return { scale: 7, category: 'Titânico', powerBonus: 4 };
+    if (level === 60) return { scale: 8, category: 'Divino', powerBonus: 5 };
+
+    return { scale: 9, category: 'Além do Divino', powerBonus: 6 }; // For levels beyond 60
+};
+
+// Helper function to determine character status (Near Death, Unconscious, Dead)
+const getCharacterStatus = (character) => {
+    const hp = character.mainAttributes?.hp;
+    if (!hp || hp.max == null || hp.current == null) {
+        return { isNearDeath: false, isUnconscious: false, isDead: false, deathThreshold: -10 };
+    }
+
+    const maxHP = hp.max || 1;
+    const currentHP = hp.current;
+    // O que for maior (em valor absoluto), ou seja, o menor número (mais negativo)
+    const deathThreshold = Math.min(-10, -Math.floor(maxHP / 2));
+
+    const isDead = currentHP <= deathThreshold;
+    const isUnconscious = !isDead && currentHP <= 0;
+    const isNearDeath = !isUnconscious && !isDead && currentHP > 0 && currentHP <= Math.floor(maxHP / 4);
+
+    return { isNearDeath, isUnconscious, isDead, deathThreshold };
+};
 
 export const useEventManager = () => useContext(EventManagerContext);
 
@@ -321,10 +359,31 @@ export const EventManagerProvider = ({ children }) => {
       return;
     }
 
+    // --- HELPER: Lógica de Escala de Poder Unificada ---
+    const calculateScaleMultiplier = (attackerId, targetId) => {
+        const attackerChar = allCharacters.find(c => c.id === attackerId);
+        const targetChar = allCharacters.find(c => c.id === targetId);
+        
+        if (!attackerChar || !targetChar) return { multiplier: 1, reflected: false };
+
+        const attackerScale = getPowerScale(attackerChar.level).scale;
+        const targetScale = getPowerScale(targetChar.level).scale;
+        const scaleDiff = targetScale - attackerScale;
+
+        let multiplier = 1 - (scaleDiff / 3);
+        multiplier = Math.max(0, Math.min(2, multiplier)); // Limita entre 0x e 2x
+        
+        const reflected = scaleDiff >= 3;
+        return { multiplier, reflected };
+    };
+
     // --- Lógica para Rolagens de Ataque (acerto vs ME) ---
     // Helper para calcular atributos derivados de um personagem "vivo" (com buffs, etc.)
     const calculateLiveAttribute = (liveChar, attrName) => {
         if (!liveChar) return 0;
+
+        // Pega o status atual para aplicar penalidades
+        const { isNearDeath } = getCharacterStatus(liveChar);
 
         const getStat = (character, statName) => {
             let key = statName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -339,6 +398,11 @@ export const EventManagerProvider = ({ children }) => {
             return getStat(liveChar, 'MD') + getStat(liveChar, 'Constituição');
         }
 
+        if (attrName === 'ME') {
+            const nearDeathPenalty = isNearDeath ? -2 : 0;
+            return getStat(liveChar, 'ME') + nearDeathPenalty;
+        }
+
         // CORREÇÃO: Iniciativa soma com Destreza
         if (attrName === 'Iniciativa') {
             return getStat(liveChar, 'Iniciativa') + getStat(liveChar, 'Destreza');
@@ -350,14 +414,7 @@ export const EventManagerProvider = ({ children }) => {
 
         // Lógica para Testes de Resistência
         const getPowerScaleBonus = (level) => {
-            level = parseInt(level, 10);
-            if (isNaN(level) || level < 1) return 0;
-            if (level >= 1 && level <= 10) return 1;
-            if (level >= 11 && level <= 40) return 2;
-            if (level >= 41 && level <= 55) return 3;
-            if (level >= 56 && level <= 59) return 4;
-            if (level === 60) return 5;
-            return 6;
+            return getPowerScale(level).powerBonus;
         };
 
         const powerScaleBonus = getPowerScaleBonus(liveChar.level);
@@ -371,8 +428,10 @@ export const EventManagerProvider = ({ children }) => {
         const primaryAttrName = primaryAttrNameMap[selectedAttrAbbr];
         
         const primaryAttrValue = primaryAttrName ? getStat(liveChar, primaryAttrName) : 0;
+        
+        const nearDeathPenalty = isNearDeath ? -1 : 0;
 
-        return baseSaveValue + primaryAttrValue + powerScaleBonus;
+        return baseSaveValue + primaryAttrValue + powerScaleBonus + nearDeathPenalty;
     };
 
     if (action.acertoResult) {
@@ -380,6 +439,7 @@ export const EventManagerProvider = ({ children }) => {
         const hitTargets = [];
         const missedTargets = [];
         let totalDamageDealt = 0;
+        let reflectedDamageInfo = null; // Para armazenar informações sobre dano refletido
 
         const newState = JSON.parse(JSON.stringify(combatState));
 
@@ -397,33 +457,73 @@ export const EventManagerProvider = ({ children }) => {
             const liveChar = allCharacters.find(c => c.id === targetId);
             if (!liveChar) return;
 
-            const totalME = calculateLiveAttribute(liveChar, 'ME');
+            const totalME = calculateLiveAttribute(liveChar, 'ME'); // Penalidade já é aplicada aqui
 
             // REGRA: Crítico é acerto automático, independente da ME.
             const isCrit = action.acertoResult?.isCrit;
 
             if (isCrit || acertoTotal >= totalME) {
                 const hp = combatChar.mainAttributes.hp;
-                let amount = parseInt(action.totalResult, 10) || 0;
+                const originalAmount = parseInt(action.totalResult, 10) || 0;
                 const effectType = action.targetEffect || 'damage';
                 let damageApplied = 0;
                 let damageReduced = 0;
+                let statusChanges = [];
 
-                if (effectType === 'damage' && amount > 0) {
+                // --- LÓGICA DE ESCALA ---
+                const { multiplier, reflected } = calculateScaleMultiplier(actor.id, targetId);
+                const scaledDamage = reflected ? 0 : Math.floor(originalAmount * multiplier);
+                const reflectedAmount = reflected ? Math.floor(originalAmount * 2) : 0;
+                // --- FIM DA LÓGICA DE ESCALA ---
+
+                if (effectType === 'damage' && scaledDamage > 0) {
                     const totalMD = calculateLiveAttribute(liveChar, 'MD');
-                    damageReduced = action.ignoraMD ? 0 : totalMD;
-                    const damageToApply = Math.max(0, amount - damageReduced);
+                    damageReduced = action.ignoraMD ? 0 : totalMD;                    
+                    const damageToApply = Math.max(0, scaledDamage - damageReduced);
 
                     const initialHP = hp.current;
-                    hp.current = Math.max(0, hp.current - damageToApply);
+                    const statusBeforeDamage = getCharacterStatus(liveChar);
+
+                    hp.current -= damageToApply; // Permite HP negativo
                     damageApplied = initialHP - hp.current;
                     totalDamageDealt += damageApplied;
+
+                    // Verifica mudança de estado após o dano
+                    const statusAfterDamage = getCharacterStatus(combatChar);
+                    if (statusAfterDamage.isDead && !statusBeforeDamage.isDead) {
+                        statusChanges.push({ type: 'dead', message: `${combatChar.name} foi morto!` });
+                    } else if (statusAfterDamage.isUnconscious && !statusBeforeDamage.isUnconscious) {
+                        statusChanges.push({ type: 'unconscious', message: `${combatChar.name} caiu inconsciente!` });
+                    } else if (statusAfterDamage.isNearDeath && !statusBeforeDamage.isNearDeath) {
+                        statusChanges.push({ type: 'near_death', message: `${combatChar.name} está perto da morte!` });
+                    }
+
                 }
+
+                // Aplica o dano refletido de volta no atacante
+                if (reflectedAmount > 0) {
+                    for (const event of newState.events) {
+                        const attackerCombatChar = (event.characters || []).find(c => c.id === actor.id);
+                        if (attackerCombatChar) {
+                            const attackerHP = attackerCombatChar.mainAttributes.hp;
+                            const attackerInitialHP = attackerHP.current;
+                            // Dano refletido ignora MD, conforme assumido
+                            attackerHP.current = Math.max(0, attackerHP.current - reflectedAmount);
+                            const reflectedDamageApplied = attackerInitialHP - attackerHP.current;
+                            reflectedDamageInfo = { targetName: actor.name, damage: reflectedDamageApplied };
+                            break; // Sai do loop de eventos
+                        }
+                    }
+                }
+
                 hitTargets.push({ 
                     name: combatChar.name, 
                     me: totalME, 
                     damage: damageApplied,
-                    reduced: damageReduced 
+                    reduced: damageReduced,
+                    powerScaleMultiplier: multiplier, // Adiciona para o feed
+                    initialDamage: originalAmount, // Adiciona para o feed
+                    statusChanges, // Adiciona para o feed
                 });
             } else {
                 missedTargets.push({ name: combatChar.name, me: totalME });
@@ -442,6 +542,7 @@ export const EventManagerProvider = ({ children }) => {
               totalResult: totalDamageDealt,
               rolledDamage: action.totalResult, // Passa o dano rolado original
               targetResults: { hits: hitTargets, misses: missedTargets },
+              reflectedDamage: reflectedDamageInfo, // Passa a info de dano refletido
               costText: action.costText || '',
               isSecret: isSecretMode,
               detailsText: action.detailsText || '', // Passa a fórmula do dano
@@ -458,6 +559,7 @@ export const EventManagerProvider = ({ children }) => {
     if (action.savingThrow && action.savingThrow.type !== 'none') {
         const savingThrowResults = [];
         const newState = JSON.parse(JSON.stringify(combatState));
+        let reflectedDamageInfo = null;
 
         (request.targetIds || [request.targetId]).forEach(targetId => {
             let combatChar = null;
@@ -470,6 +572,13 @@ export const EventManagerProvider = ({ children }) => {
             const liveChar = allCharacters.find(c => c.id === targetId);
             if (!liveChar) return;
 
+            // --- LÓGICA DE ESCALA ---
+            const { multiplier, reflected } = calculateScaleMultiplier(actor.id, targetId);
+            const originalAmount = parseInt(action.totalResult, 10) || 0;
+            const scaledDamage = reflected ? 0 : Math.floor(originalAmount * multiplier);
+            const reflectedAmount = reflected ? Math.floor(originalAmount * 2) : 0;
+            // ------------------------
+
             const saveType = action.savingThrow.type;
             const saveDC = action.savingThrow.dc;
             const saveBonus = calculateLiveAttribute(liveChar, saveType);
@@ -478,8 +587,7 @@ export const EventManagerProvider = ({ children }) => {
             const saveTotal = d20Roll + saveBonus;
             const isSuccess = saveTotal >= saveDC;
 
-            let damageAmount = parseInt(action.totalResult, 10) || 0;
-            let damageAfterSave = damageAmount;
+            let damageAfterSave = scaledDamage;
 
             if (isSuccess) {
                 if (action.savingThrow.effect === 'halfDamage') {
@@ -494,8 +602,32 @@ export const EventManagerProvider = ({ children }) => {
             const finalDamage = Math.max(0, damageAfterSave - damageReducedByMD);
 
             const initialHP = combatChar.mainAttributes.hp.current;
-            combatChar.mainAttributes.hp.current = Math.max(0, initialHP - finalDamage);
+            combatChar.mainAttributes.hp.current = initialHP - finalDamage; // Permite HP negativo
             const damageApplied = initialHP - combatChar.mainAttributes.hp.current;
+
+            if (reflectedAmount > 0 && !reflectedDamageInfo) {
+                 for (const event of newState.events) {
+                    const attackerCombatChar = (event.characters || []).find(c => c.id === actor.id);
+                    if (attackerCombatChar) {
+                        const attackerHP = attackerCombatChar.mainAttributes.hp;
+                        attackerHP.current -= reflectedAmount; // Permite HP negativo
+                        reflectedDamageInfo = { targetName: actor.name, damage: reflectedAmount };
+                        break;
+                    }
+                }
+            }
+
+            // Verifica mudança de estado após o dano
+            const statusChanges = [];
+            const statusBeforeDamage = getCharacterStatus(liveChar);
+            const statusAfterDamage = getCharacterStatus(combatChar);
+            if (statusAfterDamage.isDead && !statusBeforeDamage.isDead) {
+                statusChanges.push({ type: 'dead', message: `${combatChar.name} foi morto!` });
+            } else if (statusAfterDamage.isUnconscious && !statusBeforeDamage.isUnconscious) {
+                statusChanges.push({ type: 'unconscious', message: `${combatChar.name} caiu inconsciente!` });
+            } else if (statusAfterDamage.isNearDeath && !statusBeforeDamage.isNearDeath) {
+                statusChanges.push({ type: 'near_death', message: `${combatChar.name} está perto da morte!` });
+            }
 
             savingThrowResults.push({
                 targetName: liveChar.name,
@@ -505,10 +637,12 @@ export const EventManagerProvider = ({ children }) => {
                 saveTotal,
                 saveDC,
                 isSuccess,
-                initialDamage: damageAmount,
+                initialDamage: originalAmount,
+                powerScaleMultiplier: multiplier, // Info para o feed
                 damageAfterSave,
                 damageReducedByMD,
-                finalDamage: damageApplied
+                finalDamage: damageApplied,
+                statusChanges, // Adiciona para o feed
             });
         });
 
@@ -520,7 +654,8 @@ export const EventManagerProvider = ({ children }) => {
                 characterName: actor.name,
                 ownerUid: actor.ownerUid,
                 rollName: action.name,
-                savingThrowResults, // Nova estrutura de dados para o feed
+                savingThrowResults,
+                reflectedDamage: reflectedDamageInfo,
                 isSecret: isSecretMode,
             });
         } catch (error) {
@@ -585,11 +720,11 @@ export const EventManagerProvider = ({ children }) => {
         return;
     }
 
-    // --- Lógica original para ações sem rolagem de ataque ---
-    // Clonamos o estado atual para calcular as modificações e mensagens antes de atualizar
+    // --- Lógica Genérica (Dano/Cura Simples) ---
     const newState = JSON.parse(JSON.stringify(combatState));
-    const affectedTargets = []; // Armazena os resultados para criar um card rico
+    const affectedTargets = [];
     const actorName = allCharacters.find(c => c.id === request.actorId)?.name || 'Desconhecido';
+    let reflectedDamageInfo = null;
 
     newState.events = newState.events.map(event => ({
         ...event,
@@ -599,42 +734,68 @@ export const EventManagerProvider = ({ children }) => {
 
             const newChar = { ...character };
             const { hp, mp } = newChar.mainAttributes;
-            const amount = parseInt(action.totalResult, 10) || 0;
+            const originalAmount = parseInt(action.totalResult, 10) || 0;
             const effectType = action.targetEffect || 'damage';
-            let msg = ''; // Descrição do efeito (ex: "recuperou 10 HP")
-            let appliedAmount = 0;
+            let msg = '';
+            const statusBeforeDamage = getCharacterStatus(character);
+            
+            // --- LÓGICA DE ESCALA ---
+            let finalAmount = originalAmount;
+            let scaleMsg = '';
+            
+            if (['damage', 'damageMP', 'damageTemp'].includes(effectType)) {
+                const { multiplier, reflected } = calculateScaleMultiplier(actor.id, character.id);
+                
+                if (reflected) {
+                    finalAmount = 0;
+                    scaleMsg = ' (Refletido!)';
+                    // Aplica dano refletido ao atacante (se encontrado neste evento)
+                    const attackerCombatChar = (event.characters || []).find(c => c.id === actor.id);
+                    if (attackerCombatChar) {
+                         const refAmount = Math.floor(originalAmount * 2); // Usa originalAmount para dano refletido
+                         attackerCombatChar.mainAttributes.hp.current = Math.max(0, attackerCombatChar.mainAttributes.hp.current - refAmount);
+                         reflectedDamageInfo = { targetName: actor.name, damage: refAmount };
+                    }
+                } else {
+                    finalAmount = Math.floor(originalAmount * multiplier);
+                    if (multiplier !== 1) scaleMsg = ` (x${multiplier.toFixed(2)})`;
+                }
+            }
+            // ------------------------
 
             switch (effectType) {
                 case 'heal': 
-                    const healedHP = Math.min(hp.max, hp.current + amount) - hp.current;
+                    const healedHP = Math.min(hp.max, hp.current + finalAmount) - hp.current;
                     hp.current += healedHP; 
-                    appliedAmount = healedHP;
                     msg = `recuperou ${healedHP} HP`; 
                     break;
-                case 'healTemp': hp.temp = (hp.temp || 0) + amount; appliedAmount = amount; msg = `ganhou ${amount} HP Temporário`; break;
-                case 'damageTemp': hp.temp = Math.max(0, (hp.temp || 0) - amount); appliedAmount = amount; msg = `perdeu ${amount} HP Temporário`; break;
-                case 'damageMP': mp.current = Math.max(0, mp.current - amount); appliedAmount = amount; msg = `perdeu ${amount} MP`; break;
-                case 'healMP': mp.current = Math.min(mp.max, mp.current + amount); appliedAmount = amount; msg = `recuperou ${amount} MP`; break;
+                case 'healTemp': hp.temp = (hp.temp || 0) + finalAmount; msg = `ganhou ${finalAmount} HP Temporário`; break;
+                case 'damageTemp': hp.temp = Math.max(0, (hp.temp || 0) - finalAmount); msg = `perdeu ${finalAmount} HP Temporário${scaleMsg}`; break;
+                case 'damageMP': mp.current = Math.max(0, mp.current - finalAmount); msg = `perdeu ${finalAmount} MP${scaleMsg}`; break;
+                case 'healMP': mp.current = Math.min(mp.max, mp.current + finalAmount); msg = `recuperou ${finalAmount} MP`; break;
                 case 'cost':
                     if (action.cost?.HP) hp.current = Math.max(0, hp.current - (action.cost.HP || 0));
                     if (action.cost?.MP) mp.current = Math.max(0, mp.current - (action.cost.MP || 0));
                     msg = `pagou o custo da ação`;
                     break;
-                case 'selfHeal':
-                    if (action.recovery?.HP) hp.current = Math.min(hp.max, hp.current + (action.recovery.HP || 0));
-                    if (action.recovery?.MP) mp.current = Math.min(mp.max, mp.current + (action.recovery.MP || 0));
-                    msg = `se recuperou`;
-                    break;
                 case 'damage':
                 default: 
-                    const damage = Math.min(hp.current, amount);
-                    hp.current -= damage; 
-                    appliedAmount = damage;
-                    msg = `sofreu ${damage} de dano`; 
+                    hp.current -= finalAmount; // Permite HP negativo
+                    msg = `sofreu ${finalAmount} de dano${scaleMsg}`; 
                     break;
             }
             
             if (msg) {
+                // Verifica mudança de estado após o dano/cura
+                const statusAfterDamage = getCharacterStatus(newChar);
+                if (statusAfterDamage.isDead && !statusBeforeDamage.isDead) {
+                    msg += `\n- 💀 ${newChar.name} foi morto!`;
+                } else if (statusAfterDamage.isUnconscious && !statusBeforeDamage.isUnconscious) {
+                    msg += `\n- 😵 ${newChar.name} caiu inconsciente!`;
+                } else if (statusAfterDamage.isNearDeath && !statusBeforeDamage.isNearDeath) {
+                    msg += `\n- ⚠️ ${newChar.name} está perto da morte!`;
+                }
+
                 affectedTargets.push({ name: character.name, msg });
             }
             return newChar;
@@ -643,16 +804,19 @@ export const EventManagerProvider = ({ children }) => {
 
     setCombatState(newState);
 
-    // Envia um card de rolagem rico se houver alvos afetados
-    if (affectedTargets.length > 0) {
-        const description = affectedTargets.map(t => `${t.name} ${t.msg}.`).join('\n');
+    if (affectedTargets.length > 0 || reflectedDamageInfo) {
+        let description = affectedTargets.map(t => `${t.name} ${t.msg}.`).join('\n');
+        if (reflectedDamageInfo) {
+            description += `\n💥 DANO REFLETIDO! ${reflectedDamageInfo.targetName} sofreu ${reflectedDamageInfo.damage} de dano.`;
+        }
+
         addRollToFeed({
             type: 'roll',
             characterName: actorName,
             ownerUid: user.uid,
             rollName: action.name || 'Ação',
-            totalResult: action.totalResult, // Passa o valor original (pode ser string em custos)
-            discordText: description, // Usa este campo para listar os efeitos
+            totalResult: action.totalResult,
+            discordText: description,
             isSecret: isSecretMode,
         });
     }

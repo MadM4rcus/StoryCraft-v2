@@ -99,6 +99,7 @@ const RollFeed = () => {
                   )}
                   <p className="text-xs text-textSecondary">
                     Dano Inicial: {res.initialDamage}
+                    {typeof res.powerScaleMultiplier === 'number' && res.powerScaleMultiplier !== 1 && ` (x${res.powerScaleMultiplier.toFixed(2)})`}
                     {res.isSuccess && res.damageAfterSave !== res.initialDamage && ` ➜ Metade: ${res.damageAfterSave}`}
                     {res.damageReducedByMD > 0 && ` ➜ MD: -${res.damageReducedByMD}`}
                   </p>
@@ -106,6 +107,17 @@ const RollFeed = () => {
                     Dano Final: {res.finalDamage}
                   </p>
                 </div>
+                {/* NOVO: Exibe mudanças de estado */}
+                {(res.statusChanges || []).map((status, i) => {
+                  let statusColor = 'text-yellow-400';
+                  if (status.type === 'unconscious') statusColor = 'text-orange-500';
+                  if (status.type === 'dead') statusColor = 'text-red-600';
+                  return (
+                    <p key={`save-status-${index}-${i}`} className={`text-sm font-bold mt-1 ${statusColor}`}>
+                      {status.type === 'dead' ? '💀' : status.type === 'unconscious' ? '😵' : '⚠️'} {status.message}
+                    </p>
+                  );
+                })}
               </div>
             ))}
           </div>
@@ -165,18 +177,37 @@ const RollFeed = () => {
           {/* Bloco de Resultados por Alvo */}
           <div className="mt-2 pt-2 border-t border-bgInput/50 space-y-1">
             {(roll.targetResults.hits || []).map((hit, index) => (
-              <p key={`hit-${index}`} className="text-sm text-green-400">
-                <span className="font-bold">✔️ ACERTOU</span> em {hit.name}
-                {isMaster && ` (ME ${hit.me})`}
-                {` causando `}<span className="font-bold">{hit.damage}</span> de dano
-                {hit.reduced > 0 && ` (${hit.reduced} absorvido)`}!
-              </p>
+              <div key={`hit-${index}`}>
+                <p className="text-sm text-green-400">
+                  <span className="font-bold">✔️ ACERTOU</span> em {hit.name} 
+                  {isMaster && ` (ME ${hit.me})`}
+                  . Dano: <span className="font-bold">{hit.damage}</span>
+                  {typeof hit.powerScaleMultiplier === 'number' && hit.powerScaleMultiplier !== 1 && ` (Rolado: ${hit.initialDamage}, x${hit.powerScaleMultiplier.toFixed(2)})`}
+                  {hit.reduced > 0 && ` (${hit.reduced} absorvido)`}!
+                </p>
+                {/* NOVO: Exibe mudanças de estado */}
+                {(hit.statusChanges || []).map((status, i) => {
+                    let statusColor = 'text-yellow-400';
+                    if (status.type === 'unconscious') statusColor = 'text-orange-500';
+                    if (status.type === 'dead') statusColor = 'text-red-600';
+                    return (
+                      <p key={`hit-status-${index}-${i}`} className={`text-sm font-bold pl-4 ${statusColor}`}>
+                        {status.type === 'dead' ? '💀' : status.type === 'unconscious' ? '😵' : '⚠️'} {status.message}
+                      </p>
+                    );
+                  })}
+              </div>
             ))}
             {(roll.targetResults.misses || []).map((miss, index) => (
               <p key={`miss-${index}`} className="text-sm text-red-500">
                 <span className="font-bold">❌ ERROU</span> o ataque em {miss.name}.
               </p>
             ))}
+            {roll.reflectedDamage && (
+              <p className="text-sm text-orange-400 mt-1">
+                <span className="font-bold">💥 DANO REFLETIDO!</span> {roll.reflectedDamage.targetName} sofreu <span className="font-bold">{roll.reflectedDamage.damage}</span> de dano.
+              </p>
+            )}
           </div>
         </div>
       );

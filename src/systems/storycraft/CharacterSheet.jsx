@@ -292,6 +292,7 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
     const actorSnapshot = {
       id: actor.id,
       name: actor.name,
+      level: actor.level, // Adicionado para garantir que a escala de poder funcione
       mainAttributes: actor.mainAttributes,
       buffs: (actor.buffs || []).filter(b => b.isActive)
     };

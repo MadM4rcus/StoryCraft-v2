@@ -3,6 +3,25 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUIState } from '@/context/UIStateContext';
 import { useEventManager } from '@/context/EventManagerContext';
 
+const getCharacterStatus = (character) => {
+    const hp = character.mainAttributes?.hp;
+    if (!hp || hp.max == null || hp.current == null) {
+        return { isNearDeath: false, isUnconscious: false, isDead: false, deathThreshold: -10 };
+    }
+
+    const maxHP = hp.max || 1;
+    const currentHP = hp.current;
+    // O que for maior (em valor absoluto), ou seja, o menor número (mais negativo)
+    const deathThreshold = Math.min(-10, -Math.floor(maxHP / 2));
+
+    const isDead = currentHP <= deathThreshold;
+    const isUnconscious = !isDead && currentHP <= 0;
+    const isNearDeath = !isUnconscious && !isDead && currentHP > 0 && currentHP <= Math.floor(maxHP / 4);
+
+    return { isNearDeath, isUnconscious, isDead, deathThreshold };
+};
+
+
 const EventManager = ({ onCharacterClick }) => {
   const { isMaster } = useAuth();
   const { layout, updateLayout, isSpoilerMode } = useUIState();
@@ -54,9 +73,12 @@ const EventManager = ({ onCharacterClick }) => {
   const renderCharacterHealth = (char, eventId) => {
     const hp = char.mainAttributes?.hp || { current: '?', max: '?', temp: 0 };
     const mp = char.mainAttributes?.mp || { current: '?', max: '?' };
+    const { isNearDeath, isUnconscious, isDead } = getCharacterStatus(char);
     
     const isSpoiler = isMaster && !isSpoilerMode && char.flags?.spoiler;
     const nameClasses = `font-bold text-textPrimary truncate ${isSpoiler ? 'blur-sm' : ''}`;
+
+    const statusIcon = isDead ? '💀' : isUnconscious ? '😵' : isNearDeath ? '⚠️' : '';
 
     // Determina se os status devem ser mostrados
     const isOwner = allCharacters.some(c => c.id === char.id);
@@ -70,7 +92,10 @@ const EventManager = ({ onCharacterClick }) => {
         title={isMaster ? `Clique para ir para a ficha de ${char.name}`: ''}
       >
         <div className="flex justify-between items-center">
-          <p className={nameClasses}>{char.name}</p>
+          <p className={nameClasses}>
+            {statusIcon && <span className="mr-2">{statusIcon}</span>}
+            {char.name}
+          </p>
           <div className="flex items-center gap-1">
           {isMaster && (
              <button 
