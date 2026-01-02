@@ -490,7 +490,8 @@ export const EventManagerProvider = ({ children }) => {
 
                 if (effectType === 'damage' && scaledDamage > 0) {
                     const totalMD = calculateLiveAttribute(liveChar, 'MD');
-                    damageReduced = action.ignoraMD ? 0 : totalMD;                    
+                    // Se ignoraMD for true (total) OU se tiver um valor específico de ignoreMDValue
+                    damageReduced = action.ignoraMD ? 0 : Math.max(0, totalMD - (action.ignoreMDValue || 0));
                     const damageToApply = Math.max(0, scaledDamage - damageReduced);
 
                     const initialHP = hp.current;
@@ -614,7 +615,7 @@ export const EventManagerProvider = ({ children }) => {
             }
 
             const totalMD = calculateLiveAttribute(liveChar, 'MD');
-            const damageReducedByMD = action.ignoraMD ? 0 : totalMD;
+            const damageReducedByMD = action.ignoraMD ? 0 : Math.max(0, totalMD - (action.ignoreMDValue || 0));
             const finalDamage = Math.max(0, damageAfterSave - damageReducedByMD);
 
             const initialHP = combatChar.mainAttributes.hp.current;

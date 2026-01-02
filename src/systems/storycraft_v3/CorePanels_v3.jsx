@@ -168,7 +168,7 @@ const CharacterInfo = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
 };
 
 // --- Sub-componente: MainAttributes ---
-export const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, toggleSection, buffModifiers, isEditMode, onAttributeRoll, onMapUpdate }) => {
+export const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, toggleSection, buffModifiers, isEditMode, onAttributeRoll, onMapUpdate, isOverloaded, totalWeight, capacity }) => {
     const { user } = useAuth();
     const canEdit = user && (user.uid === character.ownerUid || isMaster);
     const canEditGeneral = user && (user.uid === character.ownerUid || isMaster);
@@ -253,6 +253,9 @@ export const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, tog
         }
     }, [localMainAttributes, character, onUpdate]); 
 
+    const baseDeslocamento = localMainAttributes?.deslocamento ?? 9;
+    const finalDeslocamento = baseDeslocamento - (isOverloaded ? 3 : 0);
+
     return (
         <SheetSkin title="Atributos" isCollapsed={isCollapsed} toggleSection={toggleSection}>
             <div className="space-y-2">
@@ -281,6 +284,22 @@ export const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, tog
                         </div>
                     </div>
                 </div>
+
+                {/* --- MOVIDO PARA DENTRO DO PAINEL DE ATRIBUTOS --- */}
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                    <div className="flex flex-col items-center p-2 bg-bgElement rounded-md">
+                        <label className="text-lg font-medium text-textSecondary mb-1 uppercase">Carga</label>
+                        <div className={`text-2xl font-bold ${isOverloaded ? 'text-red-500' : 'text-textPrimary'}`} title={isOverloaded ? 'Você está sobrecarregado!' : ''}>
+                            {totalWeight} / {capacity} {isOverloaded ? '⚠️' : ''}
+                        </div>
+                    </div>
+                    <div className="flex flex-col items-center p-2 bg-bgElement rounded-md">
+                        <label className="text-lg font-medium text-textSecondary mb-1 uppercase">Deslocamento</label>
+                        <div className="text-2xl font-bold text-textPrimary">
+                            {finalDeslocamento}m
+                        </div>
+                    </div>
+                </div>
 
                 {/* --- NOVO LAYOUT "EMPILHADO" PARA ATRIBUTOS --- */}
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
@@ -327,12 +346,12 @@ export const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, tog
                 
                 {/* --- ATRIBUTOS DE COMBATE --- */}
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 auto-rows-fr">
-                    {/* --- ATRIBUTOS DE COMBATE --- */}
-                    {['Iniciativa', 'FA', 'FM', 'MD', 'Acerto', 'ME'].map(key => {
+                    {['Iniciativa', 'FA', 'FM', 'MD', 'Acerto', 'ME', 'Deslocamento'].map(key => {
                             const lowerKey = key.toLowerCase();
                             const isCalculated = false; 
                             let baseValue, total;
 
+                                // Lógica específica para atributos calculados
                             if (key === 'Iniciativa') {
                                 baseValue = localMainAttributes?.[lowerKey] ?? '';
                                 const initiativeBonus = parseInt(baseValue, 10) || 0;
@@ -340,6 +359,9 @@ export const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, tog
                             } else if (key === 'MD') {
                                 baseValue = localMainAttributes?.md ?? '';
                                 total = calculateTotal(baseValue, 'MD') + constitutionValue; 
+                            } else if (key === 'Deslocamento') {
+                                baseValue = localMainAttributes?.deslocamento ?? 9;
+                                total = finalDeslocamento; // Usa o valor já calculado com penalidade
                             } else {
                                 baseValue = localMainAttributes?.[lowerKey] ?? '';
                                 // Para FA, FM, Acerto, ME, o cálculo é direto.
@@ -350,9 +372,9 @@ export const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, tog
                                 <div key={key} className="flex flex-col items-center p-2 bg-bgElement rounded-md">
                                     {/* Total (o número grande) */}
                                     <span 
-                                        className="text-4xl font-bold text-textPrimary cursor-pointer hover:text-btnHighlightBg"
-                                        onClick={() => onAttributeRoll(key, total)}
-                                        title={`Clique para rolar ${key} (Valor: ${total})`}>
+                                            className={`text-4xl font-bold text-textPrimary ${key !== 'Deslocamento' ? 'cursor-pointer hover:text-btnHighlightBg' : 'cursor-default'}`}
+                                            onClick={() => key !== 'Deslocamento' && onAttributeRoll(key, total)}
+                                            title={key !== 'Deslocamento' ? `Clique para rolar ${key} (Valor: ${total})` : `Deslocamento: ${total}m`}>
                                         {total}
                                     </span>
 

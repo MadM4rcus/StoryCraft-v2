@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import SheetSkin from './SheetSkin_v3';
+import { PREDEFINED_SKILLS } from './Specializations_v3';
 
 // Helper de Textarea (usado por vários sub-componentes)
 const AutoResizingTextarea = ({ value, onChange, onBlur, placeholder, className, disabled, name }) => {
@@ -27,7 +28,7 @@ const CompactWallet = ({ wallet, totalWeight, onToggleManage, canEdit }) => {
     const tiersToDisplay = ownedTiers.length > 0 ? ownedTiers : [CURRENCY_TIERS[0]];
 
     return (
-        <div className="mt-6 p-4 bg-bgInput rounded-lg border border-bgElement">
+        <div className="p-4 bg-bgInput rounded-lg border border-bgElement">
             <div className="flex flex-wrap justify-between items-center gap-4">
                 {/* O display das moedas */}
                 <div className="flex flex-wrap gap-x-5 gap-y-2 items-center">
@@ -38,7 +39,7 @@ const CompactWallet = ({ wallet, totalWeight, onToggleManage, canEdit }) => {
                         <div key={tier.name} className="flex items-baseline" title={`Florim de ${tier.name}`}>
                             {/* Busca o valor (que será 0 no caso padrão "0 FB") */}
                             <span className={`font-bold text-lg ${tier.color}`}>{wallet?.[tier.name] || 0}</span>
-                            <span className="text-sm text-textSecondary ml-1">F{tier.name[0]}</span>
+                            <span className="text-sm text-textSecondary ml-1">{tier.symbol}</span>
                         </div>
                     ))}
                 </div>
@@ -46,11 +47,7 @@ const CompactWallet = ({ wallet, totalWeight, onToggleManage, canEdit }) => {
                 {/* Controles e Peso */}
                 <div className="flex flex-col sm:flex-row sm:items-center gap-x-4 gap-y-2 ml-auto">
                     <span className="text-sm text-textSecondary whitespace-nowrap text-right">
-                        Peso Moedas: {
-                            totalWeight >= 1000
-                                ? `${(totalWeight / 1000).toFixed(2)}kg`
-                                : `${totalWeight}g`
-                        }
+                        Peso Moedas: {Number(totalWeight).toFixed(3)} Espaços
                     </span>
                     {canEdit && (<button
                         onClick={onToggleManage} // O botão de gerenciar só aparece se puder editar.
@@ -109,89 +106,51 @@ const WalletSummaryCard = ({ totalGoldValue, totalCoinWeight }) => {
         }
         if (goldValue < 2000) {
             return pickRandom([
-                "Isso é dinheiro de Mosquete (500 FO)! Vai começar uma guerra?",
-                "Você podia comprar um Grifo (1.500 FO) e sair voando por aí!",
-                "Cheiro de equipamento novo no ar. Que tal uma Couraça (500 FO)?",
+                "Isso é dinheiro de Mosquete (500 F$)! Vai começar uma guerra?",
+                "Você podia comprar um Grifo (1.500 F$) e sair voando por aí!",
+                "Cheiro de equipamento novo no ar. Que tal uma Couraça (500 F$)?",
             ]);
         }
         if (goldValue < 10000) {
             return pickRandom([
-                "Você podia comprar um DRAGÃO JOVEM (5.000 FO)?! Que nível é essa campanha?!",
-                "Tá na hora de comprar um Encantamento Lendário (5.000 FO), hein?",
-                "Com essa grana, você podia ajudar uns camponeses. Ou comprar uma Poção Rúnica de Cura (3.000 FO).",
+                "Você podia comprar um DRAGÃO JOVEM (5.000 F$)?! Que nível é essa campanha?!",
+                "Tá na hora de comprar um Encantamento Lendário (5.000 F$), hein?",
+                "Com essa grana, você podia ajudar uns camponeses. Ou comprar uma Poção Rúnica de Cura (3.000 F$).",
             ]);
         }
         // Mais de 10000 Ouro
         return pickRandom([
-            "Você tem dinheiro pra um Encantamento Titânico (20.000 FO)?!",
+            "Você tem dinheiro pra um Encantamento Titânico (20.000 F$)?!",
             "Você é o 1% da cidade. Parabéns, seu capitalista.",
             "Já pensou em comprar um Navio Voador (30.000 FO)? Só digo isso.",
         ]);
     };
 
     // --- 2. PROVOCAÇÕES DE PESO (baseado no peso em gramas) ---
-    const getWeightFact = (grams) => {
-        const weightInGrams = grams;
-        if (weightInGrams <= 0) {
+    const getWeightFact = (spaces) => {
+        if (spaces <= 0) {
             return pickRandom([
-                "Leve como uma pena. Sua bolsa de moedas está vazia.",
-                "Sua bolsa está tão leve que podia flutuar.",
-                "Peso 0g. Você está usando... crédito por acaso?"
+                "Leve como uma pena.",
+                "Sua bolsa flutua de tão vazia.",
             ]);
         }
-        if (weightInGrams < 100) {
+        if (spaces < 1) {
             return pickRandom([
-                "Alguns trocados no bolso. Você nem sente o peso.",
-                "Trocadinhos. Nem faz volume.",
+                "Peso de bolso. Tranquilo.",
+                "Nem sente no cinto.",
             ]);
         }
-        if (weightInGrams < 500) { // Menos de 0.5kg
+        if (spaces < 5) {
             return pickRandom([
-                "Já dá pra fazer 'jingle jingle'. Começando a ficar divertido.",
-                "Isso é o peso de uma Adaga (0,5 kg).",
+                "Começando a pesar...",
+                "Sua bolsa faz 'clink clink' alto demais.",
             ]);
         }
-        if (weightInGrams < 1000) { // Menos de 1kg
-            return pickRandom([
-                "Quase 1kg de metal. Sua bolsa está começando a pesar no cinto.",
-                "Isso é o peso de uma Espada Curta (1 kg).",
-                "Peso de uma garrafa de vinho. Prioridades, eu entendo.",
-            ]);
-        }
-        if (weightInGrams < 2500) { // 1kg - 2.5kg
-            return pickRandom([
-                "Isso é o peso de um abacaxi! 🍍",
-                "Você está carregando uma Espada Longa (1,5 kg) só em moedas.",
-                "Sua bolsa de moedas virou uma arma de arremesso."
-            ]);
-        }
-        if (weightInGrams < 5000) { // 2.5kg - 5kg
-            return pickRandom([
-                "Você está carregando o peso de um gato doméstico gordo em moedas! 🐈",
-                "Você é um cofrinho humano.",
-                "Isso é mais pesado que uma Besta Pesada (4,5 kg)!",
-            ]);
-        }
-        if (weightInGrams < 10000) { // 5kg - 10kg
-            return pickRandom([
-                "Isso é o peso de uma bola de boliche! 🎳 Você está maluco?",
-                "Qualquer um pode te ouvir chegando a um quilômetro de distância.",
-                "Isso é o peso de uma Armadura de Couro (5 kg) inteira!",
-            ]);
-        }
-         // Mais de 10kg
         return pickRandom([
-            "Mais de 10kg! Você está carregando o peso de um cachorro pequeno! 🐶",
-            "Você não é um aventureiro, é uma mula de carga. Vá a um banco!",
-            "Você está carregando o peso de uma Tenda Grande (10 kg) em moedas.",
+            "Você é um banco ambulante!",
+            "Cuidado com a coluna, rico!",
         ]);
     };
-
-    const weightInGrams = totalCoinWeight;
-    // Pega emprestada a lógica de g/kg do CompactWallet
-    const weightDisplay = weightInGrams >= 1000
-        ? `${(weightInGrams / 1000).toFixed(2)}kg`
-        : `${weightInGrams}g`;
 
     return (
         // Este card vai ocupar 2 colunas no grid, ao lado do Etherium
@@ -201,7 +160,7 @@ const WalletSummaryCard = ({ totalGoldValue, totalCoinWeight }) => {
             <div className="border-b border-bgInput pb-2">
                 <h5 className="text-sm font-bold text-textSecondary uppercase">Valor Total Consolidado</h5>
                 <span className="font-bold text-2xl text-yellow-400">{totalGoldValue.toFixed(2)}</span>
-                <span className="text-lg text-yellow-500 ml-1">FO (em Ouro)</span>
+                <span className="text-lg text-yellow-500 ml-1">F$ (em Florins)</span>
             </div>
 
             {/* --- SEÇÃO DAS FUN FACTS --- */}
@@ -210,32 +169,31 @@ const WalletSummaryCard = ({ totalGoldValue, totalCoinWeight }) => {
                 <p className="text-textPrimary italic">"{getValueFact(totalGoldValue)}"</p>
             </div>
             <div>
-                <h5 className="text-sm font-bold text-textSecondary uppercase">Balança da Verdade ({weightDisplay})</h5>
-                <p className="text-textPrimary italic">"{getWeightFact(weightInGrams)}"</p>
+                <h5 className="text-sm font-bold text-textSecondary uppercase">Balança da Verdade ({Number(totalCoinWeight).toFixed(3)} Espaços)</h5>
+                <p className="text-textPrimary italic">"{getWeightFact(totalCoinWeight)}"</p>
             </div>
         </div>
     );
 };
 
 // --- Constante das Moedas ---
-const CURRENCY_TIERS = [
-    { name: 'Bronze', color: 'text-yellow-600', value: 1 },
-    { name: 'Prata', color: 'text-gray-400', value: 10 },
-    { name: 'Ouro', color: 'text-yellow-400', value: 100 },
-    { name: 'Platina', color: 'text-blue-300', value: 1000 },
-    { name: 'Rubi', color: 'text-red-500', value: 10000 },
-    { name: 'Diamante', color: 'text-cyan-400', value: 100000 },
-    { name: 'Etherium', color: 'text-purple-400', value: 1000000 },
+export const CURRENCY_TIERS = [
+    { name: 'Florel', symbol: 'Fl', color: 'text-yellow-600', value: 1 },
+    { name: 'Florão', symbol: 'Fã', color: 'text-gray-400', value: 10 },
+    { name: 'Florin', symbol: 'F$', color: 'text-yellow-400', value: 100 },
+    { name: 'Flor Platina', symbol: 'FP', color: 'text-blue-300', value: 100000 },
+    { name: 'Flor Esmeralda', symbol: 'FE', color: 'text-green-400', value: 1000000 },
+    { name: 'Flor Rubi', symbol: 'FR', color: 'text-red-500', value: 10000000 },
+    { name: 'Flor Diamante', symbol: 'FD', color: 'text-cyan-400', value: 100000000 },
 ];
 
 // --- Componente da Carteira de Florins (Gerenciamento) ---
 const FlorinWallet = ({ wallet, onUpdate, canEdit, onClose, totalCoinWeight }) => {
     const [amounts, setAmounts] = useState({});
 
-    // Calcula o valor total de todas as moedas, convertido para Ouro
+    // Calcula o valor total de todas as moedas, convertido para Florin (Ouro)
     const totalGoldValue = useMemo(() => {
-        // Encontra o valor base do Ouro (que é 100)
-        const goldTierValue = CURRENCY_TIERS.find(t => t.name === 'Ouro')?.value || 100;
+        const goldTierValue = CURRENCY_TIERS.find(t => t.name === 'Florin')?.value || 100;
         
         // Soma o valor total em "Bronze"
         const totalBronzeValue = CURRENCY_TIERS.reduce((total, tier) => {
@@ -272,21 +230,23 @@ const FlorinWallet = ({ wallet, onUpdate, canEdit, onClose, totalCoinWeight }) =
         const toTier = CURRENCY_TIERS[toTierIndex];
         const currentWallet = wallet || {};
 
-        // Convertendo para cima (ex: 10 Bronze -> 1 Prata)
+        // Convertendo para cima (ex: 10 Florel -> 1 Florão)
         if (fromTier.value < toTier.value) {
+            const rate = toTier.value / fromTier.value;
             const fromAmount = currentWallet[fromTier.name] || 0;
-            if (fromAmount >= 10) {
-                const newFromAmount = fromAmount - 10;
+            if (fromAmount >= rate) {
+                const newFromAmount = fromAmount - rate;
                 const toAmount = (currentWallet[toTier.name] || 0) + 1;
                 onUpdate('wallet', { ...currentWallet, [fromTier.name]: newFromAmount, [toTier.name]: toAmount });
             }
         }
-        // Convertendo para baixo (ex: 1 Prata -> 10 Bronze)
+        // Convertendo para baixo (ex: 1 Florão -> 10 Florel)
         else {
+            const rate = fromTier.value / toTier.value;
             const fromAmount = currentWallet[fromTier.name] || 0;
             if (fromAmount >= 1) {
                 const newFromAmount = fromAmount - 1;
-                const toAmount = (currentWallet[toTier.name] || 0) + 10;
+                const toAmount = (currentWallet[toTier.name] || 0) + rate;
                 onUpdate('wallet', { ...currentWallet, [fromTier.name]: newFromAmount, [toTier.name]: toAmount });
             }
         }
@@ -304,56 +264,62 @@ const FlorinWallet = ({ wallet, onUpdate, canEdit, onClose, totalCoinWeight }) =
                 </button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {CURRENCY_TIERS.map((tier, index) => (
-                    // Card da moeda (sem o col-span no último item)
-                    <div key={tier.name} className={`flex flex-col p-2 bg-bgElement rounded-md`}>
-                        <span className={`font-bold text-lg ${tier.color}`}>Florim de {tier.name}: {wallet?.[tier.name] || 0}</span>
-                        
-                        {/* Input e botões "Adicionar/Remover" */}
-                        <div className="flex items-center gap-1 mt-2">
-                            <input
-                                type="number"
-                                value={amounts[tier.name] || ''}
-                                onChange={(e) => setAmounts(prev => ({ ...prev, [tier.name]: e.target.value }))}
-                                className="w-16 p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary text-center"
-                                placeholder="Valor"
-                                disabled={!canEdit}
-                            />
-                            <button onClick={() => handleUpdateCurrency(tier.name, 'add')} className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white font-bold rounded-md text-sm" disabled={!canEdit}>Adicionar</button>
-                            <button onClick={() => handleUpdateCurrency(tier.name, 'remove')} className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white font-bold rounded-md text-sm" disabled={!canEdit}>Remover</button>
-                        </div>
+                {CURRENCY_TIERS.map((tier, index) => {
+                    const prevTier = index > 0 ? CURRENCY_TIERS[index - 1] : null;
+                    const nextTier = index < CURRENCY_TIERS.length - 1 ? CURRENCY_TIERS[index + 1] : null;
+                    const rateDown = prevTier ? tier.value / prevTier.value : 0;
+                    const rateUp = nextTier ? nextTier.value / tier.value : 0;
 
-                        {/* Botões +1 / -1 */}
-                        <div className="flex items-center gap-1 mt-1 justify-end">
-                            <button onClick={() => handleUpdateCurrencyOne(tier.name, 'add')} className="w-8 h-6 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-md text-xs" disabled={!canEdit}>+1</button>
-                            <button onClick={() => handleUpdateCurrencyOne(tier.name, 'remove')} className="w-8 h-6 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-md text-xs" disabled={!canEdit}>-1</button>
-                        </div>
+                    return (
+                        <div key={tier.name} className={`flex flex-col p-2 bg-bgElement rounded-md`}>
+                            <span className={`font-bold text-lg ${tier.color}`}>{tier.name}: {wallet?.[tier.name] || 0}</span>
+                            
+                            {/* Input e botões "Adicionar/Remover" */}
+                            <div className="flex items-center gap-1 mt-2">
+                                <input
+                                    type="number"
+                                    value={amounts[tier.name] || ''}
+                                    onChange={(e) => setAmounts(prev => ({ ...prev, [tier.name]: e.target.value }))}
+                                    className="w-16 p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary text-center"
+                                    placeholder="Valor"
+                                    disabled={!canEdit}
+                                />
+                                <button onClick={() => handleUpdateCurrency(tier.name, 'add')} className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white font-bold rounded-md text-sm" disabled={!canEdit}>Adicionar</button>
+                                <button onClick={() => handleUpdateCurrency(tier.name, 'remove')} className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white font-bold rounded-md text-sm" disabled={!canEdit}>Remover</button>
+                            </div>
 
-                        {/* Botões de Conversão */}
-                        <div className="flex justify-between mt-2 text-xs border-t border-bgInput pt-2">
-                            {index > 0 && (
+                            {/* Botões +1 / -1 */}
+                            <div className="flex items-center gap-1 mt-1 justify-end">
+                                <button onClick={() => handleUpdateCurrencyOne(tier.name, 'add')} className="w-8 h-6 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-md text-xs" disabled={!canEdit}>+1</button>
+                                <button onClick={() => handleUpdateCurrencyOne(tier.name, 'remove')} className="w-8 h-6 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-md text-xs" disabled={!canEdit}>-1</button>
+                            </div>
+
+                            {/* Botões de Conversão */}
+                            <div className="flex justify-between mt-2 text-xs border-t border-bgInput pt-2">
+                                {prevTier && (
                                 <button 
                                     onClick={() => handleConvert(index, index - 1)}
                                     className="text-gray-400 hover:text-white disabled:opacity-50 font-mono"
-                                    title={`Converter 1 ${tier.name} para 10 ${CURRENCY_TIERS[index - 1].name}`}
+                                    title={`Converter 1 ${tier.name} para ${rateDown} ${prevTier.name}`}
                                     disabled={!canEdit}
                                 >
-                                    1 🡒 10
+                                    1 🡒 {rateDown}
                                 </button>
-                            )}
-                            {index < CURRENCY_TIERS.length - 1 && (
+                                )}
+                                {nextTier && (
                                 <button 
                                     onClick={() => handleConvert(index, index + 1)}
                                     className="text-gray-400 hover:text-white ml-auto disabled:opacity-50 font-mono"
-                                    title={`Converter 10 ${tier.name} para 1 ${CURRENCY_TIERS[index + 1].name}`}
+                                    title={`Converter ${rateUp} ${tier.name} para 1 ${nextTier.name}`}
                                     disabled={!canEdit}
                                 >
-                                    10 🡒 1
+                                    {rateUp} 🡒 1
                                 </button>
-                            )}
+                                )}
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
 
                 {/* --- PAINEL DE CURIOSIDADES --- */}
                 <WalletSummaryCard 
@@ -367,7 +333,7 @@ const FlorinWallet = ({ wallet, onUpdate, canEdit, onClose, totalCoinWeight }) =
 };
 
 // --- Sub-componente para Inventário ---
-const InventoryList = ({ character, onUpdate, isMaster, isCollapsed, toggleSection, onShowDiscord, isEditMode }) => {
+const InventoryList = ({ character, onUpdate, isMaster, isCollapsed, toggleSection, onShowDiscord, isEditMode, isEncumbered, isOverloaded, totalWeight, capacity }) => {
     const { user } = useAuth();
     // A permissão de edição geral (dono da ficha ou mestre)
     const canEdit = user.uid === character.ownerUid || isMaster;
@@ -378,8 +344,15 @@ const InventoryList = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
     const [isWalletOpen, setIsWalletOpen] = useState(false);
 
     const totalCoinWeight = useMemo(() => {
-        const totalCoins = CURRENCY_TIERS.reduce((sum, tier) => sum + (character.wallet?.[tier.name] || 0), 0);
-        return totalCoins * 5; // 5 gramas por moeda
+        return CURRENCY_TIERS.reduce((total, tier) => {
+            const amount = character.wallet?.[tier.name] || 0;
+            // Flores Maiores pesam 0.5 espaço cada
+            if (['Flor Platina', 'Flor Esmeralda', 'Flor Rubi', 'Flor Diamante'].includes(tier.name)) {
+                return total + (amount * 0.5);
+            }
+            // Moedas comuns pesam 1 espaço a cada 1000 (0.001 cada)
+            return total + (amount * 0.001);
+        }, 0);
     }, [character.wallet]);
 
     // Sincroniza o estado local com o estado da ficha pai
@@ -387,7 +360,7 @@ const InventoryList = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
         setLocalInventory(character.inventory || []);
     }, [character.inventory]);
 
-    const handleAddItem = () => onUpdate('inventory', [...(character.inventory || []), { id: crypto.randomUUID(), name: '', description: '', isCollapsed: false }]);
+    const handleAddItem = () => onUpdate('inventory', [...(character.inventory || []), { id: crypto.randomUUID(), name: '', description: '', quantity: 1, stackSize: 1, spaces: 1, isCollapsed: false }]);
     const handleRemoveItem = (id) => onUpdate('inventory', (character.inventory || []).filter(item => item.id !== id));
 
     const handleLocalChange = (id, field, value) => {
@@ -399,7 +372,8 @@ const InventoryList = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
         const originalItem = (character.inventory || []).find(item => item.id === id);
 
         if (localItem && originalItem && localItem[field] !== originalItem[field]) {
-            onUpdate('inventory', (character.inventory || []).map(item => item.id === id ? { ...item, [field]: localItem[field] } : item));
+            const valueToSave = ['quantity', 'spaces', 'stackSize'].includes(field) ? (Number(localItem[field]) || 0) : localItem[field];
+            onUpdate('inventory', (character.inventory || []).map(item => item.id === id ? { ...item, [field]: valueToSave } : item));
         }
     }, [localInventory, character.inventory, onUpdate]);
 
@@ -413,6 +387,39 @@ const InventoryList = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
     return (
         // --- TÍTULO LIMPO ---
         <SheetSkin title="Inventário" isCollapsed={isCollapsed} toggleSection={toggleSection}>
+            
+            {/* --- RESUMO DE CARGA E DEBUFFS --- */}
+            <div className={`mb-6 p-4 rounded-lg border ${isOverloaded ? 'bg-red-900/10 border-red-500/50' : 'bg-bgElement border-bgInput'}`}>
+                <div className="flex justify-between items-end mb-2">
+                    <span className="text-sm font-bold text-textSecondary uppercase">Capacidade de Carga</span>
+                    <div className="text-right">
+                        <span className={`text-2xl font-bold ${isOverloaded ? 'text-red-500' : 'text-green-400'}`}>
+                            {totalWeight} <span className="text-sm text-textSecondary">/ {capacity}</span>
+                        </span>
+                        <span className="text-xs text-textSecondary block">Espaços</span>
+                    </div>
+                </div>
+                
+                {/* Barra de Progresso */}
+                <div className="w-full bg-bgInput rounded-full h-3 mb-3 overflow-hidden">
+                    <div 
+                        className={`h-full transition-all duration-500 ${isEncumbered ? 'bg-red-600' : isOverloaded ? 'bg-yellow-500' : 'bg-green-500'}`} 
+                        style={{ width: `${Math.min(100, (totalWeight / (capacity * 2)) * 100)}%` }}
+                    ></div>
+                </div>
+
+                {/* Avisos de Sobrecarga */}
+                {isOverloaded && (
+                    <div className="mt-3 pt-3 border-t border-red-500/30">
+                        <p className="font-bold text-red-400 text-sm mb-1">⚠️ PERSONAGEM SOBRECARREGADO</p>
+                        <ul className="text-xs text-red-300 space-y-1 list-disc list-inside">
+                            <li>-5 em testes de <strong>Furtividade</strong> e <strong>Acrobacia</strong>.</li>
+                            <li>Deslocamento reduzido em <strong>3 metros</strong>.</li>
+                            {isEncumbered && <li className="font-bold text-red-500">LIMITE MÁXIMO EXCEDIDO (2x Capacidade)! Não é possível carregar mais itens.</li>}
+                        </ul>
+                    </div>
+                )}
+            </div>
             
             {/* --- LÓGICA DE TROCA DA CARTEIRA --- */}
             {!isWalletOpen ? (
@@ -433,31 +440,47 @@ const InventoryList = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
             )}
             {/* --- FIM DA LÓGICA DA CARTEIRA --- */}
             
-            {/* Grid de Itens */}
+            <h4 className="text-xl font-semibold text-textAccent mt-6 mb-3">Itens</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-6">
                 {(localInventory || []).map(item => {
                     const isItemCollapsed = item.isCollapsed !== false;
                     return isItemCollapsed ? (
                         <div key={item.id} className="p-3 bg-bgElement rounded-md shadow-sm border border-bgInput flex justify-between items-center">
-                            <span className="font-semibold text-lg cursor-pointer text-textPrimary flex-grow truncate" onClick={() => toggleItemCollapsed(item.id)}>{item.name || 'Item Sem Nome'}</span>
+                            <span className="font-semibold text-lg cursor-pointer text-textPrimary flex-grow truncate" onClick={() => toggleItemCollapsed(item.id)}>
+                                {item.name || 'Item Sem Nome'} {item.quantity > 1 ? `(x${item.quantity})` : ''}
+                            </span>
                             <button onClick={() => onShowDiscord(item.name, item.description)} title="Mostrar no Feed" className="px-3 py-1 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText text-sm font-bold rounded-md whitespace-nowrap ml-2">Mostrar no Feed</button>
                         </div>
                     ) : (
                         <div key={item.id} className="col-span-1 sm:grid-cols-2 lg:col-span-3 flex flex-col p-3 bg-bgElement rounded-md shadow-sm border border-bgInput">
                             <div className="flex justify-between items-center mb-1">
-                                <span className="font-semibold text-lg w-full cursor-pointer text-textPrimary" onClick={() => toggleItemCollapsed(item.id)}>{item.name || 'Item Sem Nome'}</span>                                
+                                <span className="font-semibold text-lg w-full cursor-pointer text-textPrimary" onClick={() => toggleItemCollapsed(item.id)}>{item.name || 'Item Sem Nome'}</span>
                                 <button onClick={() => onShowDiscord(item.name, item.description)} title="Mostrar no Feed" className="px-3 py-1 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText text-sm font-bold rounded-md whitespace-nowrap ml-4">Mostrar no Feed</button>
                             </div>
                             <span className="text-textSecondary text-xs whitespace-nowrap cursor-pointer self-end" onClick={() => toggleItemCollapsed(item.id)}>Recolher ▲</span>
-                            <input
-                                type="text"
-                                value={item.name}
-                                onChange={(e) => handleLocalChange(item.id, 'name', e.target.value)}
-                                onBlur={() => handleSave(item.id, 'name')}
-                                className="font-semibold text-lg w-full p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary mb-2"
-                                placeholder="Nome do Item"
-                                disabled={!canEdit}
-                            />
+                            <div className="flex items-center gap-2 mb-2">
+                                <input
+                                    type="text"
+                                    value={item.name}
+                                    onChange={(e) => handleLocalChange(item.id, 'name', e.target.value)}
+                                    onBlur={() => handleSave(item.id, 'name')}
+                                    className="font-semibold text-lg flex-grow p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary"
+                                    placeholder="Nome do Item"
+                                    disabled={!canEdit}
+                                />
+                                <div className="flex items-center gap-1">
+                                    <label className="text-sm text-textSecondary">Qtd:</label>
+                                    <input type="number" value={item.quantity} onChange={(e) => handleLocalChange(item.id, 'quantity', e.target.value)} onBlur={() => handleSave(item.id, 'quantity')} className="w-16 p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary text-center" disabled={!canEdit} />
+                                </div>
+                                <div className="flex items-center gap-1" title="Tamanho do Pack (Quantos itens cabem em 1 espaço)">
+                                    <label className="text-sm text-textSecondary">Pack:</label>
+                                    <input type="number" value={item.stackSize || 1} onChange={(e) => handleLocalChange(item.id, 'stackSize', e.target.value)} onBlur={() => handleSave(item.id, 'stackSize')} className="w-12 p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary text-center" placeholder="1" disabled={!canEdit} />
+                                </div>
+                                <div className="flex items-center gap-1" title="Peso por Pack (ou por unidade se Pack for 1)">
+                                    <label className="text-sm text-textSecondary">Peso:</label>
+                                    <input type="number" value={item.spaces} onChange={(e) => handleLocalChange(item.id, 'spaces', e.target.value)} onBlur={() => handleSave(item.id, 'spaces')} className="w-16 p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary text-center" disabled={!canEdit} />
+                                </div>
+                            </div>
                             <AutoResizingTextarea
                                 name="description"
                                 value={item.description}
@@ -481,14 +504,22 @@ const InventoryList = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
                 })}
             </div>
             {(localInventory || []).length === 0 && <p className="text-textSecondary italic mt-4">Nenhum item no inventário.</p>}
-            {/* O botão de adicionar item só aparece se puder editar E estiver em modo de edição */}
-            {canEdit && isEditMode && <div className="flex justify-center mt-4"><button onClick={handleAddItem} className="w-10 h-10 bg-green-600 hover:bg-green-700 text-white text-2xl font-bold rounded-full shadow-lg flex items-center justify-center">+</button></div>}
+            {canEdit && isEditMode && (
+                <div className="flex justify-center mt-4">
+                    <button
+                        onClick={handleAddItem}
+                        className="w-10 h-10 bg-green-600 hover:bg-green-700 text-white text-2xl font-bold rounded-full shadow-lg flex items-center justify-center disabled:bg-gray-500 disabled:cursor-not-allowed"
+                        disabled={isEncumbered}
+                        title={isEncumbered ? "Você atingiu o limite máximo de carga!" : "Adicionar Item"}
+                    >+</button>
+                </div>
+            )}
         </SheetSkin>
     );
 };
 
 // --- Sub-componente para Itens Equipados ---
-const EquippedItemsList = ({ character, isMaster, onUpdate, onShowDiscord, isCollapsed, toggleSection }) => {
+const EquippedItemsList = ({ character, isMaster, onUpdate, onShowDiscord, isCollapsed, toggleSection, allAttributes }) => {
     const { user } = useAuth();
     const canEdit = user.uid === character.ownerUid || isMaster;
     const [localEquippedItems, setLocalEquippedItems] = useState(character.equippedItems || []);
@@ -497,7 +528,22 @@ const EquippedItemsList = ({ character, isMaster, onUpdate, onShowDiscord, isCol
         setLocalEquippedItems(character.equippedItems || []);
     }, [character.equippedItems]);
 
-    const handleAddItem = () => onUpdate('equippedItems', [...(character.equippedItems || []), { id: crypto.randomUUID(), name: '', description: '', attributes: '', isCollapsed: false }]);
+    const handleAddItem = (type) => {
+        const newItem = {
+            id: crypto.randomUUID(),
+            name: type === 'ammo' ? 'Nova Munição' : 'Novo Equipamento',
+            description: '',
+            isActive: true,
+            isAmmo: type === 'ammo',
+            quantity: type === 'ammo' ? 20 : 1,
+            stackSize: type === 'ammo' ? 20 : 1, // Novo campo: Quantas unidades cabem em 1 espaço
+            spaces: 1, // Peso padrão do pack/item
+            ignoreMD: 0,
+            effects: [],
+            isCollapsed: false
+        };
+        onUpdate('equippedItems', [...(character.equippedItems || []), newItem]);
+    };
     const handleRemoveItem = (id) => onUpdate('equippedItems', (character.equippedItems || []).filter(i => i.id !== id));
 
     const handleLocalChange = (id, field, value) => {
@@ -508,9 +554,44 @@ const EquippedItemsList = ({ character, isMaster, onUpdate, onShowDiscord, isCol
         const localItem = localEquippedItems.find(item => item.id === id);
         const originalItem = (character.equippedItems || []).find(item => item.id === id);
         if (localItem && originalItem && localItem[field] !== originalItem[field]) {
-            onUpdate('equippedItems', (character.equippedItems || []).map(i => (i.id === id ? { ...i, [field]: localItem[field] } : i)));
+            const valueToSave = ['quantity', 'ignoreMD', 'spaces', 'stackSize'].includes(field) ? (parseFloat(localItem[field]) || 0) : localItem[field];
+            onUpdate('equippedItems', (character.equippedItems || []).map(i => (i.id === id ? { ...i, [field]: valueToSave } : i)));
         }
     }, [localEquippedItems, character.equippedItems, onUpdate]);
+
+    const handleToggleActive = (id) => {
+        onUpdate('equippedItems', (character.equippedItems || []).map(item => item.id === id ? { ...item, isActive: !item.isActive } : item));
+    };
+
+    // --- Lógica de Efeitos ---
+    const handleAddEffect = (itemId) => {
+        const newEffect = { id: crypto.randomUUID(), type: 'attribute', target: '', value: 0 };
+        onUpdate('equippedItems', (character.equippedItems || []).map(item => 
+            item.id === itemId ? { ...item, effects: [...(item.effects || []), newEffect] } : item
+        ));
+    };
+
+    const handleRemoveEffect = (itemId, effectId) => {
+        onUpdate('equippedItems', (character.equippedItems || []).map(item => 
+            item.id === itemId ? { ...item, effects: (item.effects || []).filter(e => e.id !== effectId) } : item
+        ));
+    };
+
+    const handleEffectChange = (itemId, effectId, field, value) => {
+        onUpdate('equippedItems', (character.equippedItems || []).map(item => 
+            item.id === itemId ? {
+                ...item,
+                effects: (item.effects || []).map(effect => {
+                    if (effect.id === effectId) {
+                        const updatedEffect = { ...effect, [field]: value };
+                        if (field === 'type') updatedEffect.target = ''; // Reset target on type change
+                        return updatedEffect;
+                    }
+                    return effect;
+                })
+            } : item
+        ));
+    };
 
     const toggleItemCollapsed = (id) => onUpdate('equippedItems', (character.equippedItems || []).map(item => item.id === id ? { ...item, isCollapsed: !item.isCollapsed } : item));
 
@@ -521,14 +602,32 @@ const EquippedItemsList = ({ character, isMaster, onUpdate, onShowDiscord, isCol
                     const isItemCollapsed = item.isCollapsed !== false;
                     return isItemCollapsed ? (
                         <div key={item.id} className="p-3 bg-bgElement rounded-md shadow-sm border border-bgInput flex justify-between items-center">
-                            <span className="font-semibold text-lg cursor-pointer text-textPrimary flex-grow truncate" onClick={() => toggleItemCollapsed(item.id)}>{item.name || 'Item Sem Nome'}</span>
-                            <button onClick={() => onShowDiscord(item.name, item.description)} title="Mostrar no Feed" className="px-3 py-1 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText text-sm font-bold rounded-md whitespace-nowrap ml-2">Mostrar no Feed</button>
+                            <span className="font-semibold text-lg cursor-pointer text-textPrimary flex-grow truncate" onClick={() => toggleItemCollapsed(item.id)}>
+                                {item.name || 'Item Sem Nome'} {item.quantity > 1 ? `(x${item.quantity})` : ''}
+                            </span>
+                            <div className="flex items-center gap-2">
+                                <label className="flex items-center cursor-pointer" title={item.isActive ? "Equipado" : "Desequipado"}>
+                                    <input type="checkbox" checked={item.isActive !== false} onChange={() => handleToggleActive(item.id)} className="sr-only" disabled={!canEdit} />
+                                    <div className={`w-3 h-3 rounded-full ${item.isActive !== false ? 'bg-green-500' : 'bg-gray-600'}`}></div>
+                                </label>
+                                <button onClick={() => onShowDiscord(item.name, item.description)} title="Mostrar no Feed" className="px-3 py-1 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText text-sm font-bold rounded-md whitespace-nowrap">Feed</button>
+                            </div>
                         </div>
                     ) : (
                         <div key={item.id} className="col-span-1 sm:grid-cols-2 lg:col-span-3 flex flex-col p-3 bg-bgElement rounded-md shadow-sm border border-bgInput">
                             <div className="flex justify-between items-center mb-1">
                                 <span className="font-semibold text-lg w-full cursor-pointer text-textPrimary" onClick={() => toggleItemCollapsed(item.id)}>{item.name || 'Item Sem Nome'}</span>
-                                <button onClick={() => onShowDiscord(item.name, item.description)} title="Mostrar no Feed" className="px-3 py-1 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText text-sm font-bold rounded-md whitespace-nowrap ml-4">Mostrar no Feed</button>
+                                <div className="flex items-center gap-3 ml-4">
+                                    <label className="flex items-center cursor-pointer gap-2">
+                                        <span className="text-xs text-textSecondary uppercase font-bold">{item.isActive !== false ? 'Equipado' : 'Guardado'}</span>
+                                        <div className="relative" title="Itens guardados não aplicam seus bônus passivos.">
+                                            <input type="checkbox" checked={item.isActive !== false} onChange={() => handleToggleActive(item.id)} className="sr-only" disabled={!canEdit} />
+                                            <div className={`block w-10 h-6 rounded-full ${item.isActive !== false ? 'bg-green-600' : 'bg-bgInput'}`}></div>
+                                            <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${item.isActive !== false ? 'transform translate-x-4' : ''}`}></div>
+                                        </div>
+                                    </label>
+                                    <button onClick={() => onShowDiscord(item.name, item.description)} title="Mostrar no Feed" className="px-3 py-1 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText text-sm font-bold rounded-md whitespace-nowrap">Feed</button>
+                                </div>
                             </div>
                             <span className="text-textSecondary text-xs whitespace-nowrap cursor-pointer self-end" onClick={() => toggleItemCollapsed(item.id)}>Recolher ▲</span>
                             <input
@@ -540,6 +639,44 @@ const EquippedItemsList = ({ character, isMaster, onUpdate, onShowDiscord, isCol
                                 placeholder="Nome"
                                 disabled={!canEdit}
                             />
+                            
+                            {/* --- LINHA DE DETALHES (Peso, Qtd, Tipo) --- */}
+                            <div className={`flex flex-wrap items-center gap-4 mb-2 p-2 rounded-md border ${item.isAmmo ? 'bg-yellow-900/20 border-yellow-700/30' : 'bg-bgInput/20 border-bgElement/50'}`}>
+                                
+                                {/* Badge de Munição (Apenas se for munição) */}
+                                {item.isAmmo && (
+                                    <div className="flex items-center gap-2" title="Item do tipo Munição">
+                                        <span className="text-xs font-bold uppercase text-yellow-500 bg-yellow-900/40 px-2 py-1 rounded">Munição</span>
+                                    </div>
+                                )}
+
+                                {/* Campos de Quantidade e Espaço */}
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs text-textSecondary">Qtd:</span>
+                                    <input type="number" value={item.quantity} onChange={(e) => handleLocalChange(item.id, 'quantity', e.target.value)} onBlur={() => handleSave(item.id, 'quantity')} className="w-14 p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary text-center text-sm" placeholder="1" disabled={!canEdit} />
+                                </div>
+                                
+                                {item.isAmmo && (
+                                    <div className="flex items-center gap-2" title="Quantas unidades cabem em 1 espaço (ex: 20 flechas por aljava)">
+                                        <span className="text-xs text-textSecondary">Pack:</span>
+                                        <input type="number" value={item.stackSize} onChange={(e) => handleLocalChange(item.id, 'stackSize', e.target.value)} onBlur={() => handleSave(item.id, 'stackSize')} className="w-14 p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary text-center text-sm" placeholder="20" disabled={!canEdit} />
+                                    </div>
+                                )}
+
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs text-textSecondary">{item.isAmmo ? 'Peso/Pack:' : 'Espaços:'}</span>
+                                    <input type="number" value={item.spaces} onChange={(e) => handleLocalChange(item.id, 'spaces', e.target.value)} onBlur={() => handleSave(item.id, 'spaces')} className="w-14 p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary text-center text-sm" placeholder="1" disabled={!canEdit} />
+                                </div>
+
+                                {/* Campo Específico de Munição */}
+                                {item.isAmmo && (
+                                    <div className="flex items-center gap-2 ml-auto border-l border-yellow-700/30 pl-4">
+                                        <span className="text-xs text-yellow-500 font-bold">Ignora MD:</span>
+                                        <input type="number" value={item.ignoreMD} onChange={(e) => handleLocalChange(item.id, 'ignoreMD', e.target.value)} onBlur={() => handleSave(item.id, 'ignoreMD')} className="w-14 p-1 bg-bgInput border border-yellow-700/50 rounded-md text-textPrimary text-center text-sm" placeholder="0" disabled={!canEdit} />
+                                    </div>
+                                )}
+                            </div>
+
                             <AutoResizingTextarea
                                 value={item.description}
                                 onChange={(e) => handleLocalChange(item.id, 'description', e.target.value)}
@@ -548,11 +685,86 @@ const EquippedItemsList = ({ character, isMaster, onUpdate, onShowDiscord, isCol
                                 className="text-sm text-textSecondary italic w-full p-1 bg-bgInput border border-bgElement rounded-md mb-2"
                                 disabled={!canEdit}
                             />
+                            
+                            {/* --- SEÇÃO DE EFEITOS --- */}
+                            <div className="bg-bgInput/30 p-2 rounded-md mb-2 border border-bgElement">
+                                <label className="text-xs font-bold text-textSecondary uppercase block mb-2">Efeitos & Bônus</label>
+                                <div className="space-y-2">
+                                    {(item.effects || []).map(effect => (
+                                        <div key={effect.id} className="flex flex-wrap gap-2 items-center">
+                                            <select 
+                                                value={effect.type} 
+                                                onChange={(e) => handleEffectChange(item.id, effect.id, 'type', e.target.value)}
+                                                className="p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary text-xs"
+                                                disabled={!canEdit}
+                                            >
+                                                <option value="attribute">Atributo</option>
+                                                <option value="skill">Perícia</option>
+                                                <option value="dice">Dados/Dano Extra</option>
+                                            </select>
+
+                                            {effect.type === 'dice' ? (
+                                                <span className="flex-grow text-xs text-textSecondary italic text-center">Adiciona ao resultado</span>
+                                            ) : (
+                                                <select 
+                                                    value={effect.target} 
+                                                    onChange={(e) => handleEffectChange(item.id, effect.id, 'target', e.target.value)}
+                                                    className="flex-grow p-1 bg-bgInput border border-bgElement rounded-md text-textPrimary text-xs min-w-[100px]"
+                                                    disabled={!canEdit}
+                                                >
+                                                <option value="">Selecione...</option>
+                                                {effect.type === 'attribute' 
+                                                    ? (allAttributes || []).map(attr => <option key={attr} value={attr}>{attr}</option>)
+                                                    : PREDEFINED_SKILLS.map(skill => <option key={skill.name} value={skill.name}>{skill.name}</option>)
+                                                }
+                                            </select>
+
+                                            )}
+                                            <div className="flex items-center">
+                                                <input 
+                                                    type={effect.type === 'dice' ? "text" : "number"}
+                                                    value={effect.value} 
+                                                    onChange={(e) => handleEffectChange(item.id, effect.id, 'value', e.target.value)}
+                                                    className={`p-1 bg-bgInput border border-bgElement rounded-l-md text-textPrimary text-xs text-center appearance-none ${effect.type === 'dice' ? 'w-20' : 'w-12'}`}
+                                                    placeholder="0"
+                                                    disabled={!canEdit}
+                                                />
+                                                <div className="flex flex-col">
+                                                    <button 
+                                                        onClick={() => handleEffectChange(item.id, effect.id, 'value', (parseInt(effect.value) || 0) + 1)}
+                                                        className="w-5 h-3.5 flex items-center justify-center bg-bgElement hover:bg-btnHighlightBg text-textPrimary text-[8px] rounded-tr-md border-t border-r border-bgInput"
+                                                        disabled={!canEdit}
+                                                        tabIndex="-1"
+                                                    >▲</button>
+                                                    <button 
+                                                        onClick={() => handleEffectChange(item.id, effect.id, 'value', (parseInt(effect.value) || 0) - 1)}
+                                                        className="w-5 h-3.5 flex items-center justify-center bg-bgElement hover:bg-btnHighlightBg text-textPrimary text-[8px] rounded-br-md border-b border-r border-bgInput"
+                                                        disabled={!canEdit}
+                                                        tabIndex="-1"
+                                                    >▼</button>
+                                                </div>
+                                            </div>
+
+                                            {canEdit && (
+                                                <button onClick={() => handleRemoveEffect(item.id, effect.id)} className="text-red-500 hover:text-red-400 font-bold px-1">
+                                                    &times;
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                                {canEdit && (
+                                    <button onClick={() => handleAddEffect(item.id)} className="mt-2 text-xs text-btnHighlightBg hover:text-white font-bold">
+                                        + Adicionar Efeito
+                                    </button>
+                                )}
+                            </div>
+
                             <AutoResizingTextarea
                                 value={item.attributes}
                                 onChange={(e) => handleLocalChange(item.id, 'attributes', e.target.value)}
                                 onBlur={() => handleSave(item.id, 'attributes')}
-                                placeholder="Atributos/Efeitos"
+                                placeholder="Outras notas ou detalhes..."
                                 className="w-full p-2 bg-bgInput border border-bgElement rounded-md text-sm text-textPrimary"
                                 disabled={!canEdit}
                             />
@@ -569,8 +781,13 @@ const EquippedItemsList = ({ character, isMaster, onUpdate, onShowDiscord, isCol
                     );
                 })}
             </div>
-            {(localEquippedItems || []).length === 0 && <p className="text-textSecondary italic mt-4">Nenhum item equipado.</p>}
-            {canEdit && <div className="flex justify-center mt-4"><button onClick={handleAddItem} className="w-10 h-10 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText text-2xl font-bold rounded-full shadow-lg">+</button></div>}
+            {(localEquippedItems || []).length === 0 && <p className="text-textSecondary italic mt-4">Nenhum equipamento.</p>}
+            {canEdit && (
+                <div className="flex justify-center gap-4 mt-4">
+                    <button onClick={() => handleAddItem('equipment')} className="px-4 py-2 bg-btnHighlightBg hover:opacity-80 text-btnHighlightText font-bold rounded-lg shadow-lg flex items-center gap-2">+ Equipamento</button>
+                    <button onClick={() => handleAddItem('ammo')} className="px-4 py-2 bg-yellow-700 hover:bg-yellow-600 text-white font-bold rounded-lg shadow-lg flex items-center gap-2">+ Munição</button>
+                </div>
+            )}
         </SheetSkin>
     );
 };

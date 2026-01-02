@@ -7,7 +7,7 @@ import { useSystem } from '@/context/SystemContext';
 import { useEventManager } from '@/context/EventManagerContext';
 import ModalManager from '@/components/ModalManager';
 import { CharacterInfo, MainAttributes, DiscordIntegration } from './CorePanels_v3';
-import { InventoryList, EquippedItemsList, SkillsList, PerksList } from './ListSections_v3';
+import { InventoryList, EquippedItemsList, SkillsList, PerksList, CURRENCY_TIERS } from './ListSections_v3';
 import SpecializationsList, { PREDEFINED_SKILLS, ATTR_MAP } from './Specializations_v3';
 import { Story, Notes } from './ContentSections_v3';
 import ActionsSection from './ActionsSection_v3';
@@ -37,22 +37,31 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
   }, [character]);
 
   const buffModifiers = useMemo(() => {
-    const modifiers = { attributes: {}, dice: [] };
-    if (!character?.buffs) return modifiers;
-    character.buffs.forEach(buff => {
-      if (buff.isActive && buff.effects) {
-        buff.effects.forEach(effect => {
-          if (effect.type === 'attribute' && effect.target) {
-            const value = parseInt(effect.value, 10) || 0;
-            modifiers.attributes[effect.target] = (modifiers.attributes[effect.target] || 0) + value;
-          } else if (effect.type === 'dice' && effect.value) {
-            modifiers.dice.push({ name: buff.name, value: effect.value });
-          }
+    const modifiers = { attributes: {}, skills: {}, dice: [] };
+    
+    const processEffects = (source) => {
+        if (!source) return;
+        source.forEach(item => {
+            if (item.isActive && item.effects) {
+                item.effects.forEach(effect => {
+                    const value = parseInt(effect.value, 10) || 0;
+                    if (effect.type === 'attribute' && effect.target) {
+                        modifiers.attributes[effect.target] = (modifiers.attributes[effect.target] || 0) + value;
+                    } else if (effect.type === 'skill' && effect.target) {
+                        modifiers.skills[effect.target] = (modifiers.skills[effect.target] || 0) + value;
+                    } else if (effect.type === 'dice' && effect.value) {
+                        modifiers.dice.push({ name: item.name, value: effect.value });
+                    }
+                });
+            }
         });
-      }
-    });
+    };
+
+    processEffects(character?.buffs);
+    processEffects(character?.equippedItems);
+
     return modifiers;
-  }, [character?.buffs]);
+  }, [character?.buffs, character?.equippedItems]);
 
   const handleShowOnDiscord = async (
       title, 
@@ -336,6 +345,33 @@ const handleExecuteFormulaAction = async (action) => {
         return;
     }
 
+    // --- LÓGICA DE MUNIÇÃO ---
+    let ammoBonusDice = [];
+    let ammoIgnoreMDValue = 0;
+    let ammoName = '';
+
+    if (action.ammoItemId) {
+        const ammoItem = (character.equippedItems || []).find(i => i.id === action.ammoItemId);
+        if (ammoItem) {
+            if ((ammoItem.quantity || 0) <= 0) {
+                setModalState({ type: 'info', props: { message: `Sem munição (${ammoItem.name}) suficiente!`, onConfirm: closeModal } });
+                return;
+            }
+
+            // Desconta a munição
+            const newEquippedItems = character.equippedItems.map(i => i.id === ammoItem.id ? { ...i, quantity: i.quantity - 1 } : i);
+            await updateCharacterField('equippedItems', newEquippedItems);
+            
+            ammoName = ammoItem.name;
+            ammoIgnoreMDValue = parseInt(ammoItem.ignoreMD, 10) || 0;
+
+            // Coleta efeitos de dados da munição
+            if (ammoItem.effects) {
+                ammoBonusDice = ammoItem.effects.filter(e => e.type === 'dice');
+            }
+        }
+    }
+
     let totalResult = action.totalResult ?? 0;
 
     let acertoResult = action.acertoResult || null;
@@ -446,6 +482,26 @@ const handleExecuteFormulaAction = async (action) => {
         }
     }
 
+    // --- APLICA EFEITOS DA MUNIÇÃO ---
+    ammoBonusDice.forEach(diceBuff => {
+        const match = (diceBuff.value || '').match(/(\d+)d(\d+)/i);
+        if (match) {
+            const numDice = parseInt(match[1], 10);
+            const numSides = parseInt(match[2], 10);
+            let rolls = [];
+            for (let d = 0; d < numDice; d++) {
+                rolls.push(Math.floor(Math.random() * numSides) + 1);
+            }
+            const diceRollResult = rolls.reduce((a, b) => a + b, 0);
+            totalResult += diceRollResult;
+            rollResultsForFeed.push({ type: 'dice', value: diceRollResult, displayValue: `Munição(${rolls.join('+')})` });
+        } else {
+            const num = parseInt(diceBuff.value, 10) || 0;
+            totalResult += num;
+            rollResultsForFeed.push({ type: 'number', value: num, displayValue: `Munição(${num})` });
+        }
+    });
+
     buffModifiers.dice.forEach(diceBuff => {
         const match = (diceBuff.value || '').match(/(\d+)d(\d+)/i);
         if (match) {
@@ -474,6 +530,10 @@ const handleExecuteFormulaAction = async (action) => {
             totalCost[action.costType] += costValue;
             costDetails.push(`Ação: ${costValue >= 0 ? '+' : ''}${costValue} ${action.costType}`);
         }
+    }
+
+    if (ammoName) {
+        costDetails.push(`-1 ${ammoName}`);
     }
     
     const totalRecovery = { HP: 0, MP: 0 };
@@ -540,7 +600,8 @@ const handleExecuteFormulaAction = async (action) => {
             totalResult, 
             acertoResult, 
             cost: totalCost,
-            detailsText: detailsTextForFeed // Passa os detalhes (fórmula) para o mestre ver
+            detailsText: detailsTextForFeed, // Passa os detalhes (fórmula) para o mestre ver
+            ignoreMDValue: ammoIgnoreMDValue // Passa o valor de Ignorar MD da munição
         };
         setModalState({
             type: 'targetSelection',
@@ -661,6 +722,50 @@ const handleExecuteFormulaAction = async (action) => {
   
   const handleExportJson = () => { const { collapsedStates, ...exportData } = character; const jsonString = JSON.stringify(exportData, null, 2); const blob = new Blob([jsonString], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${character.name || 'ficha'}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href); };
   
+  const strength = useMemo(() => totalAttributesMap['Força'] || 0, [totalAttributesMap]);
+
+  const capacity = useMemo(() => {
+    if (strength < 0) {
+        return Math.max(0, 10 + strength);
+    }
+    return 10 + (strength * 2);
+  }, [strength]);
+
+  const totalWeight = useMemo(() => {
+    const inventoryWeight = (character?.inventory || []).reduce((total, item) => {
+        const quantity = Number(item.quantity) || 0;
+        const spaces = Number(item.spaces) || 0;
+        const stackSize = Number(item.stackSize) || 1;
+        return total + (Math.ceil(quantity / stackSize) * spaces);
+    }, 0);
+
+    const equippedWeight = (character?.equippedItems || []).reduce((total, item) => {
+        const quantity = Number(item.quantity) || 0;
+        const spaces = Number(item.spaces) || 0;
+        
+        if (item.isAmmo) {
+            const stackSize = Number(item.stackSize) || 1; // Evita divisão por zero
+            // Peso = (Quantidade / Tamanho do Pack) arredondado para cima * Peso do Pack
+            return total + (Math.ceil(quantity / stackSize) * spaces);
+        }
+        
+        return total + (quantity * spaces);
+    }, 0);
+
+    const walletWeight = CURRENCY_TIERS.reduce((total, tier) => {
+        const amount = character?.wallet?.[tier.name] || 0;
+        if (['Flor Platina', 'Flor Esmeralda', 'Flor Rubi', 'Flor Diamante'].includes(tier.name)) {
+            return total + (amount * 0.5);
+        }
+        return total + (amount * 0.001);
+    }, 0);
+
+    return parseFloat((inventoryWeight + equippedWeight + walletWeight).toFixed(3));
+  }, [character?.inventory, character?.equippedItems, character?.wallet]);
+
+  const isOverloaded = useMemo(() => totalWeight > capacity, [totalWeight, capacity]);
+  const isEncumbered = useMemo(() => totalWeight > (capacity * 2), [totalWeight, capacity]);
+
   if (loading) { return <div className="text-center p-8"><p className="text-xl text-textSecondary">A carregar ficha...</p></div>; }
   if (!character) { return <div className="text-center p-8"><p className="text-xl text-red-400">Erro: Personagem não encontrado.</p></div>; }
 
@@ -668,13 +773,13 @@ const handleExecuteFormulaAction = async (action) => {
     <div className="w-full max-w-4xl mx-auto p-4">
           <ModalManager modalState={modalState} closeModal={closeModal} />
       <div id="info"><CharacterInfo character={character} onUpdate={updateCharacterField} isMaster={isMaster} isEditMode={isEditMode} isCollapsed={character.collapsedStates?.info} toggleSection={() => toggleSection('info')} /></div>
-      <div id="main-attributes"><MainAttributes character={character} onUpdate={updateCharacterField} isMaster={isMaster} isEditMode={isEditMode} buffModifiers={buffModifiers.attributes} isCollapsed={character.collapsedStates?.main} toggleSection={() => toggleSection('main')} onAttributeRoll={handleAttributeClick} onMapUpdate={setTotalAttributesMap} /></div>
+      <div id="main-attributes"><MainAttributes character={character} onUpdate={updateCharacterField} isMaster={isMaster} isEditMode={isEditMode} buffModifiers={buffModifiers.attributes} isCollapsed={character.collapsedStates?.main} toggleSection={() => toggleSection('main')} onAttributeRoll={handleAttributeClick} onMapUpdate={setTotalAttributesMap} isOverloaded={isOverloaded} totalWeight={totalWeight} capacity={capacity} /></div>
       <div id="actions"><ActionsSection character={character} isMaster={isMaster} isCollapsed={character.collapsedStates?.actions} toggleSection={() => toggleSection('actions')} allAttributes={allAttributes} onUpdate={updateCharacterField} onExecuteFormula={handleExecuteFormulaAction} isEditMode={isEditMode} /></div>
       <div id="buffs"><BuffsSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} allAttributes={allAttributes} isCollapsed={character.collapsedStates?.buffs} toggleSection={() => toggleSection('buffs')} isEditMode={isEditMode} /></div>
-      <div id="specializations"><SpecializationsList character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.specializations} toggleSection={() => toggleSection('specializations')} onExecuteFormula={handleExecuteFormulaAction} isEditMode={isEditMode} totalAttributesMap={totalAttributesMap} buffModifiers={buffModifiers.attributes} /></div>
+      <div id="specializations"><SpecializationsList character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.specializations} toggleSection={() => toggleSection('specializations')} onExecuteFormula={handleExecuteFormulaAction} isEditMode={isEditMode} totalAttributesMap={totalAttributesMap} buffModifiers={buffModifiers.attributes} skillModifiers={buffModifiers.skills} isOverloaded={isOverloaded} /></div>
       <div id="perks"><PerksList character={character} onUpdate={updateCharacterField} onShowDiscord={handleShowOnDiscord} isCollapsed={character.collapsedStates?.perks} toggleSection={() => toggleSection('perks')} isEditMode={isEditMode} /></div>      
-      <div id="inventory"><InventoryList character={character} onUpdate={updateCharacterField} isMaster={isMaster} onShowDiscord={handleShowOnDiscord} isCollapsed={character.collapsedStates?.inventory} toggleSection={() => toggleSection('inventory')} isEditMode={isEditMode} /></div>
-      <div id="equipped"><EquippedItemsList character={character} onUpdate={updateCharacterField} isMaster={isMaster} onShowDiscord={handleShowOnDiscord} isCollapsed={character.collapsedStates?.equipped} toggleSection={() => toggleSection('equipped')} isEditMode={isEditMode} /></div>
+      <div id="inventory"><InventoryList character={character} onUpdate={updateCharacterField} isMaster={isMaster} onShowDiscord={handleShowOnDiscord} isCollapsed={character.collapsedStates?.inventory} toggleSection={() => toggleSection('inventory')} isEditMode={isEditMode} isEncumbered={isEncumbered} isOverloaded={isOverloaded} totalWeight={totalWeight} capacity={capacity} /></div>
+      <div id="equipped"><EquippedItemsList character={character} onUpdate={updateCharacterField} isMaster={isMaster} onShowDiscord={handleShowOnDiscord} isCollapsed={character.collapsedStates?.equipped} toggleSection={() => toggleSection('equipped')} isEditMode={isEditMode} allAttributes={allAttributes} /></div>
       <div id="skills"><SkillsList character={character} onUpdate={updateCharacterField} isMaster={isMaster} onShowDiscord={handleShowOnDiscord} isCollapsed={character.collapsedStates?.skills} toggleSection={() => toggleSection('skills')} isEditMode={isEditMode} /></div>
       <div id="notes"><Notes character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.notes} toggleSection={() => toggleSection('notes')} isEditMode={isEditMode} /></div>
       <div id="story"><Story character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.story} toggleSection={() => toggleSection('story')} isEditMode={isEditMode} /></div>

@@ -36,6 +36,7 @@ const ActionsSection = ({
             costValue: 0, costType: '',
             recoverHP: false, recoverMP: false,
             requiresTarget: false, ignoraMD: false,
+            ammoItemId: '', // Novo campo para ID da munição
             // NOVO: Adiciona a estrutura do teste de resistência
             savingThrow: { type: 'none', dc: 15, effect: 'halfDamage' },
         };
@@ -294,6 +295,21 @@ const ActionsSection = ({
                                                     <option value="MP">MP</option>
                                                 </select>
                                             </div>
+                                            
+                                            {/* --- SELETOR DE MUNIÇÃO --- */}
+                                            <label className="text-sm font-medium text-textSecondary block mb-2 mt-3">Usar Munição:</label>
+                                            <select
+                                                value={action.ammoItemId || ''}
+                                                onChange={(e) => handleSaveActionChange(action.id, 'ammoItemId', e.target.value)}
+                                                className="w-full p-2 bg-bgInput border border-bgElement rounded-md text-textPrimary text-sm mb-3"
+                                                disabled={!canEdit || !isEditMode}
+                                            >
+                                                <option value="">Nenhuma</option>
+                                                {(character.equippedItems || []).filter(i => i.isAmmo).map(item => (
+                                                    <option key={item.id} value={item.id}>{item.name} (Qtd: {item.quantity})</option>
+                                                ))}
+                                            </select>
+
                                             {canEdit && (
                                                 <>
                                                 <div className="flex gap-4 mt-4" style={{ display: isEditMode ? 'flex' : 'none' }}>

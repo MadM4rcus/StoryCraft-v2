@@ -57,8 +57,10 @@ const SpecializationsList = ({
     toggleSection,
     onUpdate,
     onExecuteFormula, // Usado para enviar a rolagem para o feed/Discord
-    isEditMode,    
-    totalAttributesMap // Recebe o mapa de atributos já somados com buffs
+    isEditMode,
+    totalAttributesMap, // Recebe o mapa de atributos já somados com buffs
+    skillModifiers, // Recebe modificadores de perícia (de itens/buffs)
+    isOverloaded
 }) => {
     const { user } = useAuth();
     const canEdit = user.uid === character.ownerUid || isMaster;
@@ -119,9 +121,18 @@ const SpecializationsList = ({
         // 4. Bônus Variável (Outros)
         const otherBonus = parseInt(skillState.otherBonus, 10) || 0;
 
+        // 5. Bônus de Sobrecarga
+        let overloadPenalty = 0;
+        if (isOverloaded && (skill.name === 'Furtividade' || skill.name === 'Acrobacia')) {
+            overloadPenalty = -5;
+        }
+        
+        // 6. Modificadores de Itens/Buffs
+        const itemBuffs = skillModifiers?.[skill.name] || 0;
+
         // Retorna a soma total
-        return attrBonus + levelBonus + trainingBonus + otherBonus;
-    }, [totalAttributesMap, level]);
+        return attrBonus + levelBonus + trainingBonus + otherBonus + overloadPenalty + itemBuffs;
+    }, [totalAttributesMap, level, isOverloaded, skillModifiers]);
 
     /**
      * Alterna o estado 'trained' de uma perícia e salva na ficha.

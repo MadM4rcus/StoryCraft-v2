@@ -132,20 +132,6 @@ Esta será a próxima grande funcionalidade, evoluindo o `EventManager` para um 
     *   Criar o novo modal de aprovação de ações para o Mestre.
     *   Adaptar a ficha do jogador para entrar em "modo de combate", onde as ações disparam solicitações em vez de execuções diretas.
 
-Event manager =>
-
-a idéia é evoluir o componente em vez de apenas um monitor e atalho para fichas, para um construtor de eventos robusto. a interface do mestre deverá ser possivel de criar multiplos eventos de combate.
-salvar e encerrar esses eventos caso deseje. na interface do jogador não mestre ele apenas tem a exibição do jeito que está atualmente com os nomes das fichas, sem poder clicar para ver a ficha, apenas o nome, hp e mp caso o mestre deseje compartilhar. 
-
-o mestre deverá poder adicionar quaisquer fichas ao evento, essas fichas que estão juntas em um evento devem poder interagir entre sí: por exemplo já temos as açoes rápidas que são espécies de ataques que o proprio jogador configura. ao clicar nessa ação atualmente o app faz as rolagens pré-configuradas no chat e no discord. porém quando estiver em um evento com mais de uma ficha, o usuário dono da ficha que está em um evento deverá poder escolher um alvo para essa ação rápida, seja cura ou ataque, ao usar uma ação e escolher um alvo, o app vai enviar essas informaçoes para o monitor de eventos para o mestre confirmar ou cancelar. se o mestre confirmar a ação toma efeito. seja ela uma cura, um ataque, se for cura, a rolagem deve acontecer, e o alvo recuperar o hp segundo as regras definidas pela ação em questão, o mesmo para os ataques. existem algumas regras e lógicas que devem ser aplicadas mas isso eu adicionarei futuramente, a principio precisamos criar essa interface que reune essas açoes. 
-
-uma nova coleçao no firestore será criada para salvar esses eventos de combate. caso o mestre deseje salvar. 
-para evitar leituras e escritas desnecessárias no firestore, somente será feita a leitura das fichas quando o mestre adicionar uma ficha para o evento, ou quando ele clicar em algum botão "atualizar" pois as vezes alguma ficha pode receber um buff, e isso provavelmente não será atualizado em tempo real no monitor de eventos. 
-no decorrer do evento, vão acontecer curas e ataques, alterações no hp e mp das fichas. essa informação não deve ser constantemente lida e escrita, apenas quando o mestre clicar em salvar. 
-tudo isso acontecerá usando o navegador do mestre como servidor temporário. e será salvo no firestore quando o mestre clicar em salvar atualizando assim o hp e mp de todas as fichas envolvidas no evento. 
-para visualização em tempo real dos jogadores podemos usar o servidor real time, para atualizar para os jogadores o estado de hp e mp, bem como outras informaçoes, passagem de turnos etec. 
-
-a principio vamos deixar o componente minimamente funcional, criar os canais de comunicação, e depois eu adiciono os detalhes e regras
 
 
 📦STORYCRAFT-V2
