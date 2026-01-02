@@ -29,6 +29,7 @@ export const SystemProvider = ({ children }) => {
     switch (currentSystem) {
       case 'v1': return `artifacts2/${GLOBAL_APP_IDENTIFIER}`;
       case 'v2': return `artifacts2/${GLOBAL_APP_IDENTIFIER}`; // V2 também usa artifacts2 para fichas
+      case 'v3': return `artifacts3/${GLOBAL_APP_IDENTIFIER}`; // Exemplo: V3 agora usa uma coleção separada "artifacts3"
       default: return null; // Retorna null se nenhum sistema for selecionado
     }
   }, [currentSystem]);

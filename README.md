@@ -16,6 +16,7 @@ A plataforma utiliza o Firebase Firestore para sincronização de dados em tempo
 * **Fichas em Tempo Real**: Edições em uma ficha são refletidas instantaneamente para todos os usuários autorizados, graças ao Cloud Firestore.
 * **Visuais de Ficha (Skins)**: A arquitetura suporta múltiplos visuais ("skins") para o mesmo sistema de regras. Atualmente, existem o visual `v1` (clássico) e `v2` (com layout dinâmico).
 * **Visão do Mestre (GM)**: Mestres de jogo têm permissão para visualizar, editar e deletar as fichas de todos os jogadores em sua sessão, conforme definido nas regras do Firestore.
+* **StoryCraft V3 (Novo)**: Uma evolução do sistema padrão com regras ajustadas e refinamentos de mecânica.
 * **Feed de Sessão**: Um feed em tempo real para rolagens de dados e mensagens, garantindo a integridade do log de eventos da sessão.
 * **Layout Dinâmico (Skin V2)**: O visual v2 não possui um layout fixo. Sua estrutura é carregada de um documento no Firestore, permitindo que a aparência da ficha seja alterada sem a necessidade de um novo deploy.
 * **Ferramenta de Ajuste (GM-Only)**: Uma ferramenta interna (`ClassicSheetAdjuster`) permite que o Mestre mova, redimensione e salve as posições dos elementos do visual V2 diretamente no banco de dados.
@@ -70,6 +71,7 @@ Uma visão geral da arquitetura de pastas do src/:
 * `/systems`: O coração da aplicação. Cada subpasta representa um visual de ficha (skin) para o sistema StoryCraft.
     * `/storycraft`: O visual V1 (HTML/Tailwind).
     * `/storycraft_v2`: O novo visual V2 (dinâmico, baseado em imagem e layout do Firestore).
+    * `/storycraft_v3`: A nova versão V3 (baseada no V1 com regras ajustadas).
 
 ### Arquivos de Configuração Principais
 
@@ -89,6 +91,9 @@ Aqui é onde podemos rastrear as próximas grandes tarefas.
 -   [x] **Otimizar Leituras do Firestore:** Identificar e corrigir componentes que causam consumo excessivo de leituras no banco de dados. O objetivo é garantir que a aplicação seja sustentável e não ultrapasse os limites do plano gratuito.
 
 (Tarefa executada, porêm sempre manter manutenção.)
+
+### Em Desenvolvimento
+-   **StoryCraft V3:** Implementação da nova versão do sistema, focada em ajustes de regras e balanceamento, mantendo a interface familiar do V1.
 
 ### Em Pausa
 
@@ -186,13 +191,24 @@ a principio vamos deixar o componente minimamente funcional, criar os canais de 
 ┃ ┃ ┃ ┣ 📜ListSections.jsx
 ┃ ┃ ┃ ┣ 📜SheetSkin.jsx
 ┃ ┃ ┃ ┗ 📜Specializations.jsx
-┃ ┃ ┗ 📂storycraft_classic
-┃ ┃   ┣ 📜classic_sheet_layout.json
-┃ ┃   ┣ 📜ClassicDashboard.jsx
-┃ ┃   ┣ 📜ClassicHeader.jsx
-┃ ┃   ┣ 📜ClassicSheet.jsx
-┃ ┃   ┣ 📜ClassicSheetAdjuster.jsx
-┃ ┃   ┗ 📜classicSheetStyles.css
+┃ ┃ ┣ 📂storycraft_classic
+┃ ┃ ┃ ┣ 📜classic_sheet_layout.json
+┃ ┃ ┃ ┣ 📜ClassicDashboard.jsx
+┃ ┃ ┃ ┣ 📜ClassicHeader.jsx
+┃ ┃ ┃ ┣ 📜ClassicSheet.jsx
+┃ ┃ ┃ ┣ 📜ClassicSheetAdjuster.jsx
+┃ ┃ ┃ ┗ 📜classicSheetStyles.css
+┃ ┃ ┗ 📂storycraft_v3
+┃ ┃   ┣ 📜ActionsSection_v3.jsx
+┃ ┃   ┣ 📜BuffsSection_v3.jsx
+┃ ┃   ┣ 📜CharacterList_v3.jsx
+┃ ┃   ┣ 📜CharacterSheet_v3.jsx
+┃ ┃   ┣ 📜ContentSections_v3.jsx
+┃ ┃   ┣ 📜CorePanels_v3.jsx
+┃ ┃   ┣ 📜Dashboard_v3.jsx
+┃ ┃   ┣ 📜ListSections_v3.jsx
+┃ ┃   ┣ 📜SheetSkin_v3.jsx
+┃ ┃   ┗ 📜Specializations_v3.jsx
 ┃ ┣ 📜App.jsx
 ┃ ┣ 📜index.css
 ┃ ┗ 📜main.jsx
