@@ -40,7 +40,7 @@ const ImageUrlModal = ({ initialValue, onConfirm, onCancel }) => {
 
 
 // --- Sub-componente: CharacterInfo ---
-const CharacterInfo = ({ character, onUpdate, isMaster, isCollapsed, toggleSection, isEditMode, onPowerScaleUpdate }) => {
+const CharacterInfo = ({ character, onUpdate, isMaster, isCollapsed, toggleSection, isEditMode }) => {
     const { user } = useAuth();
     const canEdit = user && (user.uid === character.ownerUid || isMaster);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -75,30 +75,22 @@ const CharacterInfo = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
     const getPowerScale = (level) => {
         level = parseInt(level, 10);
         if (isNaN(level) || level < 1) {
-            return { scale: 'N/A', category: 'Desconhecida', powerBonus: 0 };
+            return { category: 'Desconhecida' };
         }
 
-        if (level >= 1 && level <= 10) return { scale: 0, category: 'Comum', powerBonus: 1 };
-        if (level >= 11 && level <= 20) return { scale: 1, category: 'Lendário I', powerBonus: 2 };
-        if (level >= 21 && level <= 30) return { scale: 2, category: 'Lendário II', powerBonus: 2 };
-        if (level >= 31 && level <= 40) return { scale: 3, category: 'Lendário III', powerBonus: 2 };
-        if (level >= 41 && level <= 45) return { scale: 4, category: 'Colossal I', powerBonus: 3 };
-        if (level >= 46 && level <= 50) return { scale: 5, category: 'Colossal II', powerBonus: 3 };
-        if (level >= 51 && level <= 55) return { scale: 6, category: 'Colossal III', powerBonus: 3 };
-        if (level >= 56 && level <= 59) return { scale: 7, category: 'Titânico', powerBonus: 4 };
-        if (level === 60) return { scale: 8, category: 'Divino', powerBonus: 5 };
+        // Categorias Visuais V3
+        let category = 'Comum';
+        if (level >= 0 && level <= 9) category = 'Comum';
+        else if (level >= 10 && level <= 19) category = 'Lendário';
+        else if (level >= 20 && level <= 29) category = 'Colossal';
+        else if (level >= 30 && level <= 39) category = 'Titânico';
+        else if (level >= 40 && level <= 49) category = 'Mítico';
+        else if (level >= 50) category = 'Épico';
 
-        return { scale: 'N/A', category: 'Além do Divino', powerBonus: 6 }; // For levels beyond 60
+        return { category };
     };
 
-    const { scale, category, powerBonus } = useMemo(() => getPowerScale(character.level), [character.level]);
-
-    // NOVO: Efeito para comunicar a mudança do bônus de poder para o componente pai
-    useEffect(() => {
-        if (onPowerScaleUpdate) {
-            onPowerScaleUpdate(powerBonus);
-        }
-    }, [powerBonus, onPowerScaleUpdate]);
+    const { category } = useMemo(() => getPowerScale(character.level), [character.level]);
 
     const handleLocalChange = (e) => {
         const { name, value } = e.target;
@@ -176,7 +168,7 @@ const CharacterInfo = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
 };
 
 // --- Sub-componente: MainAttributes ---
-export const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, toggleSection, buffModifiers, isEditMode, onAttributeRoll, onMapUpdate, powerScaleBonus }) => {
+export const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, toggleSection, buffModifiers, isEditMode, onAttributeRoll, onMapUpdate }) => {
     const { user } = useAuth();
     const canEdit = user && (user.uid === character.ownerUid || isMaster);
     const canEditGeneral = user && (user.uid === character.ownerUid || isMaster);
@@ -188,6 +180,9 @@ export const MainAttributes = ({ character, onUpdate, isMaster, isCollapsed, tog
     }, [character.mainAttributes]);
 
     const calculateTotal = (base, key) => (parseInt(base, 10) || 0) + ((buffModifiers && buffModifiers[key]) || 0);
+
+    // Bônus de resistência global a cada 10 níveis.
+    const resistanceBonus = Math.floor((character?.level || 0) / 10);
 
     const dexterityValue = useMemo(() => {
         return calculateTotal(localMainAttributes?.destreza, 'Destreza');
@@ -408,7 +403,7 @@ a                                         ria-label={`${key}
                         const attrValue = attrValueMap[selectedAttr] || 0;
 
                         const baseValue = localMainAttributes?.[lowerKey] ?? '';
-                        const total = (parseInt(baseValue, 10) || 0) + attrValue + (buffModifiers[key] || 0) + (powerScaleBonus || 0);
+                        const total = (parseInt(baseValue, 10) || 0) + attrValue + (buffModifiers[key] || 0) + resistanceBonus;
 
                         const handleAttrChange = (newAttr) => {
                             onUpdate(attrField, newAttr);

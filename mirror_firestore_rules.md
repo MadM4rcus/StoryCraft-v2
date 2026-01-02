@@ -51,6 +51,27 @@ service cloud.firestore {
       allow read: if request.auth != null && request.auth.token.isMaster == true;
     }
 
+    // =====================================================================
+    // REGRAS PARA STORYCRAFT V3 (NOVO - artifacts3)
+    // =====================================================================
+
+    // Regra para o documento de usuário em V3.
+    match /artifacts3/{appId}/users/{userId} {
+      // Um usuário pode SEMPRE ler seu próprio documento.
+      allow read: if request.auth != null && request.auth.uid == userId;
+      
+      // Um usuário pode escrever em seu próprio doc, OU um Mestre pode escrever.
+      allow write: if request.auth != null && (request.auth.uid == userId || request.auth.token.isMaster == true);
+      
+      // Um mestre pode listar todos os usuários.
+      allow list: if request.auth != null && request.auth.token.isMaster == true;
+    }
+
+    match /artifacts3/{appId}/users/{userId}/characterSheets/{sheetId} {
+      // O dono da ficha ou um Mestre podem ler, escrever e deletar.
+      allow read, write, delete: if request.auth != null && (request.auth.uid == userId || request.auth.token.isMaster == true);
+    }
+
     // --- NOVA REGRA: Para a coleção de status otimizada do Party Monitor ---
     match /artifacts2/{appId}/partyStatus/{statusId} {
       // Qualquer usuário logado pode ler os status (contém apenas HP/MP/Nome).
@@ -77,6 +98,12 @@ service cloud.firestore {
     match /storycraft-v2/{appId}/events/{eventId} {
       // Apenas Mestres podem ler, criar, atualizar ou deletar eventos salvos.
       // Isso impede que jogadores acessem informações de eventos que não estão ativos.
+      allow read, write, delete: if request.auth != null && request.auth.token.isMaster == true;
+    }
+
+    // --- NOVA REGRA: Para a coleção de eventos de combate salvos (V3) ---
+    match /storycraft-v3/{appId}/events/{eventId} {
+      // Mesma lógica: Apenas Mestres.
       allow read, write, delete: if request.auth != null && request.auth.token.isMaster == true;
     }
 

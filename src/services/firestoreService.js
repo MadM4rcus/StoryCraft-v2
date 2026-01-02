@@ -135,7 +135,7 @@ export const saveUserSettings = async (basePath, userId, settings) => {
  * @param {string} characterDataCollectionRoot - O caminho raiz para os dados (ex: 'artifacts2/1:727...').
  * @param {object} eventData - O objeto do evento, contendo os personagens com seus status atualizados.
  */
-export const saveEventState = async (characterDataCollectionRoot, eventData) => {
+export const saveEventState = async (characterDataCollectionRoot, eventData, systemRoot = 'storycraft-v2') => {
   if (!characterDataCollectionRoot || !eventData || !eventData.id) {
     console.error("saveEventState: Dados insuficientes para salvar o evento.");
     return;
@@ -144,9 +144,8 @@ export const saveEventState = async (characterDataCollectionRoot, eventData) => 
   const batch = writeBatch(db);
   const eventCharacters = eventData.characters || [];
   // 1. Salvar o próprio evento na coleção de eventos
-  // O caminho para os eventos é fixo em 'storycraft-v2/default/events', conforme as regras de segurança.
-  // Não depende do characterDataCollectionRoot.
-  const eventCollectionPath = 'storycraft-v2/default/events';
+  // O caminho agora é dinâmico baseado no sistema (v2 ou v3)
+  const eventCollectionPath = `${systemRoot}/default/events`;
   const eventRef = doc(db, eventCollectionPath, eventData.id);
   const eventToSave = {
     id: eventData.id,
@@ -216,14 +215,14 @@ export const saveEventState = async (characterDataCollectionRoot, eventData) => 
  * Deleta um evento salvo do Firestore.
  * @param {string} eventId - O ID do evento a ser deletado.
  */
-export const deleteEventFromFirestore = async (eventId) => {
+export const deleteEventFromFirestore = async (eventId, systemRoot = 'storycraft-v2') => {
   if (!eventId) {
     console.error("deleteEventFromFirestore: ID do evento é necessário.");
     return;
   }
 
-  // O caminho para os eventos é fixo, conforme as regras de segurança.
-  const eventCollectionPath = 'storycraft-v2/default/events';
+  // O caminho agora é dinâmico
+  const eventCollectionPath = `${systemRoot}/default/events`;
   const eventRef = doc(db, eventCollectionPath, eventId);
 
   try {

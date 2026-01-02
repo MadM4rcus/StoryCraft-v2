@@ -21,7 +21,6 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
   const { isSecretMode } = useGlobalControls();
   const { isEditMode } = useGlobalControls();
   const [totalAttributesMap, setTotalAttributesMap] = useState({});
-  const [powerScaleBonus, setPowerScaleBonus] = useState(0);
   const { events, sendActionRequest } = useEventManager();
 
   const [modalState, setModalState] = useState({ type: null, props: {} });
@@ -238,15 +237,19 @@ const CharacterSheet = ({ character: initialCharacter, onBack, isMaster }) => {
     const attrBonus = totalAttributesMap[selectedAttr] || 0;
     
     const level = character.level || 0;
+
+    // Bônus de Nível (Todas ganham +1 a cada 10 níveis)
+    const levelBonus = Math.floor(level / 10);
+
     let trainingBonus = 0;
     if (skillState.trained) {
-        trainingBonus = 2 + Math.floor(level / 10);
+        trainingBonus = 1 + Math.floor(level / 10);
     }
     
     const otherBonus = parseInt(skillState.otherBonus, 10) || 0;
     
-    return attrBonus + trainingBonus + otherBonus;
-  }, [totalAttributesMap, character?.level, character?.skillSystem]);
+    return attrBonus + levelBonus + trainingBonus + otherBonus;
+  }, [totalAttributesMap]);
 
   const parseAndRollFormula = (formula) => {
     if (!formula) return { total: 0, details: '' };
@@ -664,8 +667,8 @@ const handleExecuteFormulaAction = async (action) => {
   return (
     <div className="w-full max-w-4xl mx-auto p-4">
           <ModalManager modalState={modalState} closeModal={closeModal} />
-      <div id="info"><CharacterInfo character={character} onUpdate={updateCharacterField} isMaster={isMaster} isEditMode={isEditMode} isCollapsed={character.collapsedStates?.info} toggleSection={() => toggleSection('info')} onPowerScaleUpdate={setPowerScaleBonus} /></div>
-      <div id="main-attributes"><MainAttributes character={character} onUpdate={updateCharacterField} isMaster={isMaster} isEditMode={isEditMode} buffModifiers={buffModifiers.attributes} isCollapsed={character.collapsedStates?.main} toggleSection={() => toggleSection('main')} onAttributeRoll={handleAttributeClick} onMapUpdate={setTotalAttributesMap} powerScaleBonus={powerScaleBonus} /></div>
+      <div id="info"><CharacterInfo character={character} onUpdate={updateCharacterField} isMaster={isMaster} isEditMode={isEditMode} isCollapsed={character.collapsedStates?.info} toggleSection={() => toggleSection('info')} /></div>
+      <div id="main-attributes"><MainAttributes character={character} onUpdate={updateCharacterField} isMaster={isMaster} isEditMode={isEditMode} buffModifiers={buffModifiers.attributes} isCollapsed={character.collapsedStates?.main} toggleSection={() => toggleSection('main')} onAttributeRoll={handleAttributeClick} onMapUpdate={setTotalAttributesMap} /></div>
       <div id="actions"><ActionsSection character={character} isMaster={isMaster} isCollapsed={character.collapsedStates?.actions} toggleSection={() => toggleSection('actions')} allAttributes={allAttributes} onUpdate={updateCharacterField} onExecuteFormula={handleExecuteFormulaAction} isEditMode={isEditMode} /></div>
       <div id="buffs"><BuffsSection character={character} isMaster={isMaster} onUpdate={updateCharacterField} allAttributes={allAttributes} isCollapsed={character.collapsedStates?.buffs} toggleSection={() => toggleSection('buffs')} isEditMode={isEditMode} /></div>
       <div id="specializations"><SpecializationsList character={character} onUpdate={updateCharacterField} isMaster={isMaster} isCollapsed={character.collapsedStates?.specializations} toggleSection={() => toggleSection('specializations')} onExecuteFormula={handleExecuteFormulaAction} isEditMode={isEditMode} totalAttributesMap={totalAttributesMap} buffModifiers={buffModifiers.attributes} /></div>

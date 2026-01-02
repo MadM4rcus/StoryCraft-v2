@@ -51,6 +51,22 @@
           ".write": "auth != null"
         }
       }
+    },
+    
+    // --- REGRAS PARA STORYCRAFT V3 (Separado) ---
+    "storycraft-v3": {
+      "combat-events": {
+        "$session_id": {
+          ".read": "auth != null",
+          ".write": "auth != null && auth.token.isMaster === true"
+        }
+      },
+      "action-requests": {
+        "$session_id": {
+          ".read": "auth != null && auth.token.isMaster === true",
+          ".write": "auth != null"
+        }
+      }
     }
   }
 }

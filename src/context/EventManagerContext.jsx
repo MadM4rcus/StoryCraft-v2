@@ -11,26 +11,6 @@ import debounce from 'lodash/debounce';
 
 const EventManagerContext = createContext();
 
-// Helper function to determine Power Scale based on character level
-const getPowerScale = (level) => {
-    level = parseInt(level, 10);
-    if (isNaN(level) || level < 1) {
-        return { scale: 0, category: 'Desconhecida', powerBonus: 0 };
-    }
-
-    if (level >= 1 && level <= 10) return { scale: 0, category: 'Comum', powerBonus: 1 };
-    if (level >= 11 && level <= 20) return { scale: 1, category: 'Lendário I', powerBonus: 2 };
-    if (level >= 21 && level <= 30) return { scale: 2, category: 'Lendário II', powerBonus: 2 };
-    if (level >= 31 && level <= 40) return { scale: 3, category: 'Lendário III', powerBonus: 2 };
-    if (level >= 41 && level <= 45) return { scale: 4, category: 'Colossal I', powerBonus: 3 };
-    if (level >= 46 && level <= 50) return { scale: 5, category: 'Colossal II', powerBonus: 3 };
-    if (level >= 51 && level <= 55) return { scale: 6, category: 'Colossal III', powerBonus: 3 };
-    if (level >= 56 && level <= 59) return { scale: 7, category: 'Titânico', powerBonus: 4 };
-    if (level === 60) return { scale: 8, category: 'Divino', powerBonus: 5 };
-
-    return { scale: 9, category: 'Além do Divino', powerBonus: 6 }; // For levels beyond 60
-};
-
 // Helper function to determine character status (Near Death, Unconscious, Dead)
 const getCharacterStatus = (character) => {
     const hp = character.mainAttributes?.hp;
@@ -54,7 +34,7 @@ export const useEventManager = () => useContext(EventManagerContext);
 
 export const EventManagerProvider = ({ children }) => {
   const { user, isMaster } = useAuth();
-  const { characterDataCollectionRoot } = useSystem();
+  const { characterDataCollectionRoot, currentSystem } = useSystem();
   const { addRollToFeed, addMessageToFeed } = useRollFeed();
   const { isSecretMode } = useGlobalControls();
   
@@ -71,15 +51,18 @@ export const EventManagerProvider = ({ children }) => {
 
   const sessionId = 'default-session'; 
 
+  // Define a raiz do sistema para separar os eventos do V3
+  const systemRoot = currentSystem === 'v3' ? 'storycraft-v3' : 'storycraft-v2';
+
   const eventsRef = useMemo(() => {
     if (!characterDataCollectionRoot) return null;
-    return ref(rtdb, `storycraft-v2/combat-events/${sessionId}`);
-  }, [characterDataCollectionRoot]);
+    return ref(rtdb, `${systemRoot}/combat-events/${sessionId}`);
+  }, [characterDataCollectionRoot, systemRoot]);
 
   const actionRequestsRef = useMemo(() => {
     if (!characterDataCollectionRoot) return null;
-    return ref(rtdb, `storycraft-v2/action-requests/${sessionId}`);
-  }, [characterDataCollectionRoot]);
+    return ref(rtdb, `${systemRoot}/action-requests/${sessionId}`);
+  }, [characterDataCollectionRoot, systemRoot]);
   
   // --- SINCRONIZAÇÃO DE ESTADO ---
 
@@ -131,7 +114,7 @@ export const EventManagerProvider = ({ children }) => {
     
     console.log("[DIAGNÓSTICO] Iniciando escuta de actionRequests em:", actionRequestsRef.toString());
 
-    const unsubscribe = onValue(actionRequestsRef, (snapshot) => {
+    const unsubscribe = onValue(actionRequestsRef, (snapshot) => { 
       console.log("[DIAGNÓSTICO] Snapshot de actionRequests recebido. Existe?", snapshot.exists());
       const requests = [];
       snapshot.forEach((childSnapshot) => {
@@ -205,7 +188,7 @@ export const EventManagerProvider = ({ children }) => {
   const deleteEvent = (eventId) => {
     if (!isMaster) return;
     // Deleta o evento do Firestore para que não seja recarregado
-    deleteEventFromFirestore(eventId);
+    deleteEventFromFirestore(eventId, systemRoot);
 
     // Remove o evento do estado de combate local
     setCombatState(prevState => ({
@@ -307,7 +290,7 @@ export const EventManagerProvider = ({ children }) => {
     }
     
     console.log("Salvando evento:", eventToSave);
-    saveEventState(characterDataCollectionRoot, eventToSave);
+    saveEventState(characterDataCollectionRoot, eventToSave, systemRoot);
   };
   
   const sendActionRequest = (requestData) => { // Agora recebe { action, actorSnapshot, targetIds }
@@ -334,7 +317,7 @@ export const EventManagerProvider = ({ children }) => {
 
   const denyActionRequest = (requestId) => {
     if (!isMaster || !actionRequestsRef) return;
-    const requestRef = ref(rtdb, `storycraft-v2/action-requests/${sessionId}/${requestId}`);
+    const requestRef = ref(rtdb, `${systemRoot}/action-requests/${sessionId}/${requestId}`);
     remove(requestRef);
   };
   
@@ -366,15 +349,31 @@ export const EventManagerProvider = ({ children }) => {
         
         if (!attackerChar || !targetChar) return { multiplier: 1, reflected: false };
 
-        const attackerScale = getPowerScale(attackerChar.level).scale;
-        const targetScale = getPowerScale(targetChar.level).scale;
-        const scaleDiff = targetScale - attackerScale;
+        const attackerLvl = parseInt(attackerChar.level, 10) || 0;
+        const targetLvl = parseInt(targetChar.level, 10) || 0;
 
-        let multiplier = 1 - (scaleDiff / 3);
-        multiplier = Math.max(0, Math.min(2, multiplier)); // Limita entre 0x e 2x
-        
-        const reflected = scaleDiff >= 3;
-        return { multiplier, reflected };
+        // Elite Diamante: Personagens de nível 50 ou superior só podem ser atingidos por outros de nível 50+.
+        if (targetLvl >= 50) {
+            if (attackerLvl < 50) return { multiplier: 0, reflected: false }; // Dano zerado se o atacante for inferior a 50
+        }
+
+        const diff = targetLvl - attackerLvl;
+
+        // Atacante é nível MENOR (Redução de Dano)
+        if (diff >= 25) return { multiplier: 0, reflected: false }; // Elite Rubi (Não causa dano)
+        if (diff >= 20) return { multiplier: 0.25, reflected: false }; // Elite Esmeralda (75% diff -> 25% dano)
+        if (diff >= 15) return { multiplier: 0.5, reflected: false }; // Elite Ouro (50% diff -> 50% dano)
+        if (diff >= 10) return { multiplier: 0.75, reflected: false }; // Elite Prata (25% diff -> 75% dano)
+
+        // Atacante é nível MAIOR (Amplificação de Dano)
+        const advantage = attackerLvl - targetLvl;
+        if (advantage >= 25) return { multiplier: 2.0, reflected: false }; // Elite Rubi (Dano dobrado)
+        if (advantage >= 20) return { multiplier: 1.75, reflected: false }; // Elite Esmeralda (+75%)
+        if (advantage >= 15) return { multiplier: 1.5, reflected: false }; // Elite Ouro (+50%)
+        if (advantage >= 10) return { multiplier: 1.25, reflected: false }; // Elite Prata (+25%)
+
+        // Elite Bronze (< 10 níveis de diferença) -> Sem alteração
+        return { multiplier: 1, reflected: false };
     };
 
     // --- Lógica para Rolagens de Ataque (acerto vs ME) ---
@@ -412,12 +411,8 @@ export const EventManagerProvider = ({ children }) => {
             return getStat(liveChar, attrName);
         }
 
-        // Lógica para Testes de Resistência
-        const getPowerScaleBonus = (level) => {
-            return getPowerScale(level).powerBonus;
-        };
-
-        const powerScaleBonus = getPowerScaleBonus(liveChar.level);
+        // Bônus de resistência global a cada 10 níveis.
+        const resistanceBonus = Math.floor((liveChar.level || 0) / 10);
         const baseSaveValue = getStat(liveChar, attrName);
 
         const attrField = `${attrName.toLowerCase()}Attr`;
@@ -431,7 +426,7 @@ export const EventManagerProvider = ({ children }) => {
         
         const nearDeathPenalty = isNearDeath ? -1 : 0;
 
-        return baseSaveValue + primaryAttrValue + powerScaleBonus + nearDeathPenalty;
+        return baseSaveValue + primaryAttrValue + resistanceBonus + nearDeathPenalty;
     };
 
     // --- Helper para aplicar custo ao ator (se houver) ---
@@ -856,7 +851,7 @@ export const EventManagerProvider = ({ children }) => {
     if (!isMaster) return;
     try {
       // Caminho fixo conforme definido no firestoreService.js
-      const eventsRef = collection(db, 'storycraft-v2/default/events');
+      const eventsRef = collection(db, `${systemRoot}/default/events`);
       const snapshot = await getDocs(eventsRef);
       
       const loadedEvents = snapshot.docs.map(doc => {
