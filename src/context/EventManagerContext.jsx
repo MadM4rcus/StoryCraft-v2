@@ -434,6 +434,19 @@ export const EventManagerProvider = ({ children }) => {
         return baseSaveValue + primaryAttrValue + powerScaleBonus + nearDeathPenalty;
     };
 
+    // --- Helper para aplicar custo ao ator (se houver) ---
+    const applyActorCost = (eventsList, actorId, costData) => {
+        if (!costData || (!costData.HP && !costData.MP)) return;
+        for (const ev of eventsList) {
+            const actorChar = (ev.characters || []).find(c => c.id === actorId);
+            if (actorChar) {
+                if (costData.HP) actorChar.mainAttributes.hp.current = Math.max(0, actorChar.mainAttributes.hp.current - costData.HP);
+                if (costData.MP) actorChar.mainAttributes.mp.current = Math.max(0, actorChar.mainAttributes.mp.current - costData.MP);
+                break; 
+            }
+        }
+    };
+
     if (action.acertoResult) {
         const acertoTotal = action.acertoResult.total;
         const hitTargets = [];
@@ -442,6 +455,9 @@ export const EventManagerProvider = ({ children }) => {
         let reflectedDamageInfo = null; // Para armazenar informações sobre dano refletido
 
         const newState = JSON.parse(JSON.stringify(combatState));
+        
+        // APLICA O CUSTO AO ATOR
+        applyActorCost(newState.events, request.actorId, action.cost);
 
         (request.targetIds || [request.targetId]).forEach(targetId => {
             let combatChar = null; // O personagem no estado de combate (para modificar)
@@ -459,10 +475,11 @@ export const EventManagerProvider = ({ children }) => {
 
             const totalME = calculateLiveAttribute(liveChar, 'ME'); // Penalidade já é aplicada aqui
 
-            // REGRA: Crítico é acerto automático, independente da ME.
-            const isCrit = action.acertoResult?.isCrit;
+            // REGRA: Um 20 natural é acerto automático. Outros críticos (ex: 17-19) não são, mas ainda aplicam dano extra.
+            const isNatural20 = action.acertoResult?.roll === 20;
+            const isCrit = action.acertoResult?.isCrit; // Mantém para lógica de dano extra.
 
-            if (isCrit || acertoTotal >= totalME) {
+            if (isNatural20 || acertoTotal >= totalME) {
                 const hp = combatChar.mainAttributes.hp;
                 const originalAmount = parseInt(action.totalResult, 10) || 0;
                 const effectType = action.targetEffect || 'damage';
@@ -559,6 +576,10 @@ export const EventManagerProvider = ({ children }) => {
     if (action.savingThrow && action.savingThrow.type !== 'none') {
         const savingThrowResults = [];
         const newState = JSON.parse(JSON.stringify(combatState));
+        
+        // APLICA O CUSTO AO ATOR
+        applyActorCost(newState.events, request.actorId, action.cost);
+        
         let reflectedDamageInfo = null;
 
         (request.targetIds || [request.targetId]).forEach(targetId => {
@@ -725,6 +746,11 @@ export const EventManagerProvider = ({ children }) => {
     const affectedTargets = [];
     const actorName = allCharacters.find(c => c.id === request.actorId)?.name || 'Desconhecido';
     let reflectedDamageInfo = null;
+
+    // APLICA O CUSTO AO ATOR (Se não for uma ação de custo dedicada, para evitar duplicidade)
+    if (action.targetEffect !== 'cost') {
+        applyActorCost(newState.events, request.actorId, action.cost);
+    }
 
     newState.events = newState.events.map(event => ({
         ...event,

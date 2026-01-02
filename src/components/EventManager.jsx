@@ -215,7 +215,7 @@ const EventManager = ({ onCharacterClick }) => {
                         const baseME = targetChar.mainAttributes?.me || 0;
                         const buffME = (targetChar.buffs || []).filter(b => b.isActive).flatMap(b => b.effects || []).filter(e => e.type === 'attribute' && e.target === 'ME').reduce((sum, e) => sum + (parseInt(e.value, 10) || 0), 0);
                         const totalME = baseME + buffME;
-                        const isHit = req.action.acertoResult.isCrit || req.action.acertoResult.total >= totalME;
+                        const isHit = req.action.acertoResult.roll === 20 || req.action.acertoResult.total >= totalME;
 
                         return (
                           <li key={id}>

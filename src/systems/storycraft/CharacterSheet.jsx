@@ -502,20 +502,6 @@ const handleExecuteFormulaAction = async (action) => {
         descriptionText = descriptionText.replace(urlRegex, '').trim();
     }
 
-    if (totalCost.HP !== 0 || totalCost.MP !== 0 || totalRecovery.HP > 0 || totalRecovery.MP > 0) {
-        const newMainAttributes = { ...character.mainAttributes };
-        
-        newMainAttributes.hp.current = newMainAttributes.hp.current - totalCost.HP + totalRecovery.HP;
-        newMainAttributes.mp.current = newMainAttributes.mp.current - totalCost.MP + totalRecovery.MP;
-
-        newMainAttributes.hp.current = Math.min(newMainAttributes.hp.current, newMainAttributes.hp.max);
-        newMainAttributes.hp.current = Math.max(newMainAttributes.hp.current, 0);
-        newMainAttributes.mp.current = Math.min(newMainAttributes.mp.current, newMainAttributes.mp.max);
-        newMainAttributes.mp.current = Math.max(newMainAttributes.mp.current, 0);
-
-        await updateCharacterField('mainAttributes', newMainAttributes);
-    }
-
     let detailsString = rollResultsForFeed.map(r => r.displayValue).join(' + ');
     const detailsTextForFeed = detailsString;
     let discordDescription;
