@@ -145,7 +145,9 @@ export const EventManagerProvider = ({ children }) => {
       : query(collection(db, `${characterDataCollectionRoot}/users/${user.uid}/characterSheets`));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const charactersData = snapshot.docs.map(doc => {
+      const charactersData = snapshot.docs
+        .filter(doc => doc.ref.path.startsWith(characterDataCollectionRoot))
+        .map(doc => {
         const data = doc.data();
         // Parse JSON strings to objects (same logic as useCharacter hook)
         Object.keys(data).forEach(key => {

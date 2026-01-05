@@ -992,3 +992,9 @@ const PerkItem = ({ perk, type, canEdit, onRemove, onChange, onOriginChange, onT
 
 // Exporta cada componente individualmente para que o CharacterSheet possa controlá-los
 export { InventoryList, EquippedItemsList, SkillsList, PerksList };
+
+// eu acho ridiculo que a porra do inventario tem o maior código do aplicativo inteiro
+//
+//
+//
+// tive que adicionar mais linhas para completar 1000
