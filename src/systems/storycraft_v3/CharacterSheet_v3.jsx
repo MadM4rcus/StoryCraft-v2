@@ -722,9 +722,12 @@ const handleExecuteFormulaAction = async (action) => {
   
   const handleExportJson = () => { const { collapsedStates, ...exportData } = character; const jsonString = JSON.stringify(exportData, null, 2); const blob = new Blob([jsonString], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${character.name || 'ficha'}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href); };
   
-  const strength = useMemo(() => totalAttributesMap['Força'] || 0, [totalAttributesMap]);
+  const strength = useMemo(() => totalAttributesMap['FOR'] || 0, [totalAttributesMap]);
 
   const capacity = useMemo(() => {
+    // Regra V3: Base 10.
+    // Se Força negativa: -1 espaço por ponto negativo.
+    // Se Força positiva: +2 espaços por ponto positivo.
     if (strength < 0) {
         return Math.max(0, 10 + strength);
     }

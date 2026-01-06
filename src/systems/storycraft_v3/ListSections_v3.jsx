@@ -343,6 +343,27 @@ const InventoryList = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
     // --- NOVO ESTADO PARA CONTROLAR A CARTEIRA ---
     const [isWalletOpen, setIsWalletOpen] = useState(false);
 
+    // --- NOVO: Estado local para Deslocamento Base ---
+    const [localBaseDeslocamento, setLocalBaseDeslocamento] = useState(character.mainAttributes?.deslocamento ?? 9);
+
+    useEffect(() => {
+        setLocalBaseDeslocamento(character.mainAttributes?.deslocamento ?? 9);
+    }, [character.mainAttributes?.deslocamento]);
+
+    const handleBaseDeslocamentoChange = (e) => {
+        setLocalBaseDeslocamento(e.target.value);
+    };
+
+    const handleBaseDeslocamentoSave = () => {
+        const val = parseInt(localBaseDeslocamento, 10) || 0;
+        if (val !== (character.mainAttributes?.deslocamento ?? 9)) {
+            onUpdate('mainAttributes', { ...character.mainAttributes, deslocamento: val });
+        }
+    };
+
+    // Aplica penalidade de -3m se sobrecarregado, mas não deixa o deslocamento ser menor que 0
+    const finalDeslocamento = Math.max(0, (parseInt(localBaseDeslocamento, 10) || 0) - (isOverloaded ? 3 : 0));
+
     const totalCoinWeight = useMemo(() => {
         return CURRENCY_TIERS.reduce((total, tier) => {
             const amount = character.wallet?.[tier.name] || 0;
@@ -391,12 +412,32 @@ const InventoryList = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
             {/* --- RESUMO DE CARGA E DEBUFFS --- */}
             <div className={`mb-6 p-4 rounded-lg border ${isOverloaded ? 'bg-red-900/10 border-red-500/50' : 'bg-bgElement border-bgInput'}`}>
                 <div className="flex justify-between items-end mb-2">
-                    <span className="text-sm font-bold text-textSecondary uppercase">Capacidade de Carga</span>
-                    <div className="text-right">
+                    <div>
+                        <span className="text-sm font-bold text-textSecondary uppercase block">Capacidade de Carga</span>
                         <span className={`text-2xl font-bold ${isOverloaded ? 'text-red-500' : 'text-green-400'}`}>
                             {totalWeight} <span className="text-sm text-textSecondary">/ {capacity}</span>
                         </span>
-                        <span className="text-xs text-textSecondary block">Espaços</span>
+                        <span className="text-xs text-textSecondary ml-1">Espaços</span>
+                    </div>
+                    
+                    {/* --- NOVO: Display de Deslocamento --- */}
+                    <div className="text-right flex flex-col items-end">
+                         <span className="text-sm font-bold text-textSecondary uppercase block">Deslocamento</span>
+                         <div className="flex items-center gap-2">
+                            <span className="text-2xl font-bold text-textPrimary">{finalDeslocamento}m</span>
+                            {canEdit && (
+                                <div className="flex flex-col items-end">
+                                    <span className="text-[10px] text-textSecondary uppercase">Base</span>
+                                    <input 
+                                        type="number" 
+                                        value={localBaseDeslocamento} 
+                                        onChange={handleBaseDeslocamentoChange} 
+                                        onBlur={handleBaseDeslocamentoSave}
+                                        className="w-10 p-0.5 text-center bg-bgInput border border-bgElement rounded text-xs text-textSecondary"
+                                    />
+                                </div>
+                            )}
+                         </div>
                     </div>
                 </div>
                 
@@ -413,7 +454,7 @@ const InventoryList = ({ character, onUpdate, isMaster, isCollapsed, toggleSecti
                     <div className="mt-3 pt-3 border-t border-red-500/30">
                         <p className="font-bold text-red-400 text-sm mb-1">⚠️ PERSONAGEM SOBRECARREGADO</p>
                         <ul className="text-xs text-red-300 space-y-1 list-disc list-inside">
-                            <li>-5 em testes de <strong>Furtividade</strong> e <strong>Acrobacia</strong>.</li>
+                            <li>-5 em testes de <strong>Acrobacia</strong> e <strong>Furtividade</strong>.</li>
                             <li>Deslocamento reduzido em <strong>3 metros</strong>.</li>
                             {isEncumbered && <li className="font-bold text-red-500">LIMITE MÁXIMO EXCEDIDO (2x Capacidade)! Não é possível carregar mais itens.</li>}
                         </ul>
@@ -994,7 +1035,3 @@ const PerkItem = ({ perk, type, canEdit, onRemove, onChange, onOriginChange, onT
 export { InventoryList, EquippedItemsList, SkillsList, PerksList };
 
 // eu acho ridiculo que a porra do inventario tem o maior código do aplicativo inteiro
-//
-//
-//
-// tive que adicionar mais linhas para completar 1000
